@@ -1,6 +1,6 @@
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:latest
+    image: ghcr.io/gethomepage/homepage:${VERSION:-latest}
     container_name: homepage
     labels:
       com.autonas.managed: true

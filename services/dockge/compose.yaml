@@ -1,6 +1,6 @@
 services:
   dockge:
-    image: louislam/dockge:1
+    image: louislam/dockge:${VERSION:-1}
     container_name: dockge
     labels:
       com.autonas.managed: true
@@ -19,7 +19,7 @@ services:
       # ⚠️ READ IT CAREFULLY. If you did it wrong, your data could end up writing into a WRONG PATH.
       # ⚠️ 1. FULL path only. No relative path (MUST)
       # ⚠️ 2. Left Stacks Path === Right Stacks Path (MUST)
-      - ${WORK_DIR:-/opt/stacks}:${WORK_DIR:-/opt/stacks}
+      - ${SERVICES_PATH:-/opt/stacks}:${SERVICES_PATH:-/opt/stacks}
     environment:
       # Tell Dockge where is your stacks directory
-      - DOCKGE_STACKS_DIR=${WORK_DIR:-/opt/stacks}
+      - DOCKGE_STACKS_DIR=${SERVICES_PATH:-/opt/stacks}
