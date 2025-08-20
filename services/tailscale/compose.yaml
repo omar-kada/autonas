@@ -1,0 +1,20 @@
+services:
+  tailscale:
+    container_name: tailscale
+    image: tailscale/tailscale:${VERSION:-stable}
+    network_mode: "host"
+    labels:
+      com.autonas.managed: true
+    volumes:
+      - ${DATA_PATH:-}:/var/lib # State data will be stored in this directory
+      - /dev/net/tun:/dev/net/tun # Required for tailscale to work
+    cap_add: # Required for tailscale to work
+      - net_admin
+      - sys_module
+    command: tailscaled
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_HOSTNAME: ${HOST:-autonas}
+      TS_STATE_DIR: /var/lib/tailscale
+    privileged: true
+    restart: unless-stopped

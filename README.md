@@ -1,8 +1,13 @@
 # Autonas
 
-Automatic script(s) to deploy (&amp; update) docker compose files, that uses [Homepage](https://gethomepage.dev/) and [Dockge](https://dockge.kuma.pet/) as the main building blocks
+Automatic script(s) to deploy (&amp; update) docker compose files, that uses [Homepage](https://gethomepage.dev/) as a dashboard.
 
 The main idea is to represent all the deployed versions of the services in this git repo, which will allow an easy redployment and update of the servcies.
+Minimal custom configuration should be contained in a single file `config.env`.
+
+## Requirements
+
+a Linux environement with `bash`, `git` and `docker compose` installed
 
 ## What does it do
 
