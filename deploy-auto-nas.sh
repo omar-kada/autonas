@@ -135,9 +135,7 @@ else
     #  fi
     #done
     echo "AUTONAS_MANAGED=true" >> "$env_file_path"
-    echo "HOST=$HOST" >> "$env_file_path"
-    echo "DATA_PATH=$DATA_PATH/$service" >> "$env_file_path"
-    echo "SERVICES_PATH=$SERVICES_PATH" >> "$env_file_path"
+
     # Add service-specific variables
     for k in "${!SERVICE_VARS[@]}"; do
       if [[ "$k" == "$service|"* ]]; then
@@ -161,8 +159,11 @@ else
         icon: ${icon_val}.png
 EOF
 
-    # Run docker compose with env
+    # Run docker compose with variables only accessible to the compose file
     cd "$SERVICES_PATH/services/$service"
+    DATA_PATH="$DATA_PATH/$service" \
+    HOST="$HOST" \
+    SERVICES_PATH="$SERVICES_PATH" \
     docker compose up -d 
   done
 fi
