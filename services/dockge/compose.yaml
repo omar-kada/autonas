@@ -2,8 +2,6 @@ services:
   dockge:
     image: louislam/dockge:${VERSION:-1}
     container_name: dockge
-    labels:
-      com.autonas.managed: true
     restart: unless-stopped
     ports:
       # Host Port : Container Port
@@ -23,3 +21,5 @@ services:
     environment:
       # Tell Dockge where is your stacks directory
       - DOCKGE_STACKS_DIR=${SERVICES_PATH:-/opt/stacks}/services
+    env_file:
+      - .env

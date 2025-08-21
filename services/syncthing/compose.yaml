@@ -1,0 +1,20 @@
+services:
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:${VERSION:-latest}
+    container_name: syncthing
+    hostname: ${HOST:-autonas}
+    environment:
+      - PUID=1000
+      - PGID=1000
+    env_file:
+      - .env
+    volumes:
+      - ${DATA_PATH}/config:/config
+      - ${DATA_PATH}/data:/data
+    ports:
+      - ${PORT:-8384}:8384
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 21027:21027/udp
+    restart: unless-stopped
+networks: {}

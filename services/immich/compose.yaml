@@ -11,14 +11,13 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${VERSION:-release}
-    labels:
-      com.autonas.managed: true
     # extends:
     #   file: hwaccel.transcoding.yml
     #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
       # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
       - ${DATA_PATH}/${UPLOAD_LOCATION}:/usr/src/app/upload
+      - ${IMPORT_LOCATION:-${DATA_PATH}/import}:/usr/import:ro
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
@@ -32,8 +31,6 @@ services:
       disable: false
   immich-machine-learning:
     container_name: immich_machine_learning
-    labels:
-      com.autonas.managed: true
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
     image: ghcr.io/immich-app/immich-machine-learning:${VERSION:-release}
@@ -49,16 +46,12 @@ services:
       disable: false
   redis:
     container_name: immich_redis
-    labels:
-      com.autonas.managed: true
     image: docker.io/redis:6.2-alpine@sha256:eaba718fecd1196d88533de7ba49bf903ad33664a92debb24660a922ecd9cac8
     healthcheck:
       test: redis-cli ping || exit 1
     restart: always
   database:
     container_name: immich_postgres
-    labels:
-      com.autonas.managed: true
     image: ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
