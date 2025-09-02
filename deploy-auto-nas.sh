@@ -87,6 +87,7 @@ else
     echo "Checking out branch $BRANCH..."
     git fetch || { echo "Failed to fetch branches"; exit 1; }
     git checkout "$BRANCH" || { echo "Failed to checkout branch $BRANCH"; exit 1; }
+    git restore . || { echo "Failed to restore temp changes"; exit 1; }
     git pull "$BRANCH" --force || { echo "Failed to pull branch $BRANCH"; exit 1; }
 fi
 
