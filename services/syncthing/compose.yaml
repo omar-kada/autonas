@@ -2,7 +2,7 @@ services:
   syncthing:
     image: lscr.io/linuxserver/syncthing:${VERSION:-latest}
     container_name: syncthing
-    hostname: ${HOST:-autonas}
+    hostname: ${AUTONAS_HOST:-autonas}
     environment:
       - PUID=1000
       - PGID=1000

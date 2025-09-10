@@ -12,7 +12,7 @@ services:
     command: tailscaled
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY}
-      TS_HOSTNAME: ${HOST:-autonas}
+      TS_HOSTNAME: ${AUTONAS_HOST:-autonas}
       TS_STATE_DIR: /var/lib/tailscale
     env_file:
       - .env

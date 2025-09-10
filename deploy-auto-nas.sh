@@ -71,7 +71,7 @@ BRANCH="${GLOBAL_VARS[BRANCH]:-main}"
 STOP="${GLOBAL_VARS[STOP]:-0}"
 
 SERVICES_PATH="${GLOBAL_VARS[SERVICES_PATH]:-}"
-HOST="${GLOBAL_VARS[HOST]:-}"
+HOST="${GLOBAL_VARS[AUTONAS_HOST]:-}"
 DATA_PATH="${GLOBAL_VARS[DATA_PATH]:-}"
 
 if [[ -z "$DATA_PATH" ]]; then
@@ -139,7 +139,7 @@ else
     echo "AUTONAS_MANAGED=true" >> "$env_file_path"
     echo "DATA_PATH=$DATA_PATH/$service"  >> "$env_file_path"
     echo "SERVICES_PATH=$SERVICES_PATH"  >> "$env_file_path"
-    echo "HOST=$HOST"  >> "$env_file_path"
+    echo "AUTONAS_HOST=$HOST"  >> "$env_file_path"
 
     # Add service-specific variables
     for k in "${!SERVICE_VARS[@]}"; do

@@ -39,7 +39,7 @@ at last, run `deploy-auto-nas.sh`
 
 - **PULL** : (default = 1) when set to 0 it will disable pulling from the git repo
 - **STOP** : (default = 0) when set to 0 it will disable stopping docker containers before redeploy
-- **HOST** : hostname (needed for Homepage configuration for example)
+- **\AUTONAS_HOST** : hostname (needed for Homepage configuration for example)
 - **SERVICES_PATH** : directory that will contain the services compose files and the generated .env variables file with any configuraiton included
 - **DATA_PATH** : directory where all the containers data will be stored
 - **SERVICES** : comma-seperated string of enabled services that will be deployed
@@ -60,7 +60,7 @@ any other configuration will be copied into the `.env` file related to each serv
 
 ```ini
 [global]
-HOST=my-nas
+AUTONAS_HOST=my-nas
 
 SERVICES_PATH=/mnt/pool/autonas/services
 DATA_PATH=/mnt/pool/autonas/data
