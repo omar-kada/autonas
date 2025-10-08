@@ -1,38 +1,36 @@
 # Autonas
 
-Automatic script(s) to deploy (&amp; update) docker compose files, that uses [Homepage](https://gethomepage.dev/) as a dashboard.
-
-The main idea is to represent all the deployed versions of the services in this git repo, which will allow an easy redployment and update of the servcies.
-Minimal custom configuration should be contained in a single file `config.env`.
+AutoNAS is a simple tool that allows to handle docker compose stacks deployements through a configuration in a git repo, that uses [Homepage](https://gethomepage.dev/) as a dashboard.
 
 ## Requirements
 
-a Linux environement with `bash`, `git` and `docker compose` installed
+a Linux environement with `git` and `docker compose` installed
 
 ## What does it do
 
-The script `deploy-auto-nas.sh` is meant to be run in a cron job, it will :
-
-1. read the configuration files (`config.env` will override the default file)
-2. update the files (&amp; versions) using `git pull`
-3. copy the services folder into `SERVICES_PATH`
-4. generate the configuraion file `services.yaml` for `Homepage`
-5. run `docker compose up` on all the activated services
+1. read the configuration files
+2. copy the services folder into `SERVICES_PATH`
+3. generate `.env` file for each compose stack
+4. run `docker compose up` on all the activated services
 
 ## How to use
 
-start by cloning the repo
+first the tool is installed
+
+**WIP**
+
+start by cloning the configuration repo (could use a custom repo)
 
 ```bash
-git clone https://github.com/omar-kada/autonas.git
+git clone https://github.com/omar-kada/autonas-config.git
 ```
 
-then copy `config.example.env` to `config.env` and fill the configuration variables (adjust PULL & STOP as needed)
+then copy `config.example.yaml` to `config.yaml` and fill the configuration variables
 
-at last, run `deploy-auto-nas.sh`
+at last, run `autonas`
 
 ```bash
-./deploy-auto-nas.sh
+autonas run -c config.default.yaml,config.yaml
 ```
 
 ## Global configuration
@@ -42,11 +40,11 @@ at last, run `deploy-auto-nas.sh`
 - **\AUTONAS_HOST** : hostname (needed for Homepage configuration for example)
 - **SERVICES_PATH** : directory that will contain the services compose files and the generated .env variables file with any configuraiton included
 - **DATA_PATH** : directory where all the containers data will be stored
-- **SERVICES** : comma-seperated string of enabled services that will be deployed
+- **enabled_services** : list of enabled services that will be deployed
 
 ## Service-specific configuraiton
 
-to add service specific configuration, you just need to add a section `[service_name]` and below it all the configuration needed
+to add service specific configuration, you just need to add a section `<service_name>:` and below it all the configuration needed
 the main properties that will be used for each service are
 
 - **PORT** : the port where the service will be exposed
@@ -56,22 +54,18 @@ the main properties that will be used for each service are
 
 any other configuration will be copied into the `.env` file related to each service
 
-## Example of `config.env`
+## Example of `config.yaml`
 
-```ini
-[global]
-AUTONAS_HOST=my-nas
+```yaml
+AUTONAS_HOST: "<hostname>"
+SERVICES_PATH: "/path/to/directory/where/services/are/stored"
+DATA_PATH: "/path/to/data/folder"
 
-SERVICES_PATH=/mnt/pool/autonas/services
-DATA_PATH=/mnt/pool/autonas/data
+enabled_services: # list of services to install
+  - homepage
+  - dockge
 
-SERVICES=homepage,immich,dockge
-
-[homepage]
-PORT=3210
-
-[immich]
-UPLOAD_LOCATION=/mnt/pool/autonas/data/syncthing/immich/library
-DB_PASSWORD=MyStrongPassword
-
+services:
+  homepage:
+    PORT: 1234
 ```
