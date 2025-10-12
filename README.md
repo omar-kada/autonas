@@ -4,7 +4,7 @@ AutoNAS is a simple tool that allows to handle docker compose stacks deployement
 
 ## Requirements
 
-a Linux environement with `git` and `docker compose` installed
+a Linux environement with `docker` installed
 
 ## What does it do
 
@@ -19,25 +19,17 @@ first the tool is installed
 
 **WIP**
 
-start by cloning the configuration repo (could use a custom repo)
-
-```bash
-git clone https://github.com/omar-kada/autonas-config.git
-```
-
-then copy `config.example.yaml` to `config.yaml` and fill the configuration variables
+start by copying `config.example.yaml` to `config.yaml` and fill the configuration variables
 
 at last, run `autonas`
 
 ```bash
-autonas run -c config.default.yaml,config.yaml
+autonas run -c config.default.yaml,config.yaml -r https://github.com/omar-kada/autonas-config
 ```
 
 ## Global configuration
 
-- **PULL** : (default = 1) when set to 0 it will disable pulling from the git repo
-- **STOP** : (default = 0) when set to 0 it will disable stopping docker containers before redeploy
-- **\AUTONAS_HOST** : hostname (needed for Homepage configuration for example)
+- **AUTONAS_HOST** : hostname (needed for Homepage configuration for example)
 - **SERVICES_PATH** : directory that will contain the services compose files and the generated .env variables file with any configuraiton included
 - **DATA_PATH** : directory where all the containers data will be stored
 - **enabled_services** : list of enabled services that will be deployed
@@ -52,7 +44,7 @@ the main properties that will be used for each service are
 - **DESCRIPTION** : optional text that will be displayed in `Homepage` (defaults to service name)
 - **ICON** : optional icon name for `Homepage` (defaults to service name)
 
-any other configuration will be copied into the `.env` file related to each service
+any other fields will be copied into the `.env` file related to each service
 
 ## Example of `config.yaml`
 
