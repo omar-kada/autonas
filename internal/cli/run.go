@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/robfig/cron/v3"
 	copydir "github.com/otiai10/copy"
 	"github.com/go-git/go-git/v5"
     "github.com/go-git/go-git/v5/plumbing"
@@ -168,4 +169,15 @@ func getGit(repoURL, branch, path string) error {
 
     fmt.Println("Done!")
 	return nil
+}
+
+func RunPeriocically(cronPeriod string, configFiles []string, configRepo string) {
+	c := cron.New()
+
+	c.AddFunc(cronPeriod, func() {
+		RunCmd(configFiles, configRepo)
+	})
+
+	c.Start()
+	select {} // keep running
 }

@@ -46,4 +46,4 @@ ARG CONFIG_REPO
 
 WORKDIR /autonas/config
 # Start the application
-CMD ["sh", "-c", "/autonas/autonas run -c ${CONFIG_FILES} -r ${CONFIG_REPO}"]
+CMD ["sh", "-c", "/autonas/autonas run -c ${CONFIG_FILES} -r ${CONFIG_REPO} -p \"${CRON_PERIOD:-'@daily'}\""]
