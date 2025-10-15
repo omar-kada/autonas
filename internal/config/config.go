@@ -14,8 +14,6 @@ type ServiceConfig struct {
 
 type Config struct {
 	AUTONAS_HOST    string                   `mapstructure:"AUTONAS_HOST"`
-	PULL            int                      `mapstructure:"PULL"`
-	STOP            int                      `mapstructure:"STOP"`
 	SERVICES_PATH   string                   `mapstructure:"SERVICES_PATH"`
 	DATA_PATH       string                   `mapstructure:"DATA_PATH"`
 	EnabledServices []string                 `mapstructure:"enabled_services"`
