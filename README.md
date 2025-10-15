@@ -6,26 +6,35 @@ AutoNAS is a simple tool that allows to handle docker compose stacks deployement
 
 a Linux environement with `docker` installed
 
-## What does it do
+## Main flow
 
-1. read the configuration files
+once launched, the tool will do the following :
+
+1. sync the configuration files & check for changes
 2. copy the services folder into `SERVICES_PATH`
 3. generate `.env` file for each compose stack
 4. run `docker compose up` on all the activated services
 
 ## How to use
 
-first the tool is installed
+First the tool is installed (preferably using docker)
 
 **WIP**
 
-start by copying `config.example.yaml` to `config.yaml` and fill the configuration variables
+A configuraiton repo (or directory) is needed, you can use [AutoNAS Config](https://github.com/omar-kada/autonas-config) for inspiration.
 
-at last, run `autonas`
+start by copying `config.example.yaml` to `config.yaml` and fill the required global configuration variables (see [below](#global-configuration))
+
+at last, run `autonas` ( WIP will become a separate docker image )
 
 ```bash
 autonas run -c config.default.yaml,config.yaml -r https://github.com/omar-kada/autonas-config
 ```
+
+it takes two arguments :
+
+- configuration files (-c) : list of configuration files for all the services (last one has more priority).
+- repository (-r) : git repo used to manage the deployed services.
 
 ## Global configuration
 
