@@ -1,0 +1,34 @@
+package files
+
+import (
+	"fmt"
+	"os"
+	copydir "github.com/otiai10/copy"
+)
+
+func CopyServicesToPath(servicesPath string) (string, error) {
+	if servicesPath == "" {
+		return "", fmt.Errorf("SERVICES_PATH not set in config. Aborting copy")
+	}
+	err := copydir.Copy("./services", servicesPath)
+	if err != nil {
+		return "", fmt.Errorf("error copying services: %v", err)
+	}
+	fmt.Printf("Copied all files from ./services to %s\n", servicesPath)
+	return servicesPath, nil
+}
+
+func WriteEnvFile(filePath string, content map[string]interface{}) error {
+	f, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("error creating .env file at %s: %v", filePath, err)
+	}
+	defer f.Close()
+	for k, v := range content {
+		_, err := fmt.Fprintf(f, "%s=%v\n", k, v)
+		if err != nil {
+			return fmt.Errorf("error writing to .env file at %s: %v", filePath, err)
+		}
+	}
+	return nil
+}
