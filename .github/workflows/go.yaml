@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  audit:
-    runs-on: ubuntu-20.04
+  go:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
 
