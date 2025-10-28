@@ -6,15 +6,15 @@ import (
 	copydir "github.com/otiai10/copy"
 )
 
-func CopyServicesToPath(servicesPath string) (string, error) {
+func CopyServicesToPath(srcFolder, servicesPath string) (string, error) {
 	if servicesPath == "" {
 		return "", fmt.Errorf("SERVICES_PATH not set in config. Aborting copy")
 	}
-	err := copydir.Copy("./services", servicesPath)
+	err := copydir.Copy(srcFolder, servicesPath)
 	if err != nil {
 		return "", fmt.Errorf("error copying services: %v", err)
 	}
-	fmt.Printf("Copied all files from ./services to %s\n", servicesPath)
+	fmt.Printf("Copied all files from %s to %s\n", srcFolder, servicesPath)
 	return servicesPath, nil
 }
 

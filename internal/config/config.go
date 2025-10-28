@@ -23,6 +23,12 @@ type Config struct {
 	Extra           map[string]interface{}   `mapstructure:",remain"`
 }
 
+var currentConfig Config
+
+func GetCurrentConfig() Config {
+	return currentConfig
+}
+
 // LoadConfig reads YAML files, merges them (later files override earlier ones),
 // preserves key case for unknown keys, and decodes into Config using mapstructure.
 func LoadConfig(files []string) (Config, error) {
@@ -56,6 +62,7 @@ func LoadConfig(files []string) (Config, error) {
 	if err := decoder.Decode(merged); err != nil {
 		return Config{}, fmt.Errorf("error decoding merged config: %w", err)
 	}
+	currentConfig = cfg
 	return cfg, nil
 }
 
@@ -82,6 +89,9 @@ func mergeMaps(dst, src map[string]interface{}) map[string]interface{} {
 func ConfigPerService(cfg Config, service string) map[string]interface{} {
 	serviceConfig := make(map[string]interface{})
 	serviceConfig["AUTONAS_HOST"] = cfg.AUTONAS_HOST
+	// TODO : check if these two variables are needed
+	serviceConfig["AUTONAS_MANAGED"] = true
+	serviceConfig["AUTONAS_SERVICE_NAME"] = service
 	serviceConfig["SERVICES_PATH"] = cfg.SERVICES_PATH
 	serviceConfig["DATA_PATH"] = fmt.Sprintf("%s/%s", cfg.DATA_PATH, service)
 	for k, v := range cfg.Extra {
