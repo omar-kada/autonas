@@ -1,6 +1,6 @@
 module omar-kada/autonas
 
-go 1.25.1
+go 1.24
 
 require (
 	github.com/go-git/go-git/v5 v5.16.3
