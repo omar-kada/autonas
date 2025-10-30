@@ -1,0 +1,5 @@
+AUTONAS_HOST: host
+services:
+  svc:
+    PORT: 1000
+    VERSION: v1

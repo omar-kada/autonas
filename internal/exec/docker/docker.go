@@ -17,7 +17,7 @@ func ComposeUp(composePath string) error {
 	fmt.Printf("Running: %s \n", cmdStr)
 	// TODO : replace shell cmd with docker client lib
 	if err := util.RunShellCommand(cmdStr); err != nil {
-		return fmt.Errorf("failed to run docker compose up : %w",err)
+		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
 	return nil
 }
@@ -27,7 +27,7 @@ func ComposeDown(composePath string) error {
 	fmt.Printf("Running: %s \n", cmdStr)
 	// TODO : replace shell cmd with docker client lib
 	if err := util.RunShellCommand(cmdStr); err != nil {
-		return fmt.Errorf("failed to run docker compose down : %w",err)
+		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}
 	return nil
 }
@@ -36,27 +36,27 @@ func ComposeDown(composePath string) error {
 // If force is true, the container will be removed even if running.
 // Volumes attached to the container will also be removed.
 func RemoveContainer(containerID string, force bool) error {
-    ctx := context.Background()
-    cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-    if err != nil {
-        return fmt.Errorf("failed to create docker client: %w", err)
-    }
-    defer cli.Close()
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("failed to create docker client: %w", err)
+	}
+	defer cli.Close()
 
-    opts := client.ContainerRemoveOptions{
-        Force:         force,
-        RemoveVolumes: true,
-    }
+	opts := client.ContainerRemoveOptions{
+		Force:         force,
+		RemoveVolumes: true,
+	}
 
-    if err := cli.ContainerRemove(ctx, containerID, opts); err != nil {
-        return fmt.Errorf("failed to remove container %s: %w", containerID, err)
-    }
-    return nil
+	if err := cli.ContainerRemove(ctx, containerID, opts); err != nil {
+		return fmt.Errorf("failed to remove container %s: %w", containerID, err)
+	}
+	return nil
 }
 
-// GetContainersByEnv returns the list of containers (as returned by ContainerList)
+// GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func GetManagedConatiners() (map[string][]container.Summary, error) {
+func GetManagedContainers() (map[string][]container.Summary, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

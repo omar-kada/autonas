@@ -3,9 +3,11 @@ package files
 import (
 	"fmt"
 	"os"
+
 	copydir "github.com/otiai10/copy"
 )
 
+// CopyServicesToPath copies all files from srcFolder to servicesPath.
 func CopyServicesToPath(srcFolder, servicesPath string) (string, error) {
 	if servicesPath == "" {
 		return "", fmt.Errorf("SERVICES_PATH not set in config. Aborting copy")
