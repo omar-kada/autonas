@@ -7,8 +7,8 @@ import (
 	"runtime"
 )
 
-// RunShellCommand runs a shell command and returns error if any
-func RunShellCommand(cmdStr string) error {
+// RunCommand runs a shell command and returns error if any
+func RunCommand(cmdStr string) error {
 	var c *exec.Cmd
 	if runtime.GOOS == "windows" {
 		c = execCommand("cmd", "/C", cmdStr)

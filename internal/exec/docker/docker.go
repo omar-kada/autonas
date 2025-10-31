@@ -4,10 +4,9 @@ package docker
 import (
 	"context"
 	"fmt"
+	"omar-kada/autonas/internal/shell"
 	"os"
 	"strings"
-
-	"omar-kada/autonas/internal/util"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -18,7 +17,7 @@ func ComposeUp(composePath string) error {
 	cmdStr := fmt.Sprintf("docker compose --project-directory %s up -d", composePath)
 	fmt.Printf("Running: %s \n", cmdStr)
 	// TODO : replace shell cmd with docker client lib
-	if err := util.RunShellCommand(cmdStr); err != nil {
+	if err := shell.RunCommand(cmdStr); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
 	return nil
@@ -29,7 +28,7 @@ func ComposeDown(composePath string) error {
 	cmdStr := fmt.Sprintf("docker compose --project-directory %s down", composePath)
 	fmt.Printf("Running: %s \n", cmdStr)
 	// TODO : replace shell cmd with docker client lib
-	if err := util.RunShellCommand(cmdStr); err != nil {
+	if err := shell.RunCommand(cmdStr); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}
 	return nil
