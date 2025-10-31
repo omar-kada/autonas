@@ -1,3 +1,26 @@
 autonas
-autonas.exe
 compose.yaml
+
+# Go build artifacts
+/bin/
+/build/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test cache & coverage
+*.test
+*.out
+coverage.out
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# Modules vendor dir (only if you use go mod vendor)
+vendor/
