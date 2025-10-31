@@ -1,3 +1,4 @@
+// Package exec handles the deployment and management of services.
 package exec
 
 import (
@@ -10,6 +11,7 @@ import (
 	"slices"
 )
 
+// DeployServices handles the deployment/removal of services based on the current and new configuration.
 func DeployServices(configFolder string, currentCfg, cfg config.Config) error {
 
 	if err := removeUnusedServices(currentCfg, cfg); err != nil {
@@ -56,7 +58,7 @@ func deployActivatedServices(configFolder string, cfg config.Config) error {
 	// For each enabled service, generate .env and run docker compose up
 	for _, service := range cfg.EnabledServices {
 
-		serviceCfg := config.ConfigPerService(cfg, service)
+		serviceCfg := config.PerService(cfg, service)
 		err := files.WriteEnvFile(filepath.Join(servicesPath, service, ".env"), serviceCfg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating env file for %s: %v\n", service, err)

@@ -1,4 +1,5 @@
-package util
+// Package shell provides utilities to interact with shell.
+package shell
 
 import (
 	"os"

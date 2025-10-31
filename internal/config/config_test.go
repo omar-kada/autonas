@@ -29,7 +29,7 @@ func TestConfigPerService_BuildsCorrectMap(t *testing.T) {
 		},
 	}
 
-	got := ConfigPerService(cfg, "svc")
+	got := PerService(cfg, "svc")
 	want := map[string]any{
 		"AUTONAS_HOST":  "host",
 		"SERVICES_PATH": "/services",

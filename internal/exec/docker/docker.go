@@ -1,3 +1,4 @@
+// Package docker provides utilities to interact with Docker.
 package docker
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/moby/moby/client"
 )
 
+// ComposeUp runs 'docker compose up -d' in the given composePath directory.
 func ComposeUp(composePath string) error {
 	cmdStr := fmt.Sprintf("docker compose --project-directory %s up -d", composePath)
 	fmt.Printf("Running: %s \n", cmdStr)
@@ -22,6 +24,7 @@ func ComposeUp(composePath string) error {
 	return nil
 }
 
+// ComposeDown runs 'docker compose down' in the given composePath directory.
 func ComposeDown(composePath string) error {
 	cmdStr := fmt.Sprintf("docker compose --project-directory %s down", composePath)
 	fmt.Printf("Running: %s \n", cmdStr)

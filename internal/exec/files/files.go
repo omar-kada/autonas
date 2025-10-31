@@ -1,3 +1,4 @@
+// Package files contains utility functions for file operations.
 package files
 
 import (
@@ -20,6 +21,7 @@ func CopyServicesToPath(srcFolder, servicesPath string) (string, error) {
 	return servicesPath, nil
 }
 
+// WriteEnvFile writes the content map as key=value pairs to a .env file at filePath.
 func WriteEnvFile(filePath string, content map[string]interface{}) error {
 	f, err := os.Create(filePath)
 	if err != nil {

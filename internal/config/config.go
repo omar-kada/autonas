@@ -1,3 +1,4 @@
+// Package config provides functionality to load and manage application configuration.
 package config
 
 import (
@@ -8,12 +9,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ServiceConfig represents configuration for an individual service.
 type ServiceConfig struct {
 	Port    int            `mapstructure:"PORT"`
 	Version string         `mapstructure:"VERSION"`
 	Extra   map[string]any `mapstructure:",remain"`
 }
 
+// Config represents the overall configuration structure.
 type Config struct {
 	AutonasHost     string                   `mapstructure:"AUTONAS_HOST"`
 	ServicesPath    string                   `mapstructure:"SERVICES_PATH"`
@@ -25,6 +28,7 @@ type Config struct {
 
 var currentConfig Config
 
+// GetCurrentConfig returns the currently loaded configuration.
 func GetCurrentConfig() Config {
 	return currentConfig
 }
@@ -94,7 +98,8 @@ func mergeMaps(dst, src map[string]any) map[string]any {
 	return dst
 }
 
-func ConfigPerService(cfg Config, service string) map[string]any {
+// PerService generates a configuration map for a specific service,
+func PerService(cfg Config, service string) map[string]any {
 	serviceConfig := make(map[string]any)
 	serviceConfig["AUTONAS_HOST"] = cfg.AutonasHost
 	serviceConfig["SERVICES_PATH"] = cfg.ServicesPath
