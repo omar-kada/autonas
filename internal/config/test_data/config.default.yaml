@@ -1,5 +1,12 @@
 AUTONAS_HOST: host
+DATA_PATH: /data
+SERVICES_PATH: /services
 services:
   svc:
-    PORT: 1000
+    PORT: 2000
+    VERSION: v2
+    NEW_FIELD: new_value
+  svc2:
+    PORT: 1234
     VERSION: v1
+    OTHER_FIELD: other_value

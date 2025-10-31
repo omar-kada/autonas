@@ -1,0 +1,26 @@
+
+-- config.default.yaml --
+AUTONAS_HOST: host
+services:
+  svc:
+    PORT: 1000
+    VERSION: v1
+
+-- config.override.yaml --
+DATA_PATH: /data
+SERVICES_PATH: /services
+services:
+  svc:
+    PORT: 2000
+    VERSION: v2
+    NEW_FIELD: new_value
+
+-- want --
+AUTONAS_HOST: host
+DATA_PATH: /data
+SERVICES_PATH: /services
+services:
+  svc:
+    port: 2000
+    version: v2
+    NEW_FIELD: new_value

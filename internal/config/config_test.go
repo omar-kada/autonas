@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"golang.org/x/tools/txtar"
+	"gopkg.in/yaml.v3"
 )
 
 //go:embed test_data/*
@@ -55,26 +58,102 @@ func getTempTestFile(t *testing.T, name string) string {
 	return dst
 }
 
-func TestLoadConfig_SuccessWithOverride(t *testing.T) {
-	f1 := getTempTestFile(t, "config.default.yaml")
-	f2 := getTempTestFile(t, "config.override.yaml")
+func TestDecodeConfig(t *testing.T) {
+	input := map[string]any{
+		"AUTONAS_HOST": "localhost",
+		"DATA_PATH":    "/data",
+		"enabled_services": []any{
+			"svc1"},
+		"services": map[string]any{
+			"svc1": map[string]any{
+				"PORT":      8080,
+				"VERSION":   "v1",
+				"NEW_FIELD": "new_value",
+			},
+			"svc2": map[string]any{
+				"PORT":    9090,
+				"VERSION": "v2",
+			},
+		},
+	}
+	want := Config{
+		AutonasHost:     "localhost",
+		ServicesPath:    "",
+		DataPath:        "/data",
+		EnabledServices: []string{"svc1"},
+		Services: map[string]ServiceConfig{
+			"svc1": {
+				Port:    8080,
+				Version: "v1",
+				Extra:   map[string]any{"NEW_FIELD": "new_value"},
+			},
+			"svc2": {
+				Port:    9090,
+				Version: "v2",
+			},
+		},
+	}
 
-	cfg, err := LoadConfig([]string{f1, f2})
+	cfg, err := decodeConfig(input)
 	if err != nil {
-		t.Fatalf("LoadConfig failed: %v", err)
+		t.Fatalf("decodeConfig failed: %v", err)
 	}
-	// Ensure merged values
-	wantSvc := ServiceConfig{
-		Port:    2000,
-		Version: "v2",
-		Extra:   map[string]any{"NEW_FIELD": "new_value"},
+
+	if !reflect.DeepEqual(cfg, want) {
+		t.Fatalf("decodeConfig mismatch\nwant=%#v\ngot =%#v", want, cfg)
 	}
-	svc, ok := cfg.Services["svc"]
-	if !ok {
-		t.Fatalf("expected svc entry in services")
+}
+
+// extractTxtar extracts config files & expected result from a txtar test archive.
+func extractTxtar(t *testing.T, archivePath string) (inputs []string, want map[string]any) {
+	t.Helper()
+
+	ar, err := txtar.ParseFile(getTempTestFile(t, archivePath))
+	if err != nil {
+		t.Fatalf("failed to parse txtar file: %v", err)
 	}
-	if !reflect.DeepEqual(svc, wantSvc) {
-		t.Fatalf("unexpected svc values: want=%+v got=%+v", wantSvc, svc)
+
+	tempDir := t.TempDir()
+	for _, file := range ar.Files {
+		outPath := filepath.Join(tempDir, file.Name)
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+			t.Fatalf("failed to create tmp directory: %v", err)
+		}
+		if err := os.WriteFile(outPath, file.Data, 0o600); err != nil {
+			t.Fatalf("failed to create tmp file: %v", err)
+		}
+
+		if file.Name == "want" {
+			err = yaml.Unmarshal(file.Data, &want)
+			if err != nil {
+				t.Fatalf("failed to parse want yaml file: %v", err)
+			}
+		} else {
+			inputs = append(inputs, outPath)
+		}
+	}
+	return inputs, want
+}
+
+func TestLoadConfig_SuccessWithOverride(t *testing.T) {
+	testTable := []string{"config_override.txtar"}
+
+	for _, testFile := range testTable {
+		t.Run(testFile, func(t *testing.T) {
+
+			inputs, want := extractTxtar(t, testFile)
+			wantCfg, err := decodeConfig(want)
+			if err != nil {
+				t.Fatalf("failed to decode config: %v", err)
+			}
+			cfg, err := LoadConfig(inputs)
+			if err != nil {
+				t.Fatalf("LoadConfig failed: %v", err)
+			}
+			if !reflect.DeepEqual(cfg, wantCfg) {
+				t.Fatalf("unexpected svc values: want=%+v got=%+v", wantCfg, cfg)
+			}
+		})
 	}
 
 }
@@ -89,7 +168,7 @@ func TestGetCurrentConfig_AfterLoadConfig(t *testing.T) {
 	// GetCurrentConfig should reflect last loaded cfg
 	got := GetCurrentConfig()
 	if !reflect.DeepEqual(got, cfg) {
-		t.Fatalf("GetCurrentConfig mismatch\nwant=%#v\ngot =%#v", cfg, got)
+		t.Fatalf("GetCurrentConfig mismatch \n want=%#v \n got =%#v", cfg, got)
 	}
 }
 

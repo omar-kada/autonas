@@ -49,6 +49,15 @@ func LoadConfig(files []string) (Config, error) {
 		fmt.Printf("Loaded config file: %s\n", file)
 	}
 
+	cfg, err := decodeConfig(merged)
+	if err != nil {
+		return Config{}, err
+	}
+	currentConfig = cfg
+	return cfg, nil
+}
+
+func decodeConfig(configMap map[string]any) (Config, error) {
 	var cfg Config
 	decCfg := &mapstructure.DecoderConfig{
 		TagName:          "mapstructure",
@@ -59,10 +68,9 @@ func LoadConfig(files []string) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to create decoder: %w", err)
 	}
-	if err := decoder.Decode(merged); err != nil {
+	if err := decoder.Decode(configMap); err != nil {
 		return Config{}, fmt.Errorf("error decoding merged config: %w", err)
 	}
-	currentConfig = cfg
 	return cfg, nil
 }
 
