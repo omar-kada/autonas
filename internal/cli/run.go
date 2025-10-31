@@ -1,3 +1,4 @@
+// Package cli provides command-line interface functionalities for Autonas.
 package cli
 
 import (
