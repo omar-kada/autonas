@@ -33,9 +33,8 @@ func (m *Mocker) generateConfigFromFiles(files []string) (config.Config, error) 
 	m.Calls = append(m.Calls, args)
 	if m.ShouldError {
 		return config.Config{}, fmt.Errorf("mock error generateConfigFromFiles")
-	} else {
-		return mockConfig, nil
 	}
+	return mockConfig, nil
 }
 
 func (m *Mocker) syncCode(repoURL string, branch string, path string) error {
