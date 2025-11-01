@@ -26,16 +26,8 @@ type Config struct {
 	Extra           map[string]any           `mapstructure:",remain"`
 }
 
-var currentConfig Config
-
-// GetCurrentConfig returns the currently loaded configuration.
-func GetCurrentConfig() Config {
-	return currentConfig
-}
-
-// LoadConfig reads YAML files, merges them (later files override earlier ones),
-// preserves key case for unknown keys, and decodes into Config using mapstructure.
-func LoadConfig(files []string) (Config, error) {
+// FromFiles reads YAML files, merges them (later files override earlier ones),
+func FromFiles(files []string) (Config, error) {
 	merged := make(map[string]any)
 
 	for _, file := range files {
@@ -57,7 +49,6 @@ func LoadConfig(files []string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	currentConfig = cfg
 	return cfg, nil
 }
 
@@ -98,8 +89,8 @@ func mergeMaps(dst, src map[string]any) map[string]any {
 	return dst
 }
 
-// PerService generates a configuration map for a specific service,
-func PerService(cfg Config, service string) map[string]any {
+// PerService generates a configuration map for a specific service
+func (cfg *Config) PerService(service string) map[string]any {
 	serviceConfig := make(map[string]any)
 	serviceConfig["AUTONAS_HOST"] = cfg.AutonasHost
 	serviceConfig["SERVICES_PATH"] = cfg.ServicesPath

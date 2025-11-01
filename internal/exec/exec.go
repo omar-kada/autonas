@@ -58,7 +58,7 @@ func deployActivatedServices(configFolder string, cfg config.Config) error {
 	// For each enabled service, generate .env and run docker compose up
 	for _, service := range cfg.EnabledServices {
 
-		serviceCfg := config.PerService(cfg, service)
+		serviceCfg := cfg.PerService(service)
 		err := files.WriteEnvFile(filepath.Join(servicesPath, service, ".env"), serviceCfg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating env file for %s: %v\n", service, err)

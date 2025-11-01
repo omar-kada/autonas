@@ -11,21 +11,29 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+var (
+	generateConfigFromFiles = config.FromFiles
+	syncCode                = git.SyncCode
+	deployServices          = exec.DeployServices
+)
+
+var currentCfg config.Config
+
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
 func RunCmd(configFiles []string, configRepo string) error {
-	currentCfg := config.GetCurrentConfig()
 
 	// TODO : add these to configuration
 	configFolder := "."
 	repoBranch := "main"
 
-	err := git.SyncCode(configRepo, repoBranch, configFolder)
+	err := syncCode(configRepo, repoBranch, configFolder)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", err)
 		return err
 	}
 
-	cfg, err := config.LoadConfig(configFiles)
+	cfg, err := generateConfigFromFiles(configFiles)
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		return err
@@ -33,11 +41,12 @@ func RunCmd(configFiles []string, configRepo string) error {
 	fmt.Printf("Final consolidated config: %+v\n", cfg)
 
 	// Copy all files from ./services to SERVICES_PATH
-	err = exec.DeployServices(configFolder, currentCfg, cfg)
+	err = deployServices(configFolder, currentCfg, cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deploying services: %v\n", err)
 		return err
 	}
+	currentCfg = cfg
 	return nil
 }
 

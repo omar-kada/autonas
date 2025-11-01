@@ -29,7 +29,7 @@ func TestConfigPerService_BuildsCorrectMap(t *testing.T) {
 		},
 	}
 
-	got := PerService(cfg, "svc")
+	got := cfg.PerService("svc")
 	want := map[string]any{
 		"AUTONAS_HOST":  "host",
 		"SERVICES_PATH": "/services",
@@ -146,7 +146,7 @@ func TestLoadConfig_SuccessWithOverride(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to decode config: %v", err)
 			}
-			cfg, err := LoadConfig(inputs)
+			cfg, err := FromFiles(inputs)
 			if err != nil {
 				t.Fatalf("LoadConfig failed: %v", err)
 			}
@@ -158,30 +158,16 @@ func TestLoadConfig_SuccessWithOverride(t *testing.T) {
 
 }
 
-func TestGetCurrentConfig_AfterLoadConfig(t *testing.T) {
-
-	cfg, err := LoadConfig([]string{getTempTestFile(t, "config.default.yaml")})
-	if err != nil {
-		t.Fatalf("LoadConfig failed: %v", err)
-	}
-
-	// GetCurrentConfig should reflect last loaded cfg
-	got := GetCurrentConfig()
-	if !reflect.DeepEqual(got, cfg) {
-		t.Fatalf("GetCurrentConfig mismatch \n want=%#v \n got =%#v", cfg, got)
-	}
-}
-
 func TestLoadConfig_FileError(t *testing.T) {
 	t.Run("missing file", func(t *testing.T) {
-		if _, err := LoadConfig([]string{"/does/not/exist.yaml"}); err == nil {
+		if _, err := FromFiles([]string{"/does/not/exist.yaml"}); err == nil {
 			t.Fatalf("expected error for missing file")
 		}
 	})
 
 	t.Run("invalid yaml", func(t *testing.T) {
 		f := getTempTestFile(t, "config.invalid.yaml")
-		if _, err := LoadConfig([]string{f}); err == nil {
+		if _, err := FromFiles([]string{f}); err == nil {
 			t.Fatalf("expected error for invalid yaml")
 		}
 	})
