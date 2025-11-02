@@ -4,8 +4,9 @@ package exec
 import (
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/exec/containers"
-	"omar-kada/autonas/internal/exec/files"
 	"slices"
+
+	copydir "github.com/otiai10/copy"
 )
 
 // Deployer abstracts service deployment operations
@@ -13,20 +14,20 @@ type Deployer interface {
 	DeployServices(configFolder string, currentCfg, cfg config.Config) error
 }
 
-var defaultFileManager = files.NewManager()
-var defaultContainersHandler = containers.NewHandler(defaultFileManager)
+var (
+	copyFunc                 = copydir.Copy
+	defaultContainersHandler = containers.NewHandler()
+)
 
 // New creates a new Deployer instance with default dependencies.
 func New() Deployer {
 	return &defaultDeployer{
 		containersHandler: defaultContainersHandler,
-		fileManager:       defaultFileManager,
 	}
 }
 
 type defaultDeployer struct {
 	containersHandler containers.Handler
-	fileManager       files.Manager
 }
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
@@ -37,7 +38,7 @@ func (d *defaultDeployer) DeployServices(configFolder string, currentCfg, cfg co
 		return err
 	}
 
-	if err := d.fileManager.CopyToPath(configFolder+"/services", cfg.ServicesPath); err != nil {
+	if err := copyFunc(configFolder+"/services", cfg.ServicesPath); err != nil {
 		return err
 	}
 

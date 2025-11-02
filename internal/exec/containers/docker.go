@@ -14,13 +14,15 @@ import (
 	"github.com/moby/moby/client"
 )
 
-func newDockerHandler(fileManager files.Manager) *dockerHandler {
-	return &dockerHandler{fileManager: fileManager}
+var (
+	writeToFileFunc = files.WriteToFile
+)
+
+func newDockerHandler() *dockerHandler {
+	return &dockerHandler{}
 }
 
-type dockerHandler struct {
-	fileManager files.Manager
-}
+type dockerHandler struct{}
 
 // RemoveServices stops and removes Docker Compose services.
 func (d *dockerHandler) RemoveServices(services []string, servicesPath string) error {
@@ -82,7 +84,7 @@ func (d *dockerHandler) generateEnvFile(cfg config.Config, service string) error
 	}
 
 	envFilePath := filepath.Join(cfg.ServicesPath, service, ".env")
-	return d.fileManager.WriteToFile(envFilePath, content.String())
+	return writeToFileFunc(envFilePath, content.String())
 }
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)

@@ -8,76 +8,63 @@ import (
 	"testing"
 
 	"github.com/moby/moby/api/types/container"
+	copydir "github.com/otiai10/copy"
 )
 
-type mockContainersHandler struct {
+type Mocker struct {
 	testutil.Mocker
 	removeErr error
 	deployErr error
+	copyErr   error
 }
 
-func (m *mockContainersHandler) RemoveServices(services []string, servicesPath string) error {
+func (m *Mocker) RemoveServices(services []string, servicesPath string) error {
 	m.AddCall("removeServices", services, servicesPath)
 	return m.removeErr
 }
 
-func (m *mockContainersHandler) DeployServices(cfg config.Config) error {
+func (m *Mocker) DeployServices(cfg config.Config) error {
 	m.AddCall("deployServices", cfg)
 	return m.deployErr
 }
 
-func (m *mockContainersHandler) GetManagedContainers() (map[string][]container.Summary, error) {
+func (m *Mocker) GetManagedContainers() (map[string][]container.Summary, error) {
 	m.AddCall("getManagedContainers")
 	return nil, nil
 }
 
-type mockFileManager struct {
-	testutil.Mocker
-	copyErr error
-}
-
-func (m *mockFileManager) CopyToPath(srcFolder, servicesPath string) error {
-	m.AddCall("CopyToPath", srcFolder, servicesPath)
+func (m *Mocker) Copy(srcFolder, servicesPath string, _ ...copydir.Options) error {
+	m.AddCall("Copy", srcFolder, servicesPath)
 	return m.copyErr
 }
 
-func (m *mockFileManager) WriteToFile(filePath string, content string) error {
-	m.AddCall("writeToFile", filePath, content)
-	return nil
-}
-
-var mockConfigOld = config.Config{
-	EnabledServices: []string{"svc1", "svc2"},
-	ServicesPath:    "/services",
-}
-var mockConfigNew = config.Config{
-	EnabledServices: []string{"svc2", "svc3"},
-	ServicesPath:    "/services",
-}
-
 var (
-	fileManager       = &mockFileManager{}
-	containersHandler = &mockContainersHandler{}
+	mocker = &Mocker{}
+
+	mockConfigOld = config.Config{
+		EnabledServices: []string{"svc1", "svc2"},
+		ServicesPath:    "/services",
+	}
+	mockConfigNew = config.Config{
+		EnabledServices: []string{"svc2", "svc3"},
+		ServicesPath:    "/services",
+	}
 )
 
 func TestDeployServices_Success(t *testing.T) {
-	defaultFileManager = fileManager
-	defaultContainersHandler = containersHandler
+	defaultContainersHandler = mocker
+	copyFunc = mocker.Copy
 	deployer := New()
 	err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-
 	expectedCalls := [][]any{
-		{"CopyToPath", "configFolder/services", "/services"},
-	}
-	fileManager.AssertCalls(t, expectedCalls)
-	expectedContainerCalls := [][]any{
 		{"removeServices", []string{"svc1"}, "/services"},
+		{"Copy", "configFolder/services", "/services"},
 		{"deployServices", mockConfigNew},
 	}
-	containersHandler.AssertCalls(t, expectedContainerCalls)
+	mocker.AssertCalls(t, expectedCalls)
 }
 
 var ErrRemove = errors.New("removeServices error")
@@ -86,29 +73,25 @@ var ErrCopy = errors.New("copyServices error")
 
 func TestDeployServices_Errors(t *testing.T) {
 	testCases := []struct {
-		name              string
-		containersHandler mockContainersHandler
-		fileManager       mockFileManager
-		expectedError     error
+		name          string
+		mocker        Mocker
+		expectedError error
 	}{
 		{
-			name:              "removeServices error",
-			containersHandler: mockContainersHandler{removeErr: ErrRemove},
-			fileManager:       mockFileManager{},
-			expectedError:     ErrRemove,
+			name:          "removeServices error",
+			mocker:        Mocker{removeErr: ErrRemove},
+			expectedError: ErrRemove,
 		},
 		{
-			name:              "deployServices error",
-			containersHandler: mockContainersHandler{deployErr: ErrDeploy},
-			fileManager:       mockFileManager{},
-			expectedError:     ErrDeploy,
+			name:          "deployServices error",
+			mocker:        Mocker{deployErr: ErrDeploy},
+			expectedError: ErrDeploy,
 		},
 
 		{
-			name:              "copyServices error",
-			containersHandler: mockContainersHandler{},
-			fileManager:       mockFileManager{copyErr: ErrCopy},
-			expectedError:     ErrCopy,
+			name:          "copyServices error",
+			mocker:        Mocker{copyErr: ErrCopy},
+			expectedError: ErrCopy,
 		},
 	}
 
@@ -116,8 +99,8 @@ func TestDeployServices_Errors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// create a mock that returns an error for the chosen method
 			// replace the package default with the one returning an error
-			defaultContainersHandler = &tc.containersHandler
-			defaultFileManager = &tc.fileManager
+			defaultContainersHandler = &tc.mocker
+			copyFunc = tc.mocker.Copy
 			deployer := New()
 
 			err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)

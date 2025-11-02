@@ -3,7 +3,6 @@ package containers
 
 import (
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/exec/files"
 
 	"github.com/moby/moby/api/types/container"
 )
@@ -16,6 +15,6 @@ type Handler interface {
 }
 
 // NewHandler creates a new instance of the Containers Handler.
-func NewHandler(fileManager files.Manager) Handler {
-	return newDockerHandler(fileManager)
+func NewHandler() Handler {
+	return newDockerHandler()
 }
