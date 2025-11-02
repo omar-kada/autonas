@@ -17,12 +17,13 @@ var (
 	defaultDeployer         = exec.New()
 )
 
+// Runner defines the interface for running AutoNAS commands.
 type Runner interface {
 	RunCmd(configFiles []string, configRepo string) error
 	RunPeriocically(cronPeriod string, configFiles []string, configRepo string)
-	GetCurrentConfig() config.Config
 }
 
+// NewRunner creates a new Runner instance with default dependencies.
 func NewRunner() Runner {
 	return &runner{deployer: defaultDeployer}
 }
@@ -61,11 +62,6 @@ func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 	}
 	r.currentCfg = cfg
 	return nil
-}
-
-// GetCurrentConfig returns the current configuration.
-func (r *runner) GetCurrentConfig() config.Config {
-	return r.currentCfg
 }
 
 // RunPeriocically runs the RunCmd function periodically based on the given cron period string.

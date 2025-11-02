@@ -67,9 +67,11 @@ func TestDeployServices_Success(t *testing.T) {
 	mocker.AssertCalls(t, expectedCalls)
 }
 
-var ErrRemove = errors.New("removeServices error")
-var ErrDeploy = errors.New("deployServices error")
-var ErrCopy = errors.New("copyServices error")
+var (
+	ErrRemove = errors.New("removeServices error")
+	ErrDeploy = errors.New("deployServices error")
+	ErrCopy   = errors.New("copyServices error")
+)
 
 func TestDeployServices_Errors(t *testing.T) {
 	testCases := []struct {

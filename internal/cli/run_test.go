@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"fmt"
+	"errors"
 	"omar-kada/autonas/internal/config"
-	"reflect"
+	"omar-kada/autonas/internal/testutil"
 	"testing"
 )
 
@@ -21,109 +21,105 @@ var mockConfig = config.Config{
 }
 
 type Mocker struct {
-	Calls       [][]any
-	ShouldError bool
+	testutil.Mocker
+	generateErr error
+	syncError   error
+	deployErr   error
 }
 
 func (m *Mocker) generateConfigFromFiles(files []string) (config.Config, error) {
-	args := []any{"generateConfigFromFiles"}
-	for _, f := range files {
-		args = append(args, f)
-	}
-	m.Calls = append(m.Calls, args)
-	if m.ShouldError {
-		return config.Config{}, fmt.Errorf("mock error generateConfigFromFiles")
-	}
-	return mockConfig, nil
+	m.AddCall("generateConfigFromFiles", files)
+	return mockConfig, m.generateErr
 }
 
 func (m *Mocker) syncCode(repoURL string, branch string, path string) error {
-	m.Calls = append(m.Calls, []any{"syncCode", repoURL, branch, path})
-	if m.ShouldError {
-		return fmt.Errorf("mock error syncCode")
-	}
-	return nil
+	m.AddCall("syncCode", repoURL, branch, path)
+	return m.syncError
 }
 
 func (m *Mocker) DeployServices(configFolder string, currentCfg config.Config, cfg config.Config) error {
-	m.Calls = append(m.Calls, []any{"deployServices", configFolder, currentCfg, cfg})
-	if m.ShouldError {
-		return fmt.Errorf("mock error deployServices")
-	}
-	return nil
+	m.AddCall("deployServices", configFolder, currentCfg, cfg)
+	return m.deployErr
 }
 
-var mocks Mocker
-var errorMocks Mocker
-
-func initMock() {
-	mocks = Mocker{}
-	errorMocks = Mocker{ShouldError: true}
-	generateConfigFromFiles = mocks.generateConfigFromFiles
-	syncCode = mocks.syncCode
-	defaultDeployer = &mocks
+func initMocks(useMocker Mocker) *Mocker {
+	generateConfigFromFiles = useMocker.generateConfigFromFiles
+	syncCode = useMocker.syncCode
+	defaultDeployer = &useMocker
+	return &useMocker
 }
 
 func TestRunCmd_Success(t *testing.T) {
-	initMock()
-	runner := NewRunner()
+	mocker := *initMocks(Mocker{})
+	run := NewRunner()
 
-	err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
+	err := run.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
 	if err != nil {
 		t.Fatalf("RunCmd failed: %v", err)
 	}
 
 	wantCfg := mockConfig
 
-	currentCfg := runner.GetCurrentConfig()
-	if !reflect.DeepEqual(currentCfg, wantCfg) {
-		t.Fatalf("currentCfg mismatch\nwant=%+v\ngot =%+v", wantCfg, currentCfg)
-	}
 	wantCalls := [][]any{
 		{"syncCode", "https://example.com/repo.git", "main", "."},
-		{"generateConfigFromFiles", "config1.yaml", "config2.yaml"},
+		{"generateConfigFromFiles", []string{"config1.yaml", "config2.yaml"}},
 		{"deployServices", ".", config.Config{}, wantCfg},
 	}
+	mocker.AssertCalls(t, wantCalls)
 
-	if !reflect.DeepEqual(mocks.Calls, wantCalls) {
-		t.Fatalf("Calls mismatch\nwant=%+v\ngot =%+v", wantCalls, mocks.Calls)
+	// Verify that the currentCfg in runner is updated
+	mocker.Reset()
+
+	err = run.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
+	if err != nil {
+		t.Fatalf("RunCmd failed: %v", err)
 	}
+
+	wantCalls = [][]any{
+		{"syncCode", "https://example.com/repo.git", "main", "."},
+		{"generateConfigFromFiles", []string{"config1.yaml", "config2.yaml"}},
+		{"deployServices", ".", wantCfg, wantCfg},
+	}
+	mocker.AssertCalls(t, wantCalls)
 }
+
+var (
+	ErrGenerate = errors.New("generate file error")
+	ErrSync     = errors.New("sync config error")
+	ErrDeploy   = errors.New("deploy error")
+)
 
 func TestRunCmd_Errors(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		mockErrors    func() // which function to mock to return error
-		expectedError string
+		errorMocker   Mocker
+		expectedError error
 	}{
 		{
 			name:          "syncCode error",
-			mockErrors:    func() { syncCode = errorMocks.syncCode },
-			expectedError: "mock error syncCode",
+			errorMocker:   Mocker{syncError: ErrSync},
+			expectedError: ErrSync,
 		},
 		{
 			name:          "generateConfigFromFiles error",
-			mockErrors:    func() { generateConfigFromFiles = errorMocks.generateConfigFromFiles },
-			expectedError: "mock error generateConfigFromFiles",
+			errorMocker:   Mocker{generateErr: ErrGenerate},
+			expectedError: ErrGenerate,
 		},
 		{
 			name:          "deployServices error",
-			mockErrors:    func() { defaultDeployer = &errorMocks },
-			expectedError: "mock error deployServices",
+			errorMocker:   Mocker{deployErr: ErrDeploy},
+			expectedError: ErrDeploy,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initMock()
-
-			// Set the specific function to return error
-			tc.mockErrors()
+			initMocks(tc.errorMocker)
 			runner := NewRunner()
 
 			err := runner.RunCmd([]string{"config1.yaml"}, "https://example.com/repo.git")
-			if err == nil || err.Error() != tc.expectedError {
+			if !errors.Is(err, tc.expectedError) {
 				t.Fatalf("expected error %q, got %v", tc.expectedError, err)
 			}
 		})

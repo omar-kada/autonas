@@ -5,25 +5,24 @@ import (
 	"testing"
 )
 
+// Mocker records method calls and their arguments for testing purposes.
 type Mocker struct {
 	Calls [][]any
 }
 
-func (m *Mocker) Mock(method string, fn func()) {
-	m.Calls = append(m.Calls, []any{method, fn})
+// Reset clears all recorded calls.
+func (m *Mocker) Reset() {
+	m.Calls = nil
 }
 
-func (m *Mocker) MockErr(method string, fn func()) {
-	m.Calls = append(m.Calls, []any{method, fn})
-	fn()
-}
-
+// AddCall records a method call with its arguments.
 func (m *Mocker) AddCall(method string, args ...any) {
 	call := []any{method}
 	call = append(call, args...)
 	m.Calls = append(m.Calls, call)
 }
 
+// AssertCalls checks if the recorded calls match the expected calls.
 func (m *Mocker) AssertCalls(t *testing.T, expected [][]any) {
 	t.Helper()
 	if len(m.Calls) != len(expected) {
