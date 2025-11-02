@@ -39,8 +39,6 @@ func (m *Mocker) Copy(srcFolder, servicesPath string, _ ...copydir.Options) erro
 }
 
 var (
-	mocker = &Mocker{}
-
 	mockConfigOld = config.Config{
 		EnabledServices: []string{"svc1", "svc2"},
 		ServicesPath:    "/services",
@@ -58,7 +56,7 @@ func initMocks(useMocker *Mocker) *Mocker {
 }
 
 func TestDeployServices_Success(t *testing.T) {
-	mocker = initMocks(&Mocker{})
+	mocker := initMocks(&Mocker{})
 	deployer := New()
 	err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 	if err != nil {
