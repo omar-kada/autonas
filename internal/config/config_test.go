@@ -166,7 +166,13 @@ func TestLoadConfig_FileError(t *testing.T) {
 	})
 
 	t.Run("invalid yaml", func(t *testing.T) {
-		f := getTempTestFile(t, "config.invalid.yaml")
+		// create a temporary file with invalid YAML content so the test
+		tmp := t.TempDir()
+		f := filepath.Join(tmp, "invalid.yaml")
+		invalid := []byte("this: is: not: valid: yaml")
+		if err := os.WriteFile(f, invalid, 0o644); err != nil {
+			t.Fatalf("failed to write temp invalid yaml: %v", err)
+		}
 		if _, err := FromFiles([]string{f}); err == nil {
 			t.Fatalf("expected error for invalid yaml")
 		}

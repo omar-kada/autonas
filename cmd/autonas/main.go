@@ -26,9 +26,10 @@ func init() {
 		Use:   "run",
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
-			cli.RunCmd(configFiles, configRepo)
+			runner := cli.NewRunner()
+			runner.RunCmd(configFiles, configRepo)
 			if cronPeriod != "" {
-				cli.RunPeriocically(cronPeriod, configFiles, configRepo)
+				runner.RunPeriocically(cronPeriod, configFiles, configRepo)
 			}
 		},
 	}

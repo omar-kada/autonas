@@ -45,7 +45,7 @@ func (m *Mocker) syncCode(repoURL string, branch string, path string) error {
 	return nil
 }
 
-func (m *Mocker) deployServices(configFolder string, currentCfg config.Config, cfg config.Config) error {
+func (m *Mocker) DeployServices(configFolder string, currentCfg config.Config, cfg config.Config) error {
 	m.Calls = append(m.Calls, []any{"deployServices", configFolder, currentCfg, cfg})
 	if m.ShouldError {
 		return fmt.Errorf("mock error deployServices")
@@ -56,24 +56,26 @@ func (m *Mocker) deployServices(configFolder string, currentCfg config.Config, c
 var mocks Mocker
 var errorMocks Mocker
 
-func mockInit() {
+func initMock() {
 	mocks = Mocker{}
 	errorMocks = Mocker{ShouldError: true}
 	generateConfigFromFiles = mocks.generateConfigFromFiles
 	syncCode = mocks.syncCode
-	deployServices = mocks.deployServices
+	defaultDeployer = &mocks
 }
 
 func TestRunCmd_Success(t *testing.T) {
-	mockInit()
+	initMock()
+	runner := NewRunner()
 
-	err := RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
+	err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
 	if err != nil {
 		t.Fatalf("RunCmd failed: %v", err)
 	}
 
 	wantCfg := mockConfig
 
+	currentCfg := runner.GetCurrentConfig()
 	if !reflect.DeepEqual(currentCfg, wantCfg) {
 		t.Fatalf("currentCfg mismatch\nwant=%+v\ngot =%+v", wantCfg, currentCfg)
 	}
@@ -107,20 +109,20 @@ func TestRunCmd_Errors(t *testing.T) {
 		},
 		{
 			name:          "deployServices error",
-			mockErrors:    func() { deployServices = errorMocks.deployServices },
+			mockErrors:    func() { defaultDeployer = &errorMocks },
 			expectedError: "mock error deployServices",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Reset mocks
-			mockInit()
+			initMock()
 
 			// Set the specific function to return error
 			tc.mockErrors()
+			runner := NewRunner()
 
-			err := RunCmd([]string{"config1.yaml"}, "https://example.com/repo.git")
+			err := runner.RunCmd([]string{"config1.yaml"}, "https://example.com/repo.git")
 			if err == nil || err.Error() != tc.expectedError {
 				t.Fatalf("expected error %q, got %v", tc.expectedError, err)
 			}

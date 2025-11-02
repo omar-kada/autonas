@@ -14,13 +14,26 @@ import (
 var (
 	generateConfigFromFiles = config.FromFiles
 	syncCode                = git.SyncCode
-	deployServices          = exec.DeployServices
+	defaultDeployer         = exec.New()
 )
 
-var currentCfg config.Config
+type Runner interface {
+	RunCmd(configFiles []string, configRepo string) error
+	RunPeriocically(cronPeriod string, configFiles []string, configRepo string)
+	GetCurrentConfig() config.Config
+}
+
+func NewRunner() Runner {
+	return &runner{deployer: defaultDeployer}
+}
+
+type runner struct {
+	deployer   exec.Deployer
+	currentCfg config.Config
+}
 
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
-func RunCmd(configFiles []string, configRepo string) error {
+func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 
 	// TODO : add these to configuration
 	configFolder := "."
@@ -41,21 +54,26 @@ func RunCmd(configFiles []string, configRepo string) error {
 	fmt.Printf("Final consolidated config: %+v\n", cfg)
 
 	// Copy all files from ./services to SERVICES_PATH
-	err = deployServices(configFolder, currentCfg, cfg)
+	err = r.deployer.DeployServices(configFolder, r.currentCfg, cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error deploying services: %v\n", err)
 		return err
 	}
-	currentCfg = cfg
+	r.currentCfg = cfg
 	return nil
 }
 
+// GetCurrentConfig returns the current configuration.
+func (r *runner) GetCurrentConfig() config.Config {
+	return r.currentCfg
+}
+
 // RunPeriocically runs the RunCmd function periodically based on the given cron period string.
-func RunPeriocically(cronPeriod string, configFiles []string, configRepo string) {
+func (r *runner) RunPeriocically(cronPeriod string, configFiles []string, configRepo string) {
 	c := cron.New()
 
 	c.AddFunc(cronPeriod, func() {
-		RunCmd(configFiles, configRepo)
+		r.RunCmd(configFiles, configRepo)
 	})
 
 	c.Start()
