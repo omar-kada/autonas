@@ -12,7 +12,7 @@ import (
 )
 
 type Mocker struct {
-	testutil.Mocker
+	testutil.MockRecorder
 	removeErr error
 	deployErr error
 	copyErr   error
@@ -51,9 +51,14 @@ var (
 	}
 )
 
+func initMocks(useMocker *Mocker) *Mocker {
+	defaultContainersHandler = useMocker
+	copyFunc = useMocker.Copy
+	return useMocker
+}
+
 func TestDeployServices_Success(t *testing.T) {
-	defaultContainersHandler = mocker
-	copyFunc = mocker.Copy
+	mocker = initMocks(&Mocker{})
 	deployer := New()
 	err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 	if err != nil {
@@ -101,8 +106,7 @@ func TestDeployServices_Errors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// create a mock that returns an error for the chosen method
 			// replace the package default with the one returning an error
-			defaultContainersHandler = &tc.mocker
-			copyFunc = tc.mocker.Copy
+			initMocks(&tc.mocker)
 			deployer := New()
 
 			err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)

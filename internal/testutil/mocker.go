@@ -1,3 +1,4 @@
+// Package testutil provides utilities for testing, including a MockRecorder for recording method calls.
 package testutil
 
 import (
@@ -5,25 +6,25 @@ import (
 	"testing"
 )
 
-// Mocker records method calls and their arguments for testing purposes.
-type Mocker struct {
+// MockRecorder records method calls and their arguments for testing purposes.
+type MockRecorder struct {
 	Calls [][]any
 }
 
 // Reset clears all recorded calls.
-func (m *Mocker) Reset() {
+func (m *MockRecorder) Reset() {
 	m.Calls = nil
 }
 
 // AddCall records a method call with its arguments.
-func (m *Mocker) AddCall(method string, args ...any) {
+func (m *MockRecorder) AddCall(method string, args ...any) {
 	call := []any{method}
 	call = append(call, args...)
 	m.Calls = append(m.Calls, call)
 }
 
 // AssertCalls checks if the recorded calls match the expected calls.
-func (m *Mocker) AssertCalls(t *testing.T, expected [][]any) {
+func (m *MockRecorder) AssertCalls(t *testing.T, expected [][]any) {
 	t.Helper()
 	if len(m.Calls) != len(expected) {
 		t.Errorf("expected %d calls, got %d", len(expected), len(m.Calls))

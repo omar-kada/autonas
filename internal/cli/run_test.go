@@ -21,9 +21,9 @@ var mockConfig = config.Config{
 }
 
 type Mocker struct {
-	testutil.Mocker
+	testutil.MockRecorder
 	generateErr error
-	syncError   error
+	syncErr     error
 	deployErr   error
 }
 
@@ -34,7 +34,7 @@ func (m *Mocker) generateConfigFromFiles(files []string) (config.Config, error) 
 
 func (m *Mocker) syncCode(repoURL string, branch string, path string) error {
 	m.AddCall("syncCode", repoURL, branch, path)
-	return m.syncError
+	return m.syncErr
 }
 
 func (m *Mocker) DeployServices(configFolder string, currentCfg config.Config, cfg config.Config) error {
@@ -42,15 +42,15 @@ func (m *Mocker) DeployServices(configFolder string, currentCfg config.Config, c
 	return m.deployErr
 }
 
-func initMocks(useMocker Mocker) *Mocker {
+func initMocks(useMocker *Mocker) *Mocker {
 	generateConfigFromFiles = useMocker.generateConfigFromFiles
 	syncCode = useMocker.syncCode
-	defaultDeployer = &useMocker
-	return &useMocker
+	defaultDeployer = useMocker
+	return useMocker
 }
 
 func TestRunCmd_Success(t *testing.T) {
-	mocker := *initMocks(Mocker{})
+	mocker := initMocks(&Mocker{})
 	run := NewRunner()
 
 	err := run.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
@@ -98,7 +98,7 @@ func TestRunCmd_Errors(t *testing.T) {
 	}{
 		{
 			name:          "syncCode error",
-			errorMocker:   Mocker{syncError: ErrSync},
+			errorMocker:   Mocker{syncErr: ErrSync},
 			expectedError: ErrSync,
 		},
 		{
@@ -115,7 +115,7 @@ func TestRunCmd_Errors(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initMocks(tc.errorMocker)
+			initMocks(&tc.errorMocker)
 			runner := NewRunner()
 
 			err := runner.RunCmd([]string{"config1.yaml"}, "https://example.com/repo.git")
