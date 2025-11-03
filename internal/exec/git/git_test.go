@@ -6,6 +6,7 @@ import (
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 func setupRemoteRepo(t *testing.T) string {
@@ -45,7 +46,9 @@ func addCommitToRepo(t *testing.T, repoPath string, fileName string, content str
 	file.Close()
 
 	w.Add(fileName)
-	_, err = w.Commit("add "+fileName, &git.CommitOptions{})
+	_, err = w.Commit("add "+fileName, &git.CommitOptions{
+		Author: &object.Signature{Name: "Test", Email: "test@test.com"},
+	})
 	if err != nil {
 		t.Fatalf("Failed to commit changes: %v", err)
 	}
