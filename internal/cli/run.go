@@ -37,6 +37,17 @@ type runner struct {
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
 func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 
+	// TODO : add these to configuration
+	configFolder := "."
+	repoBranch := "main"
+
+	syncErr := syncCode(configRepo, repoBranch, configFolder)
+
+	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
+		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", syncErr)
+		return syncErr
+	}
+
 	cfg, err := generateConfigFromFiles(configFiles)
 
 	if err != nil {
@@ -45,20 +56,10 @@ func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 	}
 	fmt.Printf("Final consolidated config: %+v\n", cfg)
 
-	// TODO : add these to configuration
-	configFolder := "."
-	repoBranch := "main"
-
-	err = syncCode(configRepo, repoBranch, configFolder)
-
-	if err == git.NoErrAlreadyUpToDate {
-		if reflect.DeepEqual(r.currentCfg, cfg) {
-			fmt.Println("Configuration and repository are up to date. No changes detected.")
-			return nil
-		}
-	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", err)
-		return err
+	// check if the config changed from last run
+	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(r.currentCfg, cfg) {
+		fmt.Println("Configuration and repository are up to date. No changes detected.")
+		return nil
 	}
 
 	// Copy all files from ./services to SERVICES_PATH
