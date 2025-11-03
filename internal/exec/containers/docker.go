@@ -10,26 +10,28 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 )
 
-var (
-	writeToFileFunc = files.WriteToFile
-)
-
 func newDockerHandler() *dockerHandler {
-	return &dockerHandler{}
+	return &dockerHandler{
+		_writeToFileFunc: files.WriteToFile,
+		_runCommandFunc:  shell.RunCommand,
+	}
 }
 
-type dockerHandler struct{}
+// dockerHandler manages Docker Compose services.
+type dockerHandler struct {
+	_writeToFileFunc func(filePath string, content string) error
+	_runCommandFunc  func(cmdAndArgs ...string) error
+}
 
 // RemoveServices stops and removes Docker Compose services.
 func (d *dockerHandler) RemoveServices(services []string, servicesPath string) error {
 
 	fmt.Printf("Services %s will be removed if running.\n", services)
 	for _, serviceName := range services {
-		err := composeDown(filepath.Join(servicesPath, serviceName))
+		err := d.composeDown(filepath.Join(servicesPath, serviceName))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error running docker compose down for %s: %v\n", serviceName, err)
 		}
@@ -51,7 +53,7 @@ func (d *dockerHandler) DeployServices(cfg config.Config) error {
 		if err := d.generateEnvFile(cfg, service); err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating env file for %s: %v\n", service, err)
 		}
-		if err := composeUp(filepath.Join(cfg.ServicesPath, service)); err != nil {
+		if err := d.composeUp(filepath.Join(cfg.ServicesPath, service)); err != nil {
 			fmt.Fprintf(os.Stderr, "Error running docker compose for %s: %v\n", service, err)
 		}
 	}
@@ -59,17 +61,17 @@ func (d *dockerHandler) DeployServices(cfg config.Config) error {
 	return nil
 }
 
-func composeUp(composePath string) error {
+func (d *dockerHandler) composeUp(composePath string) error {
 	cmd := []string{"docker", "compose", "--project-directory", composePath, "up", "-d"}
-	if err := shell.RunCommand(cmd...); err != nil {
+	if err := d._runCommandFunc(cmd...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
 	return nil
 }
 
-func composeDown(composePath string) error {
+func (d *dockerHandler) composeDown(composePath string) error {
 	cmd := []string{"docker", "compose", "--project-directory", composePath, "down"}
-	if err := shell.RunCommand(cmd...); err != nil {
+	if err := d._runCommandFunc(cmd...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}
 	return nil
@@ -84,12 +86,12 @@ func (d *dockerHandler) generateEnvFile(cfg config.Config, service string) error
 	}
 
 	envFilePath := filepath.Join(cfg.ServicesPath, service, ".env")
-	return writeToFileFunc(envFilePath, content.String())
+	return d._writeToFileFunc(envFilePath, content.String())
 }
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (d *dockerHandler) GetManagedContainers() (map[string][]container.Summary, error) {
+func (d *dockerHandler) GetManagedContainers() (map[string][]Summary, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -97,13 +99,13 @@ func (d *dockerHandler) GetManagedContainers() (map[string][]container.Summary, 
 	}
 	defer cli.Close()
 
-	containers, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
+	summaries, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	matches := make(map[string][]container.Summary)
-	for _, c := range containers {
+	matches := make(map[string][]Summary)
+	for _, c := range summaries {
 		inspect, err := cli.ContainerInspect(ctx, c.ID)
 		if err != nil {
 			// don't fail entirely on single-container inspect error; just log and continue
@@ -127,7 +129,13 @@ func (d *dockerHandler) GetManagedContainers() (map[string][]container.Summary, 
 			if serviceName == "" {
 				fmt.Fprintf(os.Stderr, "warning: container %s marked as AUTONAS_MANAGED but missing AUTONAS_SERVICE_NAME\n", c.ID)
 			} else {
-				matches[serviceName] = append(matches[serviceName], c)
+				matches[serviceName] = append(matches[serviceName], Summary{
+					ID:     c.ID,
+					Names:  c.Names,
+					Image:  c.Image,
+					State:  c.State,
+					Status: c.Status,
+				})
 			}
 		}
 	}

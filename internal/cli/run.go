@@ -7,6 +7,7 @@ import (
 	"omar-kada/autonas/internal/exec"
 	"omar-kada/autonas/internal/exec/git"
 	"os"
+	"reflect"
 
 	"github.com/robfig/cron/v3"
 )
@@ -36,16 +37,6 @@ type runner struct {
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
 func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 
-	// TODO : add these to configuration
-	configFolder := "."
-	repoBranch := "main"
-
-	err := syncCode(configRepo, repoBranch, configFolder)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", err)
-		return err
-	}
-
 	cfg, err := generateConfigFromFiles(configFiles)
 
 	if err != nil {
@@ -53,6 +44,22 @@ func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 		return err
 	}
 	fmt.Printf("Final consolidated config: %+v\n", cfg)
+
+	// TODO : add these to configuration
+	configFolder := "."
+	repoBranch := "main"
+
+	err = syncCode(configRepo, repoBranch, configFolder)
+
+	if err == git.NoErrAlreadyUpToDate {
+		if reflect.DeepEqual(r.currentCfg, cfg) {
+			fmt.Println("Configuration and repository are up to date. No changes detected.")
+			return nil
+		}
+	} else if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", err)
+		return err
+	}
 
 	// Copy all files from ./services to SERVICES_PATH
 	err = r.deployer.DeployServices(configFolder, r.currentCfg, cfg)

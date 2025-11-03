@@ -61,8 +61,8 @@ func TestRunCmd_Success(t *testing.T) {
 	wantCfg := mockConfig
 
 	wantCalls := [][]any{
-		{"syncCode", "https://example.com/repo.git", "main", "."},
 		{"generateConfigFromFiles", []string{"config1.yaml", "config2.yaml"}},
+		{"syncCode", "https://example.com/repo.git", "main", "."},
 		{"deployServices", ".", config.Config{}, wantCfg},
 	}
 	mocker.AssertCalls(t, wantCalls)
@@ -76,8 +76,8 @@ func TestRunCmd_Success(t *testing.T) {
 	}
 
 	wantCalls = [][]any{
-		{"syncCode", "https://example.com/repo.git", "main", "."},
 		{"generateConfigFromFiles", []string{"config1.yaml", "config2.yaml"}},
+		{"syncCode", "https://example.com/repo.git", "main", "."},
 		{"deployServices", ".", wantCfg, wantCfg},
 	}
 	mocker.AssertCalls(t, wantCalls)

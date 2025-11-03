@@ -1,20 +1,28 @@
-// Package containers provides utilities to interact with Container managers.
+// Package containers provides type definitions used with containers.
 package containers
 
 import (
 	"omar-kada/autonas/internal/config"
-
-	"github.com/moby/moby/api/types/container"
 )
 
 // Handler defines methods for managing containerized services.
 type Handler interface {
 	RemoveServices(services []string, servicesPath string) error
 	DeployServices(cfg config.Config) error
-	GetManagedContainers() (map[string][]container.Summary, error)
+	GetManagedContainers() (map[string][]Summary, error)
 }
 
-// NewHandler creates a new instance of the Containers Handler.
-func NewHandler() Handler {
+// New creates a new instance of the Handler.
+func New() Handler {
 	return newDockerHandler()
+}
+
+// Summary is the domain view of a managed container.
+// Keep only fields callers need.
+type Summary struct {
+	ID     string
+	Names  []string
+	Image  string
+	State  string
+	Status string
 }

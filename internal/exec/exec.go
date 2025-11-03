@@ -14,20 +14,17 @@ type Deployer interface {
 	DeployServices(configFolder string, currentCfg, cfg config.Config) error
 }
 
-var (
-	copyFunc                 = copydir.Copy
-	defaultContainersHandler = containers.NewHandler()
-)
-
 // New creates a new Deployer instance with default dependencies.
 func New() Deployer {
 	return &defaultDeployer{
-		containersHandler: defaultContainersHandler,
+		containersHandler: containers.New(),
+		_copyFunc:         copydir.Copy,
 	}
 }
 
 type defaultDeployer struct {
 	containersHandler containers.Handler
+	_copyFunc         func(srcFolder, servicesPath string, _ ...copydir.Options) error
 }
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
@@ -38,7 +35,7 @@ func (d *defaultDeployer) DeployServices(configFolder string, currentCfg, cfg co
 		return err
 	}
 
-	if err := copyFunc(configFolder+"/services", cfg.ServicesPath); err != nil {
+	if err := d._copyFunc(configFolder+"/services", cfg.ServicesPath); err != nil {
 		return err
 	}
 

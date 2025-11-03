@@ -3,16 +3,17 @@ package exec
 import (
 	"errors"
 	"omar-kada/autonas/internal/config"
+	"omar-kada/autonas/internal/exec/containers"
 	"omar-kada/autonas/internal/testutil"
 
 	"testing"
 
-	"github.com/moby/moby/api/types/container"
 	copydir "github.com/otiai10/copy"
 )
 
 type Mocker struct {
 	testutil.MockRecorder
+	containers.Handler
 	removeErr error
 	deployErr error
 	copyErr   error
@@ -26,11 +27,6 @@ func (m *Mocker) RemoveServices(services []string, servicesPath string) error {
 func (m *Mocker) DeployServices(cfg config.Config) error {
 	m.AddCall("deployServices", cfg)
 	return m.deployErr
-}
-
-func (m *Mocker) GetManagedContainers() (map[string][]container.Summary, error) {
-	m.AddCall("getManagedContainers")
-	return nil, nil
 }
 
 func (m *Mocker) Copy(srcFolder, servicesPath string, _ ...copydir.Options) error {
@@ -49,15 +45,12 @@ var (
 	}
 )
 
-func initMocks(useMocker *Mocker) *Mocker {
-	defaultContainersHandler = useMocker
-	copyFunc = useMocker.Copy
-	return useMocker
-}
-
 func TestDeployServices_Success(t *testing.T) {
-	mocker := initMocks(&Mocker{})
-	deployer := New()
+	mocker := &Mocker{}
+	deployer := defaultDeployer{
+		containersHandler: mocker,
+		_copyFunc:         mocker.Copy,
+	}
 	err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -104,8 +97,10 @@ func TestDeployServices_Errors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// create a mock that returns an error for the chosen method
 			// replace the package default with the one returning an error
-			initMocks(&tc.mocker)
-			deployer := New()
+			deployer := defaultDeployer{
+				containersHandler: &tc.mocker,
+				_copyFunc:         tc.mocker.Copy,
+			}
 
 			err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 			if !errors.Is(err, tc.expectedError) {
