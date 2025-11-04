@@ -23,6 +23,7 @@ func NewDeployer(containersManager model.Manager) Deployer {
 	}
 }
 
+// Deployer is responsible for deploying the services
 type Deployer struct {
 	containersManager model.Manager
 	_copyFunc         func(srcFolder, servicesPath string, _ ...copydir.Options) error
