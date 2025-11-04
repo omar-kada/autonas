@@ -1,10 +1,12 @@
-package containers
+// Package docker implements a manager for docker containers
+package docker
 
 import (
 	"context"
 	"fmt"
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/exec/files"
+	"omar-kada/autonas/internal/containers/model"
+	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/shell"
 	"os"
 	"path/filepath"
@@ -13,21 +15,22 @@ import (
 	"github.com/moby/moby/client"
 )
 
-func newDockerHandler() *dockerHandler {
-	return &dockerHandler{
+// New creates an instance of Manager for docker containers
+func New() *Manager {
+	return &Manager{
 		_writeToFileFunc: files.WriteToFile,
 		_runCommandFunc:  shell.RunCommand,
 	}
 }
 
-// dockerHandler manages Docker Compose services.
-type dockerHandler struct {
+// Manager manages Docker Compose services.
+type Manager struct {
 	_writeToFileFunc func(filePath string, content string) error
-	_runCommandFunc  func(cmdAndArgs ...string) error
+	_runCommandFunc  func(cmd string, args ...string) error
 }
 
 // RemoveServices stops and removes Docker Compose services.
-func (d *dockerHandler) RemoveServices(services []string, servicesPath string) error {
+func (d *Manager) RemoveServices(services []string, servicesPath string) error {
 
 	fmt.Printf("Services %s will be removed if running.\n", services)
 	for _, serviceName := range services {
@@ -42,7 +45,7 @@ func (d *dockerHandler) RemoveServices(services []string, servicesPath string) e
 }
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
-func (d *dockerHandler) DeployServices(cfg config.Config) error {
+func (d *Manager) DeployServices(cfg config.Config) error {
 
 	if len(cfg.EnabledServices) == 0 {
 		fmt.Fprintln(os.Stderr, "No enabled_services specified in config. Skipping .env generation and compose up.")
@@ -61,23 +64,23 @@ func (d *dockerHandler) DeployServices(cfg config.Config) error {
 	return nil
 }
 
-func (d *dockerHandler) composeUp(composePath string) error {
-	cmd := []string{"docker", "compose", "--project-directory", composePath, "up", "-d"}
-	if err := d._runCommandFunc(cmd...); err != nil {
+func (d *Manager) composeUp(composePath string) error {
+	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
+	if err := d._runCommandFunc("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
 	return nil
 }
 
-func (d *dockerHandler) composeDown(composePath string) error {
-	cmd := []string{"docker", "compose", "--project-directory", composePath, "down"}
-	if err := d._runCommandFunc(cmd...); err != nil {
+func (d *Manager) composeDown(composePath string) error {
+	args := []string{"compose", "--project-directory", composePath, "down"}
+	if err := d._runCommandFunc("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}
 	return nil
 }
 
-func (d *dockerHandler) generateEnvFile(cfg config.Config, service string) error {
+func (d *Manager) generateEnvFile(cfg config.Config, service string) error {
 	serviceCfg := cfg.PerService(service)
 
 	var content strings.Builder
@@ -91,7 +94,7 @@ func (d *dockerHandler) generateEnvFile(cfg config.Config, service string) error
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (d *dockerHandler) GetManagedContainers() (map[string][]Summary, error) {
+func (d *Manager) GetManagedContainers() (map[string][]model.Summary, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -104,7 +107,7 @@ func (d *dockerHandler) GetManagedContainers() (map[string][]Summary, error) {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	matches := make(map[string][]Summary)
+	matches := make(map[string][]model.Summary)
 	for _, c := range summaries {
 		inspect, err := cli.ContainerInspect(ctx, c.ID)
 		if err != nil {
@@ -129,7 +132,7 @@ func (d *dockerHandler) GetManagedContainers() (map[string][]Summary, error) {
 			if serviceName == "" {
 				fmt.Fprintf(os.Stderr, "warning: container %s marked as AUTONAS_MANAGED but missing AUTONAS_SERVICE_NAME\n", c.ID)
 			} else {
-				matches[serviceName] = append(matches[serviceName], Summary{
+				matches[serviceName] = append(matches[serviceName], model.Summary{
 					ID:     c.ID,
 					Names:  c.Names,
 					Image:  c.Image,

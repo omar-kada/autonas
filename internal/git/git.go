@@ -17,7 +17,7 @@ var (
 // checking out the specified branch.
 // returns NoErrAlreadyUpToDate if the repository is already up to date.
 func SyncCode(repoURL, branch, path string) error {
-	// Clone
+
 	_, err := git.PlainClone(path, false, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.NewBranchReferenceName(branch),
@@ -25,19 +25,18 @@ func SyncCode(repoURL, branch, path string) error {
 		Progress:      os.Stdout,
 	})
 	if err == git.ErrRepositoryAlreadyExists {
-		repo, err := git.PlainOpen(path)
-		if err != nil {
-			return err
-		}
-
-		// Fetch
-		return fetchAndPull(repo, branch)
+		return fetchAndPull(path, branch)
 	}
 	return err
 }
 
-func fetchAndPull(repo *git.Repository, branch string) error {
-	err := repo.Fetch(&git.FetchOptions{
+func fetchAndPull(path string, branch string) error {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	err = repo.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
 		Progress:   os.Stdout,
 		Force:      true,

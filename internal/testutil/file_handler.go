@@ -1,3 +1,4 @@
+// Package testutil contains utility functions to be used for testing
 package testutil
 
 import (

@@ -4,18 +4,12 @@ package cli
 import (
 	"fmt"
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/exec"
-	"omar-kada/autonas/internal/exec/git"
+	"omar-kada/autonas/internal/containers"
+	"omar-kada/autonas/internal/git"
 	"os"
 	"reflect"
 
 	"github.com/robfig/cron/v3"
-)
-
-var (
-	generateConfigFromFiles = config.FromFiles
-	syncCode                = git.SyncCode
-	defaultDeployer         = exec.New()
 )
 
 // Runner defines the interface for running AutoNAS commands.
@@ -24,13 +18,16 @@ type Runner interface {
 	RunPeriocically(cronPeriod string, configFiles []string, configRepo string)
 }
 
-// NewRunner creates a new Runner instance with default dependencies.
-func NewRunner() Runner {
-	return &runner{deployer: defaultDeployer}
+// New creates a new Runner instance with default dependencies.
+func New() Runner {
+	return &runner{deployer: containers.NewDockerDeployer()}
 }
 
 type runner struct {
-	deployer   exec.Deployer
+	deployer                 containers.Deployer
+	_generateConfigFromFiles func(files []string) (config.Config, error)
+	_syncCode                func(repoURL string, branch string, path string) error
+
 	currentCfg config.Config
 }
 
@@ -41,14 +38,14 @@ func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 	configFolder := "."
 	repoBranch := "main"
 
-	syncErr := syncCode(configRepo, repoBranch, configFolder)
+	syncErr := r._syncCode(configRepo, repoBranch, configFolder)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", syncErr)
 		return syncErr
 	}
 
-	cfg, err := generateConfigFromFiles(configFiles)
+	cfg, err := r._generateConfigFromFiles(configFiles)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)

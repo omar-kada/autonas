@@ -1,9 +1,10 @@
-// Package exec handles the deployment and management of services.
-package exec
+// Package containers handles the deployment and management of services.
+package containers
 
 import (
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/exec/containers"
+	"omar-kada/autonas/internal/containers/docker"
+	"omar-kada/autonas/internal/containers/model"
 	"slices"
 
 	copydir "github.com/otiai10/copy"
@@ -14,16 +15,21 @@ type Deployer interface {
 	DeployServices(configFolder string, currentCfg, cfg config.Config) error
 }
 
-// New creates a new Deployer instance with default dependencies.
-func New() Deployer {
+// NewDockerDeployer creates a new deployer that uses docker for containers
+func NewDockerDeployer() Deployer {
+	return NewDeployer(docker.New())
+}
+
+// NewDeployer creates a new Deployer instance
+func NewDeployer(containersManager model.Manager) Deployer {
 	return &defaultDeployer{
-		containersHandler: containers.New(),
+		containersManager: containersManager,
 		_copyFunc:         copydir.Copy,
 	}
 }
 
 type defaultDeployer struct {
-	containersHandler containers.Handler
+	containersManager model.Manager
 	_copyFunc         func(srcFolder, servicesPath string, _ ...copydir.Options) error
 }
 
@@ -31,7 +37,7 @@ type defaultDeployer struct {
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
 func (d *defaultDeployer) DeployServices(configFolder string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
-	if err := d.containersHandler.RemoveServices(toBeRemoved, currentCfg.ServicesPath); err != nil {
+	if err := d.containersManager.RemoveServices(toBeRemoved, currentCfg.ServicesPath); err != nil {
 		return err
 	}
 
@@ -39,7 +45,7 @@ func (d *defaultDeployer) DeployServices(configFolder string, currentCfg, cfg co
 		return err
 	}
 
-	if err := d.containersHandler.DeployServices(cfg); err != nil {
+	if err := d.containersManager.DeployServices(cfg); err != nil {
 		return err
 	}
 	return nil

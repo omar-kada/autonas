@@ -8,15 +8,12 @@ import (
 )
 
 // RunCommand runs a shell command and returns error if any
-func RunCommand(cmdAndArgs ...string) error {
-	path, err := exec.LookPath(cmdAndArgs[0])
+func RunCommand(cmd string, args ...string) error {
+	path, err := exec.LookPath(cmd)
 	if err != nil {
 		return fmt.Errorf("executable not found: %w", err)
 	}
-	c, err := execCommand(path, cmdAndArgs[1:]...)
-	if err != nil {
-		return err
-	}
+	c := execCommand(path, args...)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	fmt.Printf("Running command: %s\n", c)
@@ -26,6 +23,6 @@ func RunCommand(cmdAndArgs ...string) error {
 // execCommand is a wrapper for exec.Command for testability
 var execCommand = defaultExecCommand
 
-func defaultExecCommand(cmd string, args ...string) (*exec.Cmd, error) {
-	return exec.Command(cmd, args...), nil
+func defaultExecCommand(cmd string, args ...string) *exec.Cmd {
+	return exec.Command(cmd, args...)
 }
