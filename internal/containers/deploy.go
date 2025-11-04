@@ -10,11 +10,6 @@ import (
 	copydir "github.com/otiai10/copy"
 )
 
-// Deployer abstracts service deployment operations
-type Deployer interface {
-	DeployServices(configFolder string, currentCfg, cfg config.Config) error
-}
-
 // NewDockerDeployer creates a new deployer that uses docker for containers
 func NewDockerDeployer() Deployer {
 	return NewDeployer(docker.New())
@@ -22,20 +17,20 @@ func NewDockerDeployer() Deployer {
 
 // NewDeployer creates a new Deployer instance
 func NewDeployer(containersManager model.Manager) Deployer {
-	return &defaultDeployer{
+	return Deployer{
 		containersManager: containersManager,
 		_copyFunc:         copydir.Copy,
 	}
 }
 
-type defaultDeployer struct {
+type Deployer struct {
 	containersManager model.Manager
 	_copyFunc         func(srcFolder, servicesPath string, _ ...copydir.Options) error
 }
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
-func (d *defaultDeployer) DeployServices(configFolder string, currentCfg, cfg config.Config) error {
+func (d *Deployer) DeployServices(configFolder string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
 	if err := d.containersManager.RemoveServices(toBeRemoved, currentCfg.ServicesPath); err != nil {
 		return err

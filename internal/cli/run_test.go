@@ -3,7 +3,6 @@ package cli
 import (
 	"errors"
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/containers"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +24,7 @@ var mockConfig = config.Config{
 
 type Mocker struct {
 	mock.Mock
-	containers.Deployer
+	Deployer
 }
 
 func (m *Mocker) generateConfigFromFiles(files []string) (config.Config, error) {
@@ -65,8 +64,8 @@ func mockReturnValues(m *Mocker, val ExpectedValues) {
 	)
 }
 
-func newRunnerWithMocks(mocker *Mocker) Runner {
-	return &runner{
+func newRunnerWithMocks(mocker *Mocker) *Runner {
+	return &Runner{
 		deployer:                 mocker,
 		_generateConfigFromFiles: mocker.generateConfigFromFiles,
 		_syncCode:                mocker.syncCode,

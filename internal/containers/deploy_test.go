@@ -68,8 +68,8 @@ func initMocker(errors ExpectedErrors) *Mocker {
 	return mocker
 }
 
-func newDeployerWithMocks(mocker *Mocker) *defaultDeployer {
-	return &defaultDeployer{
+func newDeployerWithMocks(mocker *Mocker) *Deployer {
+	return &Deployer{
 		containersManager: mocker,
 		_copyFunc:         mocker.Copy,
 	}

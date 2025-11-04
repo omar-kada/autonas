@@ -12,19 +12,20 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-// Runner defines the interface for running AutoNAS commands.
-type Runner interface {
-	RunCmd(configFiles []string, configRepo string) error
-	RunPeriocically(cronPeriod string, configFiles []string, configRepo string)
+// Deployer abstracts service deployment operations
+type Deployer interface {
+	DeployServices(configFolder string, currentCfg, cfg config.Config) error
 }
 
 // New creates a new Runner instance with default dependencies.
 func New() Runner {
-	return &runner{deployer: containers.NewDockerDeployer()}
+	deployer := containers.NewDockerDeployer()
+	return Runner{deployer: &deployer}
 }
 
-type runner struct {
-	deployer                 containers.Deployer
+// Runner abstracts the implements of the run command
+type Runner struct {
+	deployer                 Deployer
 	_generateConfigFromFiles func(files []string) (config.Config, error)
 	_syncCode                func(repoURL string, branch string, path string) error
 
@@ -32,7 +33,7 @@ type runner struct {
 }
 
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
-func (r *runner) RunCmd(configFiles []string, configRepo string) error {
+func (r *Runner) RunCmd(configFiles []string, configRepo string) error {
 
 	// TODO : add these to configuration
 	configFolder := "."
@@ -70,7 +71,7 @@ func (r *runner) RunCmd(configFiles []string, configRepo string) error {
 }
 
 // RunPeriocically runs the RunCmd function periodically based on the given cron period string.
-func (r *runner) RunPeriocically(cronPeriod string, configFiles []string, configRepo string) {
+func (r *Runner) RunPeriocically(cronPeriod string, configFiles []string, configRepo string) {
 	c := cron.New()
 
 	c.AddFunc(cronPeriod, func() {
