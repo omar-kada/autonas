@@ -32,7 +32,7 @@ type Manager struct {
 }
 
 // RemoveServices stops and removes Docker Compose services.
-func (d *Manager) RemoveServices(services []string, servicesPath string) error {
+func (d Manager) RemoveServices(services []string, servicesPath string) error {
 
 	d.log.Debugf("services %s will be removed if running.", services)
 	for _, serviceName := range services {
@@ -47,7 +47,7 @@ func (d *Manager) RemoveServices(services []string, servicesPath string) error {
 }
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
-func (d *Manager) DeployServices(cfg config.Config) error {
+func (d Manager) DeployServices(cfg config.Config) error {
 
 	if len(cfg.EnabledServices) == 0 {
 		d.log.Warnf("No enabled_services specified in config. Skipping .env generation and compose up.")
@@ -66,7 +66,7 @@ func (d *Manager) DeployServices(cfg config.Config) error {
 	return nil
 }
 
-func (d *Manager) composeUp(composePath string) error {
+func (d Manager) composeUp(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
 	if err := d._runCommandFunc("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
@@ -74,7 +74,7 @@ func (d *Manager) composeUp(composePath string) error {
 	return nil
 }
 
-func (d *Manager) composeDown(composePath string) error {
+func (d Manager) composeDown(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "down"}
 	if err := d._runCommandFunc("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
@@ -82,12 +82,12 @@ func (d *Manager) composeDown(composePath string) error {
 	return nil
 }
 
-func (d *Manager) generateEnvFile(cfg config.Config, service string) error {
+func (d Manager) generateEnvFile(cfg config.Config, service string) error {
 	serviceCfg := cfg.PerService(service)
 
 	var content strings.Builder
-	for k, v := range serviceCfg {
-		content.WriteString(fmt.Sprintf("%s=%v\n", k, v))
+	for _, v := range serviceCfg {
+		content.WriteString(fmt.Sprintf("%s=%v\n", v.Key, v.Value))
 	}
 
 	envFilePath := filepath.Join(cfg.ServicesPath, service, ".env")
@@ -96,7 +96,7 @@ func (d *Manager) generateEnvFile(cfg config.Config, service string) error {
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (d *Manager) GetManagedContainers() (map[string][]model.Summary, error) {
+func (d Manager) GetManagedContainers() (map[string][]model.Summary, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

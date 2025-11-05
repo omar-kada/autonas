@@ -13,7 +13,7 @@ import (
 //go:embed test_data/*
 var testDataFS embed.FS
 
-func TestConfigPerService_BuildsCorrectMap(t *testing.T) {
+func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 	cfg := Config{
 		AutonasHost:  "host",
 		ServicesPath: "/services",
@@ -29,14 +29,14 @@ func TestConfigPerService_BuildsCorrectMap(t *testing.T) {
 	}
 
 	got := cfg.PerService("svc")
-	want := map[string]any{
-		"AUTONAS_HOST":  "host",
-		"SERVICES_PATH": "/services",
-		"DATA_PATH":     "/data/svc",
-		"GLOBAL":        "g",
-		"PORT":          8080,
-		"VERSION":       "v1",
-		"SVC_EXTRA":     "s",
+	want := []Variable{
+		{Key: "AUTONAS_HOST", Value: "host"},
+		{Key: "SERVICES_PATH", Value: "\\services"},
+		{Key: "DATA_PATH", Value: "\\data\\svc"},
+		{Key: "GLOBAL", Value: "g"},
+		{Key: "PORT", Value: "8080"},
+		{Key: "VERSION", Value: "v1"},
+		{Key: "SVC_EXTRA", Value: "s"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ConfigPerService mismatch\nwant=%#v\ngot =%#v", want, got)

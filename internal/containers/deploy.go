@@ -13,14 +13,13 @@ import (
 
 // NewDockerDeployer creates a new deployer that uses docker for containers
 func NewDockerDeployer(log logger.Logger) Deployer {
-	return NewDeployer(docker.New(log), log)
+	return NewDeployer(docker.New(log))
 }
 
 // NewDeployer creates a new Deployer instance
-func NewDeployer(containersManager model.Manager, log logger.Logger) Deployer {
+func NewDeployer(containersManager model.Manager) Deployer {
 	return Deployer{
 		containersManager: containersManager,
-		log:               log,
 
 		_copyFunc: copydir.Copy,
 	}
@@ -29,7 +28,6 @@ func NewDeployer(containersManager model.Manager, log logger.Logger) Deployer {
 // Deployer is responsible for deploying the services
 type Deployer struct {
 	containersManager model.Manager
-	log               logger.Logger
 
 	_copyFunc func(srcFolder, servicesPath string, _ ...copydir.Options) error
 }

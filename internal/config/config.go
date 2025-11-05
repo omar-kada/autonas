@@ -4,6 +4,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
@@ -88,24 +90,36 @@ func mergeMaps(dst, src map[string]any) map[string]any {
 	return dst
 }
 
-// PerService generates a configuration map for a specific service
-func (cfg *Config) PerService(service string) map[string]any {
-	serviceConfig := make(map[string]any)
-	serviceConfig["AUTONAS_HOST"] = cfg.AutonasHost
-	serviceConfig["SERVICES_PATH"] = cfg.ServicesPath
-	serviceConfig["DATA_PATH"] = fmt.Sprintf("%s/%s", cfg.DataPath, service)
-	for k, v := range cfg.Extra {
-		serviceConfig[k] = v
+// Variable represent an environement variable
+type Variable struct {
+	Key   string
+	Value string
+}
+
+// PerService generates a slice of configuration variables for a specific service
+func (cfg Config) PerService(service string) []Variable {
+	serviceConfig := []Variable{
+		{Key: "AUTONAS_HOST", Value: cfg.AutonasHost},
+		{Key: "SERVICES_PATH", Value: filepath.Clean(cfg.ServicesPath)},
+		{Key: "DATA_PATH", Value: filepath.Join(cfg.DataPath, service)},
+	}
+	for key, value := range cfg.Extra {
+		serviceConfig = append(serviceConfig,
+			Variable{Key: key, Value: value.(string)})
 	}
 	if svcVars, ok := cfg.Services[service]; ok {
 		if svcVars.Port != 0 {
-			serviceConfig["PORT"] = svcVars.Port
+			serviceConfig = append(serviceConfig,
+				Variable{Key: "PORT", Value: strconv.Itoa(svcVars.Port)})
 		}
 		if svcVars.Version != "" {
-			serviceConfig["VERSION"] = svcVars.Version
+			serviceConfig = append(serviceConfig,
+				Variable{Key: "VERSION", Value: svcVars.Version})
 		}
-		for k, v := range svcVars.Extra {
-			serviceConfig[k] = v
+
+		for key, value := range svcVars.Extra {
+			serviceConfig = append(serviceConfig,
+				Variable{Key: key, Value: value.(string)})
 		}
 	}
 	return serviceConfig
