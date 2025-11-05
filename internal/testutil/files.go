@@ -25,15 +25,20 @@ func GetTempTestFile(t *testing.T, testDataFS embed.FS, name string) string {
 	return dst
 }
 
+type File struct {
+	Name string
+	Path string
+}
+
 // ExtractTxtar extracts config files & expected result from a txtar test archive.
-func ExtractTxtar(t *testing.T, testDataFS embed.FS, archivePath string) map[string]string {
+func ExtractTxtar(t *testing.T, testDataFS embed.FS, archivePath string) []File {
 	t.Helper()
 
 	ar, err := txtar.ParseFile(GetTempTestFile(t, testDataFS, archivePath))
 	if err != nil {
 		t.Fatalf("failed to parse txtar file: %v", err)
 	}
-	result := make(map[string]string)
+	result := make([]File, 0, len(ar.Files))
 	tempDir := t.TempDir()
 	for _, file := range ar.Files {
 		outPath := filepath.Join(tempDir, file.Name)
@@ -43,7 +48,10 @@ func ExtractTxtar(t *testing.T, testDataFS embed.FS, archivePath string) map[str
 		if err := os.WriteFile(outPath, file.Data, 0o600); err != nil {
 			t.Fatalf("failed to create tmp file: %v", err)
 		}
-		result[file.Name] = outPath
+		result = append(result, File{
+			Name: file.Name,
+			Path: outPath,
+		})
 	}
 	return result
 }

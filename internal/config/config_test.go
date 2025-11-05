@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -92,13 +93,14 @@ func extractTestCase(t *testing.T, archivePath string) (inputs []string, want ma
 	t.Helper()
 
 	filesMap := testutil.ExtractTxtar(t, testDataFS, archivePath)
-	for name, path := range filesMap {
-		if name == "want" {
-			want = testutil.ReadYamlFile(t, path)
+	for _, file := range filesMap {
+		if file.Name == "want" {
+			want = testutil.ReadYamlFile(t, file.Path)
 		} else {
-			inputs = append(inputs, path)
+			inputs = append(inputs, file.Path)
 		}
 	}
+	sort.Strings(inputs)
 	return inputs, want
 }
 
