@@ -25,6 +25,7 @@ func GetTempTestFile(t *testing.T, testDataFS embed.FS, name string) string {
 	return dst
 }
 
+// File represents a temporary file used in tests
 type File struct {
 	Name string
 	Path string
