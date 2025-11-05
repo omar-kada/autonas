@@ -2,9 +2,10 @@
 package main
 
 import (
-	"fmt"
 	"omar-kada/autonas/internal/cli"
+	"omar-kada/autonas/internal/logger"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -18,30 +19,35 @@ var (
 	configFiles []string
 	configRepo  string
 	cronPeriod  string
+	log         logger.Logger
 	runCmd      *cobra.Command
 )
 
-func init() {
+func main() {
+
+	env := strings.ToUpper(os.Getenv("ENV"))
+	log = logger.New(env == "DEV")
+	defer log.Sync()
+
+	runner := cli.New(log)
 	runCmd = &cobra.Command{
 		Use:   "run",
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
-			runner := cli.New()
 			runner.RunCmd(configFiles, configRepo)
 			if cronPeriod != "" {
-				runner.RunPeriocically(cronPeriod, configFiles, configRepo)
+				runner.RunPeriodically(cronPeriod, configFiles, configRepo)
 			}
 		},
 	}
-	runCmd.Flags().StringSliceVarP(&configFiles, "config", "c", []string{"config.default.yaml", "config.yaml"}, "YAML config files (default: config.yaml)")
+	runCmd.Flags().StringSliceVarP(&configFiles, "config", "c", []string{"config.yaml"}, "YAML config files (default: config.yaml)")
 	runCmd.Flags().StringVarP(&configRepo, "repo", "r", "", "repository URL to fetch config files & services")
 	runCmd.Flags().StringVarP(&cronPeriod, "period", "p", "", "cron period string")
-}
-func main() {
+
 	// Add subcommands
 	rootCmd.AddCommand(runCmd)
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Error("error on the root command : %w", err)
 		os.Exit(1)
 	}
 }

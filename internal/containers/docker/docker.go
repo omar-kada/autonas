@@ -7,8 +7,8 @@ import (
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/shell"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,8 +16,9 @@ import (
 )
 
 // New creates an instance of Manager for docker containers
-func New() *Manager {
+func New(log logger.Logger) *Manager {
 	return &Manager{
+		log:              log,
 		_writeToFileFunc: files.WriteToFile,
 		_runCommandFunc:  shell.RunCommand,
 	}
@@ -25,6 +26,7 @@ func New() *Manager {
 
 // Manager manages Docker Compose services.
 type Manager struct {
+	log              logger.Logger
 	_writeToFileFunc func(filePath string, content string) error
 	_runCommandFunc  func(cmd string, args ...string) error
 }
@@ -32,11 +34,11 @@ type Manager struct {
 // RemoveServices stops and removes Docker Compose services.
 func (d *Manager) RemoveServices(services []string, servicesPath string) error {
 
-	fmt.Printf("Services %s will be removed if running.\n", services)
+	d.log.Debugf("services %s will be removed if running.", services)
 	for _, serviceName := range services {
 		err := d.composeDown(filepath.Join(servicesPath, serviceName))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error running docker compose down for %s: %v\n", serviceName, err)
+			d.log.Errorf("Error running docker compose down for %s: %v", serviceName, err)
 		}
 	}
 
@@ -48,16 +50,16 @@ func (d *Manager) RemoveServices(services []string, servicesPath string) error {
 func (d *Manager) DeployServices(cfg config.Config) error {
 
 	if len(cfg.EnabledServices) == 0 {
-		fmt.Fprintln(os.Stderr, "No enabled_services specified in config. Skipping .env generation and compose up.")
+		d.log.Warnf("No enabled_services specified in config. Skipping .env generation and compose up.")
 		return nil
 	}
 
 	for _, service := range cfg.EnabledServices {
 		if err := d.generateEnvFile(cfg, service); err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating env file for %s: %v\n", service, err)
+			d.log.Errorf("Error creating env file for %s: %v", service, err)
 		}
 		if err := d.composeUp(filepath.Join(cfg.ServicesPath, service)); err != nil {
-			fmt.Fprintf(os.Stderr, "Error running docker compose for %s: %v\n", service, err)
+			d.log.Errorf("Error running docker compose for %s: %v", service, err)
 		}
 	}
 	// TODO : return aggregated error instead of nil
@@ -112,7 +114,7 @@ func (d *Manager) GetManagedContainers() (map[string][]model.Summary, error) {
 		inspect, err := cli.ContainerInspect(ctx, c.ID)
 		if err != nil {
 			// don't fail entirely on single-container inspect error; just log and continue
-			fmt.Fprintf(os.Stderr, "warning: failed to inspect container %s: %v\n", c.ID, err)
+			d.log.Errorf("Failed to inspect container %s, %s: %v", c.ID, c.Names, err)
 			continue
 		}
 		var managed bool
@@ -130,7 +132,7 @@ func (d *Manager) GetManagedContainers() (map[string][]model.Summary, error) {
 		}
 		if managed {
 			if serviceName == "" {
-				fmt.Fprintf(os.Stderr, "warning: container %s marked as AUTONAS_MANAGED but missing AUTONAS_SERVICE_NAME\n", c.ID)
+				d.log.Errorf("container %s marked as AUTONAS_MANAGED but missing AUTONAS_SERVICE_NAME", c.ID)
 			} else {
 				matches[serviceName] = append(matches[serviceName], model.Summary{
 					ID:     c.ID,

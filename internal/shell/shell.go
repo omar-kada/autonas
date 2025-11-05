@@ -16,7 +16,6 @@ func RunCommand(cmd string, args ...string) error {
 	c := execCommand(path, args...)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	fmt.Printf("Running command: %s\n", c)
 	return c.Run()
 }
 

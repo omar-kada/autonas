@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"omar-kada/autonas/internal/config"
+	"omar-kada/autonas/internal/logger"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,6 +67,7 @@ func mockReturnValues(m *Mocker, val ExpectedValues) {
 
 func newRunnerWithMocks(mocker *Mocker) *Runner {
 	return &Runner{
+		log:                      logger.New(true),
 		deployer:                 mocker,
 		_generateConfigFromFiles: mocker.generateConfigFromFiles,
 		_syncCode:                mocker.syncCode,

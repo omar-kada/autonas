@@ -6,10 +6,11 @@ import (
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/git"
-	"os"
+	"omar-kada/autonas/internal/logger"
 	"reflect"
 
 	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
 )
 
 // Deployer abstracts service deployment operations
@@ -18,13 +19,19 @@ type Deployer interface {
 }
 
 // New creates a new Runner instance with default dependencies.
-func New() Runner {
-	deployer := containers.NewDockerDeployer()
-	return Runner{deployer: &deployer}
+func New(log logger.Logger) Runner {
+	deployer := containers.NewDockerDeployer(log)
+	return Runner{
+		log:                      log,
+		deployer:                 &deployer,
+		_generateConfigFromFiles: config.FromFiles,
+		_syncCode:                git.SyncCode,
+	}
 }
 
 // Runner abstracts the implements of the run command
 type Runner struct {
+	log                      logger.Logger
 	deployer                 Deployer
 	_generateConfigFromFiles func(files []string) (config.Config, error)
 	_syncCode                func(repoURL string, branch string, path string) error
@@ -42,40 +49,41 @@ func (r *Runner) RunCmd(configFiles []string, configRepo string) error {
 	syncErr := r._syncCode(configRepo, repoBranch, configFolder)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
-		fmt.Fprintf(os.Stderr, "Error getting config repo: %v\n", syncErr)
-		return syncErr
+		return fmt.Errorf("error getting config repo:  %w", syncErr)
+
 	}
 
 	cfg, err := r._generateConfigFromFiles(configFiles)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		return err
+		return fmt.Errorf("error loading config: %w", err)
 	}
-	fmt.Printf("Final consolidated config: %+v\n", cfg)
+	r.log.Info("Final consolidated config", zap.Any("config", cfg))
 
 	// check if the config changed from last run
 	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(r.currentCfg, cfg) {
-		fmt.Println("Configuration and repository are up to date. No changes detected.")
+		r.log.Info("Configuration and repository are up to date. No changes detected.")
 		return nil
 	}
 
 	// Copy all files from ./services to SERVICES_PATH
 	err = r.deployer.DeployServices(configFolder, r.currentCfg, cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error deploying services: %v\n", err)
-		return err
+		return fmt.Errorf("error deploying services: %w", err)
 	}
 	r.currentCfg = cfg
 	return nil
 }
 
-// RunPeriocically runs the RunCmd function periodically based on the given cron period string.
-func (r *Runner) RunPeriocically(cronPeriod string, configFiles []string, configRepo string) {
+// RunPeriodically runs the RunCmd function periodically based on the given cron period string.
+func (r *Runner) RunPeriodically(cronPeriod string, configFiles []string, configRepo string) {
 	c := cron.New()
 
 	c.AddFunc(cronPeriod, func() {
-		r.RunCmd(configFiles, configRepo)
+		err := r.RunCmd(configFiles, configRepo)
+		if err != nil {
+			r.log.Errorf("error on run periodically: %w", err)
+		}
 	})
 
 	c.Start()

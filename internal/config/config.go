@@ -42,7 +42,6 @@ func FromFiles(files []string) (Config, error) {
 		}
 
 		merged = mergeMaps(merged, m)
-		fmt.Printf("Loaded config file: %s\n", file)
 	}
 
 	cfg, err := decodeConfig(merged)
