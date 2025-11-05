@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/logger"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -60,16 +61,16 @@ func TestDeployServices_SingleService(t *testing.T) {
 
 	wantEnv := strings.Join([]string{
 		"AUTONAS_HOST=localhost",
-		"SERVICES_PATH=\\",
-		"DATA_PATH=\\data\\svc1",
+		"SERVICES_PATH=" + filepath.Clean("/"),
+		"DATA_PATH=" + filepath.Clean("/data/svc1"),
 		"PORT=8080",
 		"VERSION=v1",
 		"NEW_FIELD=new_value",
 	}, "\n") + "\n"
 	mock.InOrder(
-		mocker.On("WriteToFile", "\\svc1\\.env", wantEnv).Return(nil),
+		mocker.On("WriteToFile", filepath.Clean("/svc1/.env"), wantEnv).Return(nil),
 		mocker.On(
-			"RunCommand", "docker", []string{"compose", "--project-directory", "\\svc1", "up", "-d"},
+			"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/svc1"), "up", "-d"},
 		).Return(nil),
 	)
 	err := manager.DeployServices(mockConfig)
@@ -80,10 +81,10 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker := &Mocker{}
 	manager := newManagerWithMocks(mocker)
 	mocker.On(
-		"RunCommand", "docker", []string{"compose", "--project-directory", "\\svc1", "down"},
+		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/svc1"), "down"},
 	).Return(nil)
 	mocker.On(
-		"RunCommand", "docker", []string{"compose", "--project-directory", "\\svc2", "down"},
+		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/svc2"), "down"},
 	).Return(fmt.Errorf("mock error"))
 	err := manager.RemoveServices([]string{"svc1", "svc2"}, "/")
 
