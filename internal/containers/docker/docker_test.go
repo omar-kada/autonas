@@ -45,7 +45,7 @@ var (
 			"svc1": {
 				Port:    8080,
 				Version: "v1",
-				Extra:   map[string]any{"NEW_FIELD": "new_value"},
+				Extra:   map[string]string{"NEW_FIELD": "new_value"},
 			},
 			"svc2": {
 				Port:    9090,

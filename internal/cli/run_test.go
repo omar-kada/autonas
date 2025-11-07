@@ -84,7 +84,7 @@ func TestRunCmd_Success(t *testing.T) {
 		deployInputOldConfig: config.Config{},
 	})
 
-	err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
+	err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git", ".")
 	assert.NoError(t, err)
 
 	// Verify that the currentCfg in runner is updated
@@ -93,7 +93,7 @@ func TestRunCmd_Success(t *testing.T) {
 		deployInputOldConfig: wantCfg,
 	})
 
-	err = runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
+	err = runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git", ".")
 	assert.NoError(t, err)
 }
 
@@ -133,7 +133,7 @@ func TestRunCmd_Errors(t *testing.T) {
 			runner := newRunnerWithMocks(mocker)
 			mockReturnValues(mocker, tc.mockValues)
 
-			err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git")
+			err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git", ".")
 			assert.ErrorIs(t, err, tc.expectedError, "want %s but got %s", tc.expectedError, err)
 		})
 	}

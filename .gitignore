@@ -1,4 +1,6 @@
 compose.yaml
+.env
+_ignore_*
 
 # Go build artifacts
 /bin/

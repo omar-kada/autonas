@@ -5,7 +5,10 @@ run-dev:
 	ENV=dev go run ./cmd/autonas run
 
 test:
-	go test ./...
+	go test ./internal/...
+
+test-int:
+	go test ./integration/... -v -count=1
 
 cover-html:
 	go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out

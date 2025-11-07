@@ -34,16 +34,27 @@ RUN apt update && apt install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Move to working directory /build
+
+ARG UID=1000
+ARG GID=1000
+
 RUN mkdir /autonas
 RUN mkdir /autonas/config
+
 WORKDIR /autonas
 
 COPY --from=builder /autonas/autonas /autonas/
-RUN chmod 755 /autonas/autonas
+
+RUN chmod -R 750 /autonas
+
+RUN groupadd -g $GID appgroup && \
+useradd -m -u $UID -g appgroup appuser
+
+RUN chown -R appuser:appgroup /autonas
+USER appuser
 
 ARG CONFIG_FILES
 ARG CONFIG_REPO
 
-WORKDIR /autonas/config
 # Start the application
-CMD ["sh", "-c", "/autonas/autonas run -c ${CONFIG_FILES} -r ${CONFIG_REPO} -p \"${CRON_PERIOD:-'@daily'}\""]
+CMD ["sh", "-c", "/autonas/autonas run -c ${CONFIG_FILES} -r ${CONFIG_REPO} -p \"${CRON_PERIOD:-'@daily'}\" -d /autonas/config"]

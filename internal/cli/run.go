@@ -7,6 +7,7 @@ import (
 	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/logger"
+	"path/filepath"
 	"reflect"
 
 	"github.com/robfig/cron/v3"
@@ -40,12 +41,9 @@ type Runner struct {
 }
 
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
-func (r *Runner) RunCmd(configFiles []string, configRepo string) error {
-
+func (r *Runner) RunCmd(configFiles []string, configRepo, configFolder string) error {
 	// TODO : add these to configuration
-	configFolder := "."
 	repoBranch := "main"
-
 	syncErr := r._syncCode(configRepo, repoBranch, configFolder)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
@@ -53,6 +51,11 @@ func (r *Runner) RunCmd(configFiles []string, configRepo string) error {
 
 	}
 
+	for i, file := range configFiles {
+		if !filepath.IsAbs(file) {
+			configFiles[i] = filepath.Join(configFolder, configFiles[i])
+		}
+	}
 	cfg, err := r._generateConfigFromFiles(configFiles)
 
 	if err != nil {
@@ -76,11 +79,11 @@ func (r *Runner) RunCmd(configFiles []string, configRepo string) error {
 }
 
 // RunPeriodically runs the RunCmd function periodically based on the given cron period string.
-func (r *Runner) RunPeriodically(cronPeriod string, configFiles []string, configRepo string) {
+func (r *Runner) RunPeriodically(cronPeriod string, configFiles []string, configRepo, configFolder string) {
 	c := cron.New()
 
 	c.AddFunc(cronPeriod, func() {
-		err := r.RunCmd(configFiles, configRepo)
+		err := r.RunCmd(configFiles, configRepo, configFolder)
 		if err != nil {
 			r.log.Errorf("error on run periodically: %w", err)
 		}

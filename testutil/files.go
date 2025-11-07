@@ -34,7 +34,6 @@ type File struct {
 // ExtractTxtar extracts config files & expected result from a txtar test archive.
 func ExtractTxtar(t *testing.T, testDataFS embed.FS, archivePath string) []File {
 	t.Helper()
-
 	ar, err := txtar.ParseFile(GetTempTestFile(t, testDataFS, archivePath))
 	if err != nil {
 		t.Fatalf("failed to parse txtar file: %v", err)
@@ -59,14 +58,24 @@ func ExtractTxtar(t *testing.T, testDataFS embed.FS, archivePath string) []File 
 
 // ReadYamlFile reads a YAML file from the given path and unmarshals it into a map.
 func ReadYamlFile(t *testing.T, path string) map[string]any {
-	want := make(map[string]any)
+	t.Helper()
+
+	result := make(map[string]any)
+	bs := ReadFile(t, path)
+	err := yaml.Unmarshal(bs, &result)
+	if err != nil {
+		t.Fatalf("failed to parse want yaml file: %v", err)
+	}
+	return result
+}
+
+// ReadFile reads file byte content and returns it
+func ReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+
 	bs, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read want file: %v", err)
 	}
-	err = yaml.Unmarshal(bs, &want)
-	if err != nil {
-		t.Fatalf("failed to parse want yaml file: %v", err)
-	}
-	return want
+	return bs
 }

@@ -1,0 +1,22 @@
+name: Integration Tests
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        run: |
+          sudo systemctl start docker
+          docker --version
+          
+      - name: Run integration tests
+        run: |
+          make test-int
+        env:
+          DOCKER_HOST: unix:///var/run/docker.sock
+          
+      - name: Cleanup
+        if: always()
+        run: docker system prune -f

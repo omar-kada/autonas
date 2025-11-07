@@ -17,7 +17,6 @@ var (
 // checking out the specified branch.
 // returns NoErrAlreadyUpToDate if the repository is already up to date.
 func SyncCode(repoURL, branch, path string) error {
-
 	_, err := git.PlainClone(path, false, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.NewBranchReferenceName(branch),
@@ -46,7 +45,10 @@ func fetchAndPull(path string, branch string) error {
 	}
 
 	// Checkout branch
-	wt, _ := repo.Worktree()
+	wt, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
 	err = wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branch),
 		Force:  true, // like `--force`
