@@ -13,9 +13,9 @@ import (
 
 // ServiceConfig represents configuration for an individual service.
 type ServiceConfig struct {
-	Port    int               `mapstructure:"PORT"`
-	Version string            `mapstructure:"VERSION"`
-	Extra   map[string]string `mapstructure:",remain"`
+	Port    int            `mapstructure:"PORT"`
+	Version string         `mapstructure:"VERSION"`
+	Extra   map[string]any `mapstructure:",remain"`
 }
 
 // Config represents the overall configuration structure.
@@ -25,7 +25,7 @@ type Config struct {
 	DataPath        string                   `mapstructure:"DATA_PATH"`
 	EnabledServices []string                 `mapstructure:"enabled_services"`
 	Services        map[string]ServiceConfig `mapstructure:"services"`
-	Extra           map[string]string        `mapstructure:",remain"`
+	Extra           map[string]any           `mapstructure:",remain"`
 }
 
 // FromFiles reads YAML files, merges them (later files override earlier ones),
@@ -106,7 +106,7 @@ func (cfg Config) PerService(service string) []Variable {
 
 	for key, value := range cfg.Extra {
 		serviceConfig = append(serviceConfig,
-			Variable{Key: key, Value: value})
+			Variable{Key: key, Value: fmt.Sprint(value)})
 	}
 	if svcVars, ok := cfg.Services[service]; ok {
 		if svcVars.Port != 0 {
@@ -120,7 +120,7 @@ func (cfg Config) PerService(service string) []Variable {
 
 		for key, value := range svcVars.Extra {
 			serviceConfig = append(serviceConfig,
-				Variable{Key: key, Value: value})
+				Variable{Key: key, Value: fmt.Sprint(value)})
 		}
 	}
 	return serviceConfig

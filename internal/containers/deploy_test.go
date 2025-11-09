@@ -2,8 +2,10 @@ package containers
 
 import (
 	"errors"
+	"fmt"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/model"
+	"omar-kada/autonas/internal/logger"
 
 	"testing"
 
@@ -44,41 +46,34 @@ var (
 	}
 )
 
-type ExpectedErrors struct {
-	removeErr error
-	deployErr error
-	copyErr   error
-}
-
-func initMocker(errors ExpectedErrors) *Mocker {
-	mocker := &Mocker{}
-	mock.InOrder(
-		mocker.On(
-			"RemoveServices", []string{"svc1"}, "/services",
-		).Return(errors.removeErr),
-
-		mocker.On(
-			"Copy", "configFolder/services", "/services", []copydir.Options(nil),
-		).Return(errors.copyErr),
-
-		mocker.On(
-			"DeployServices", mockConfigNew,
-		).Return(errors.deployErr),
-	)
-	return mocker
-}
-
 func newDeployerWithMocks(mocker *Mocker) *Deployer {
 	return &Deployer{
+		log:               logger.New(true),
 		containersManager: mocker,
 		_copyFunc:         mocker.Copy,
 	}
 }
 
 func TestDeployServices_Success(t *testing.T) {
-	mocker := initMocker(ExpectedErrors{})
+	mocker := &Mocker{}
 	deployer := newDeployerWithMocks(mocker)
+	mock.InOrder(
+		mocker.On(
+			"RemoveServices", []string{"svc1"}, "/services",
+		).Return(nil),
 
+		mocker.On(
+			"Copy", "configFolder/services/svc2", "/services/svc2", []copydir.Options(nil),
+		).Return(nil),
+
+		mocker.On(
+			"Copy", "configFolder/services/svc3", "/services/svc3", []copydir.Options(nil),
+		).Return(nil),
+
+		mocker.On(
+			"DeployServices", mockConfigNew,
+		).Return(nil),
+	)
 	err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 	assert.NoError(t, err)
 }
@@ -88,6 +83,12 @@ var (
 	ErrDeploy = errors.New("deployServices error")
 	ErrCopy   = errors.New("copyServices error")
 )
+
+type ExpectedErrors struct {
+	removeErr error
+	deployErr error
+	copyErr   error
+}
 
 func TestDeployServices_Errors(t *testing.T) {
 
@@ -117,12 +118,30 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			mocker := initMocker(tc.errors)
+			mocker := &Mocker{}
 			deployer := newDeployerWithMocks(mocker)
+
+			mock.InOrder(
+				mocker.On(
+					"RemoveServices", []string{"svc1"}, "/services",
+				).Return(tc.errors.removeErr),
+
+				mocker.On(
+					"Copy", "configFolder/services/svc2", "/services/svc2", []copydir.Options(nil),
+				).Return(tc.errors.copyErr),
+
+				mocker.On(
+					"Copy", "configFolder/services/svc3", "/services/svc3", []copydir.Options(nil),
+				).Return(tc.errors.copyErr),
+
+				mocker.On(
+					"DeployServices", mockConfigNew,
+				).Return(tc.errors.deployErr),
+			)
 
 			err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
 
-			assert.ErrorIs(t, err, tc.expectedError, "want %s but got %s", tc.expectedError, err)
+			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
 		})
 	}
 }

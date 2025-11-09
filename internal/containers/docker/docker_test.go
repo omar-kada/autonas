@@ -38,14 +38,14 @@ func newManagerWithMocks(mocker *Mocker) *Manager {
 var (
 	mockConfig = config.Config{
 		AutonasHost:     "localhost",
-		ServicesPath:    "/",
+		ServicesPath:    "/services",
 		DataPath:        "/data",
 		EnabledServices: []string{"svc1"},
 		Services: map[string]config.ServiceConfig{
 			"svc1": {
 				Port:    8080,
 				Version: "v1",
-				Extra:   map[string]string{"NEW_FIELD": "new_value"},
+				Extra:   map[string]any{"NEW_FIELD": "new_value"},
 			},
 			"svc2": {
 				Port:    9090,
@@ -61,16 +61,16 @@ func TestDeployServices_SingleService(t *testing.T) {
 
 	wantEnv := strings.Join([]string{
 		"AUTONAS_HOST=localhost",
-		"SERVICES_PATH=" + filepath.Clean("/"),
+		"SERVICES_PATH=" + filepath.Clean("/services"),
 		"DATA_PATH=" + filepath.Clean("/data/svc1"),
 		"PORT=8080",
 		"VERSION=v1",
 		"NEW_FIELD=new_value",
 	}, "\n") + "\n"
 	mock.InOrder(
-		mocker.On("WriteToFile", filepath.Clean("/svc1/.env"), wantEnv).Return(nil),
+		mocker.On("WriteToFile", filepath.Clean("/services/svc1/.env"), wantEnv).Return(nil),
 		mocker.On(
-			"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/svc1"), "up", "-d"},
+			"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "up", "-d"},
 		).Return(nil),
 	)
 	err := manager.DeployServices(mockConfig)
@@ -81,12 +81,12 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker := &Mocker{}
 	manager := newManagerWithMocks(mocker)
 	mocker.On(
-		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/svc1"), "down"},
+		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "down"},
 	).Return(nil)
 	mocker.On(
-		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/svc2"), "down"},
+		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc2"), "down"},
 	).Return(fmt.Errorf("mock error"))
-	err := manager.RemoveServices([]string{"svc1", "svc2"}, "/")
+	err := manager.RemoveServices([]string{"svc1", "svc2"}, "/services")
 
 	assert.NoError(t, err)
 }

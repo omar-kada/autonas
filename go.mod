@@ -5,7 +5,6 @@ go 1.24.9
 toolchain go1.24.10
 
 require (
-	github.com/AaronO/go-git-http v0.0.0-20161214145340-1d9485b3a98f
 	github.com/docker/compose/v2 v2.40.2
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/mitchellh/mapstructure v1.5.0

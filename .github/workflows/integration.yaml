@@ -10,12 +10,26 @@ jobs:
         run: |
           sudo systemctl start docker
           docker --version
+
+      - name: Debug user info
+        run: |
+          echo "User: $(id -u)"
+          echo "Group: $(id -g)"
+          echo "Users in group 121: $(getent group 121 || echo 'Group 121 not found')"
+          echo "All groups: $(id)"
+
+      - name: Set up user info
+        run: |
+          echo "CURRENT_UID=$(id -u)" >> $GITHUB_ENV
+          echo "CURRENT_GID=$(id -g)" >> $GITHUB_ENV
+          echo "User: $(id -u), Group: $(id -g)"
           
       - name: Run integration tests
         run: |
-          make test-int
+          go test ./integration/... -v
         env:
           DOCKER_HOST: unix:///var/run/docker.sock
+          GITHUB_RUNNER: true
           
       - name: Cleanup
         if: always()

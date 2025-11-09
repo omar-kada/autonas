@@ -8,7 +8,7 @@ test:
 	go test ./internal/...
 
 test-int:
-	go test ./integration/... -v -count=1
+	(docker rmi autonas:local --force || true) && go test ./integration/... -v -count=1
 
 cover-html:
 	go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out

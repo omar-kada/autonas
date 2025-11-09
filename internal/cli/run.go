@@ -61,7 +61,7 @@ func (r *Runner) RunCmd(configFiles []string, configRepo, configFolder string) e
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
-	r.log.Info("Final consolidated config", zap.Any("config", cfg))
+	r.log.Debug("Final consolidated config", zap.Any("config", cfg))
 
 	// check if the config changed from last run
 	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(r.currentCfg, cfg) {

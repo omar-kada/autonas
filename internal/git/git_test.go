@@ -1,7 +1,7 @@
 package git
 
 import (
-	"omar-kada/autonas/testutil"
+	"omar-kada/autonas/internal/testutil"
 	"os"
 	"testing"
 

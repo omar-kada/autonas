@@ -30,9 +30,9 @@ type zapSugar struct {
 func New(dev bool) Logger {
 	var l *zap.Logger
 	if dev {
-		l, _ = zap.NewDevelopment()
+		l, _ = zap.NewDevelopment(zap.AddCallerSkip(1))
 	} else {
-		l, _ = zap.NewProduction()
+		l, _ = zap.NewProduction(zap.AddCallerSkip(1))
 	}
 	return &zapSugar{sugar: l.Sugar()}
 }

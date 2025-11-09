@@ -45,16 +45,11 @@ WORKDIR /autonas
 
 COPY --from=builder /autonas/autonas /autonas/
 
-RUN chmod -R 750 /autonas
+RUN chmod -R 755 /autonas
 
-RUN groupadd -g $GID appgroup && \
-useradd -m -u $UID -g appgroup appuser
-
-RUN chown -R appuser:appgroup /autonas
-USER appuser
 
 ARG CONFIG_FILES
 ARG CONFIG_REPO
 
 # Start the application
-CMD ["sh", "-c", "/autonas/autonas run -c ${CONFIG_FILES} -r ${CONFIG_REPO} -p \"${CRON_PERIOD:-'@daily'}\" -d /autonas/config"]
+CMD ["sh", "-c", "ls -lau /autonas && /autonas/autonas run -c ${CONFIG_FILES} -r ${CONFIG_REPO} -p \"${CRON_PERIOD:-'@daily'}\" -d /autonas/config"]

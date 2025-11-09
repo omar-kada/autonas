@@ -1,6 +1,6 @@
-compose.yaml
 .env
 _ignore_*
+/autonas 
 
 # Go build artifacts
 /bin/
@@ -15,7 +15,6 @@ _ignore_*
 # Go test cache & coverage
 *.test
 *.out
-coverage.out
 
 # IDE/editor files
 .vscode/

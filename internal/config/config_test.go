@@ -2,7 +2,7 @@ package config
 
 import (
 	"embed"
-	"omar-kada/autonas/testutil"
+	"omar-kada/autonas/internal/testutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -18,12 +18,12 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 		AutonasHost:  "host",
 		ServicesPath: "/services",
 		DataPath:     "/data",
-		Extra:        map[string]string{"GLOBAL": "g"},
+		Extra:        map[string]any{"GLOBAL": "g"},
 		Services: map[string]ServiceConfig{
 			"svc": {
 				Port:    8080,
 				Version: "v1",
-				Extra:   map[string]string{"SVC_EXTRA": "s"},
+				Extra:   map[string]any{"SVC_EXTRA": "s"},
 			},
 		},
 	}
@@ -70,7 +70,7 @@ func TestDecodeConfig(t *testing.T) {
 			"svc1": {
 				Port:    8080,
 				Version: "v1",
-				Extra:   map[string]string{"NEW_FIELD": "new_value"},
+				Extra:   map[string]any{"NEW_FIELD": "new_value"},
 			},
 			"svc2": {
 				Port:    9090,

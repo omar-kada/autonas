@@ -8,6 +8,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+// SetupRemoteRepo creates new git Repo
 func SetupRemoteRepo(t *testing.T) string {
 	t.Helper()
 
@@ -25,6 +26,7 @@ func SetupRemoteRepo(t *testing.T) string {
 	return dir
 }
 
+// AddCommitToRepo commits a file in the given repo
 func AddCommitToRepo(t *testing.T, repoPath string, fileName string, content string) {
 	t.Helper()
 	r, err := git.PlainOpen(repoPath)

@@ -1,0 +1,15 @@
+services:
+  autonas:
+    build: ${BUILD_CONTEXT:-null}
+    image: autonas:${VERSION:-latest}
+    container_name: autonas
+    environment:
+      CONFIG_FILES: "${CONFIG_FILES}" # list here the configuration files that will define what should be deployed
+      CONFIG_REPO: "${CONFIG_REPO}" # URL of the git repo where configuration will be fetched
+      CRON_PERIOD: "${CRON_PERIOD}" # CRON expression of when sync should be done
+      ENV: "${ENV}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${SERVICES_PATH}:${SERVICES_PATH} # path where compose stacks will be stored
+      - ${CONFIG_PATH}:/config:ro # users could add more local config files (for machine specific fields)
+    restart: "no"
