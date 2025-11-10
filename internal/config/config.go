@@ -4,7 +4,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/mitchellh/mapstructure"
@@ -20,9 +19,6 @@ type ServiceConfig struct {
 
 // Config represents the overall configuration structure.
 type Config struct {
-	AutonasHost     string                   `mapstructure:"AUTONAS_HOST"`
-	ServicesPath    string                   `mapstructure:"SERVICES_PATH"`
-	DataPath        string                   `mapstructure:"DATA_PATH"`
 	EnabledServices []string                 `mapstructure:"enabled_services"`
 	Services        map[string]ServiceConfig `mapstructure:"services"`
 	Extra           map[string]any           `mapstructure:",remain"`
@@ -98,11 +94,7 @@ type Variable struct {
 
 // PerService generates a slice of configuration variables for a specific service
 func (cfg Config) PerService(service string) []Variable {
-	serviceConfig := []Variable{
-		{Key: "AUTONAS_HOST", Value: cfg.AutonasHost},
-		{Key: "SERVICES_PATH", Value: filepath.Clean(cfg.ServicesPath)},
-		{Key: "DATA_PATH", Value: filepath.Join(cfg.DataPath, service)},
-	}
+	serviceConfig := []Variable{}
 
 	for key, value := range cfg.Extra {
 		serviceConfig = append(serviceConfig,

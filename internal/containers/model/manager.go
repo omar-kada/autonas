@@ -8,7 +8,7 @@ import (
 // Manager defines methods for managing containerized services.
 type Manager interface {
 	RemoveServices(services []string, servicesPath string) error
-	DeployServices(cfg config.Config) error
+	DeployServices(cfg config.Config, servicesDir string) error
 	GetManagedContainers() (map[string][]Summary, error)
 }
 

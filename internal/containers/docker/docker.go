@@ -47,7 +47,7 @@ func (d Manager) RemoveServices(services []string, servicesPath string) error {
 }
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
-func (d Manager) DeployServices(cfg config.Config) error {
+func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
 
 	if len(cfg.EnabledServices) == 0 {
 		d.log.Warnf("No enabled_services specified in config. Skipping .env generation and compose up.")
@@ -55,10 +55,10 @@ func (d Manager) DeployServices(cfg config.Config) error {
 	}
 
 	for _, service := range cfg.EnabledServices {
-		if err := d.generateEnvFile(cfg, service); err != nil {
+		if err := d.generateEnvFile(cfg, servicesDir, service); err != nil {
 			d.log.Errorf("Error creating env file for %s: %v", service, err)
 		}
-		if err := d.composeUp(filepath.Join(cfg.ServicesPath, service)); err != nil {
+		if err := d.composeUp(filepath.Join(servicesDir, service)); err != nil {
 			d.log.Errorf("Error running docker compose for %s: %v", service, err)
 		}
 	}
@@ -82,7 +82,7 @@ func (d Manager) composeDown(composePath string) error {
 	return nil
 }
 
-func (d Manager) generateEnvFile(cfg config.Config, service string) error {
+func (d Manager) generateEnvFile(cfg config.Config, servicesDir, service string) error {
 	serviceCfg := cfg.PerService(service)
 
 	var content strings.Builder
@@ -90,7 +90,7 @@ func (d Manager) generateEnvFile(cfg config.Config, service string) error {
 		content.WriteString(fmt.Sprintf("%s=%v\n", v.Key, v.Value))
 	}
 
-	envFilePath := filepath.Join(cfg.ServicesPath, service, ".env")
+	envFilePath := filepath.Join(servicesDir, service, ".env")
 	return d._writeToFileFunc(envFilePath, content.String())
 }
 

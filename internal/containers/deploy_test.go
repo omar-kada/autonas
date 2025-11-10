@@ -25,8 +25,8 @@ func (m *Mocker) RemoveServices(services []string, servicesPath string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) DeployServices(cfg config.Config) error {
-	args := m.Called(cfg)
+func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) error {
+	args := m.Called(cfg, servicesDir)
 	return args.Error(0)
 }
 
@@ -38,11 +38,9 @@ func (m *Mocker) Copy(srcFolder, servicesPath string, opts ...copydir.Options) e
 var (
 	mockConfigOld = config.Config{
 		EnabledServices: []string{"svc1", "svc2"},
-		ServicesPath:    "/services",
 	}
 	mockConfigNew = config.Config{
 		EnabledServices: []string{"svc2", "svc3"},
-		ServicesPath:    "/services",
 	}
 )
 
@@ -71,10 +69,10 @@ func TestDeployServices_Success(t *testing.T) {
 		).Return(nil),
 
 		mocker.On(
-			"DeployServices", mockConfigNew,
+			"DeployServices", mockConfigNew, "/services",
 		).Return(nil),
 	)
-	err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
+	err := deployer.DeployServices("configFolder", "/services", mockConfigOld, mockConfigNew)
 	assert.NoError(t, err)
 }
 
@@ -135,11 +133,11 @@ func TestDeployServices_Errors(t *testing.T) {
 				).Return(tc.errors.copyErr),
 
 				mocker.On(
-					"DeployServices", mockConfigNew,
+					"DeployServices", mockConfigNew, "/services",
 				).Return(tc.errors.deployErr),
 			)
 
-			err := deployer.DeployServices("configFolder", mockConfigOld, mockConfigNew)
+			err := deployer.DeployServices("configFolder", "/services", mockConfigOld, mockConfigNew)
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
 		})

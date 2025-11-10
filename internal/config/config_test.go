@@ -15,10 +15,10 @@ var testDataFS embed.FS
 
 func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 	cfg := Config{
-		AutonasHost:  "host",
-		ServicesPath: "/services",
-		DataPath:     "/data",
-		Extra:        map[string]any{"GLOBAL": "g"},
+
+		Extra: map[string]any{
+			"GLOBAL": "g",
+		},
 		Services: map[string]ServiceConfig{
 			"svc": {
 				Port:    8080,
@@ -30,9 +30,6 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 
 	got := cfg.PerService("svc")
 	want := []Variable{
-		{Key: "AUTONAS_HOST", Value: "host"},
-		{Key: "SERVICES_PATH", Value: filepath.Clean("/services")},
-		{Key: "DATA_PATH", Value: filepath.Clean("/data/svc")},
 		{Key: "GLOBAL", Value: "g"},
 		{Key: "PORT", Value: "8080"},
 		{Key: "VERSION", Value: "v1"},
@@ -62,9 +59,10 @@ func TestDecodeConfig(t *testing.T) {
 		},
 	}
 	want := Config{
-		AutonasHost:     "localhost",
-		ServicesPath:    "",
-		DataPath:        "/data",
+		Extra: map[string]any{
+			"AUTONAS_HOST": "localhost",
+			"DATA_PATH":    "/data",
+		},
 		EnabledServices: []string{"svc1"},
 		Services: map[string]ServiceConfig{
 			"svc1": {

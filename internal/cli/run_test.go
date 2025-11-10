@@ -11,9 +11,12 @@ import (
 )
 
 var mockConfig = config.Config{
-	AutonasHost:     "localhost",
-	ServicesPath:    "/services",
-	DataPath:        "/data",
+	Extra: map[string]any{
+
+		"AutonasHost":  "localhost",
+		"ServicesPath": "/services",
+		"DataPath":     "/data",
+	},
 	EnabledServices: []string{"svc1"},
 	Services: map[string]config.ServiceConfig{
 		"svc1": {
@@ -38,8 +41,8 @@ func (m *Mocker) syncCode(repoURL string, branch string, path string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) DeployServices(configFolder string, currentCfg config.Config, cfg config.Config) error {
-	args := m.Called(configFolder, currentCfg, cfg)
+func (m *Mocker) DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error {
+	args := m.Called(configFolder, servicesDir, currentCfg, cfg)
 	return args.Error(0)
 }
 
@@ -60,7 +63,7 @@ func mockReturnValues(m *Mocker, val ExpectedValues) {
 			"generateConfigFromFiles", []string{"config1.yaml", "config2.yaml"},
 		).Once().Return(val.generateConfig, val.generateErr),
 		m.On(
-			"DeployServices", ".", val.deployInputOldConfig, val.generateConfig,
+			"DeployServices", ".", "/services", val.deployInputOldConfig, val.generateConfig,
 		).Once().Return(val.deployErr),
 	)
 }
@@ -84,7 +87,13 @@ func TestRunCmd_Success(t *testing.T) {
 		deployInputOldConfig: config.Config{},
 	})
 
-	err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git", ".")
+	err := runner.RunCmd(RunParams{
+		ConfigFiles: []string{"config1.yaml", "config2.yaml"},
+		Repo:        "https://example.com/repo.git",
+		Branch:      "main",
+		WorkingDir:  ".",
+		ServicesDir: "/services",
+	})
 	assert.NoError(t, err)
 
 	// Verify that the currentCfg in runner is updated
@@ -93,7 +102,14 @@ func TestRunCmd_Success(t *testing.T) {
 		deployInputOldConfig: wantCfg,
 	})
 
-	err = runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git", ".")
+	err = runner.RunCmd(
+		RunParams{
+			ConfigFiles: []string{"config1.yaml", "config2.yaml"},
+			Repo:        "https://example.com/repo.git",
+			Branch:      "main",
+			WorkingDir:  ".",
+			ServicesDir: "/services",
+		})
 	assert.NoError(t, err)
 }
 
@@ -133,7 +149,13 @@ func TestRunCmd_Errors(t *testing.T) {
 			runner := newRunnerWithMocks(mocker)
 			mockReturnValues(mocker, tc.mockValues)
 
-			err := runner.RunCmd([]string{"config1.yaml", "config2.yaml"}, "https://example.com/repo.git", ".")
+			err := runner.RunCmd(RunParams{
+				ConfigFiles: []string{"config1.yaml", "config2.yaml"},
+				Repo:        "https://example.com/repo.git",
+				Branch:      "main",
+				WorkingDir:  ".",
+				ServicesDir: "/services",
+			})
 			assert.ErrorIs(t, err, tc.expectedError, "want %s but got %s", tc.expectedError, err)
 		})
 	}

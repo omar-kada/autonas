@@ -16,7 +16,7 @@ import (
 
 // Deployer abstracts service deployment operations
 type Deployer interface {
-	DeployServices(configFolder string, currentCfg, cfg config.Config) error
+	DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error
 }
 
 // New creates a new Runner instance with default dependencies.
@@ -30,6 +30,15 @@ func New(log logger.Logger) Runner {
 	}
 }
 
+// RunParams contains all input parameters of the run command
+type RunParams struct {
+	ConfigFiles []string
+	Repo        string
+	Branch      string
+	WorkingDir  string
+	ServicesDir string
+}
+
 // Runner abstracts the implements of the run command
 type Runner struct {
 	log                      logger.Logger
@@ -41,22 +50,21 @@ type Runner struct {
 }
 
 // RunCmd performs the main operations of fetching config, loading it, and deploying services.
-func (r *Runner) RunCmd(configFiles []string, configRepo, configFolder string) error {
-	// TODO : add these to configuration
-	repoBranch := "main"
-	syncErr := r._syncCode(configRepo, repoBranch, configFolder)
+func (r *Runner) RunCmd(params RunParams) error {
+
+	syncErr := r._syncCode(params.Repo, params.Branch, params.WorkingDir)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("error getting config repo:  %w", syncErr)
 
 	}
 
-	for i, file := range configFiles {
+	for i, file := range params.ConfigFiles {
 		if !filepath.IsAbs(file) {
-			configFiles[i] = filepath.Join(configFolder, configFiles[i])
+			params.ConfigFiles[i] = filepath.Join(params.WorkingDir, params.ConfigFiles[i])
 		}
 	}
-	cfg, err := r._generateConfigFromFiles(configFiles)
+	cfg, err := r._generateConfigFromFiles(params.ConfigFiles)
 
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
@@ -70,7 +78,7 @@ func (r *Runner) RunCmd(configFiles []string, configRepo, configFolder string) e
 	}
 
 	// Copy all files from ./services to SERVICES_PATH
-	err = r.deployer.DeployServices(configFolder, r.currentCfg, cfg)
+	err = r.deployer.DeployServices(params.WorkingDir, params.ServicesDir, r.currentCfg, cfg)
 	if err != nil {
 		return fmt.Errorf("error deploying services: %w", err)
 	}
@@ -79,11 +87,11 @@ func (r *Runner) RunCmd(configFiles []string, configRepo, configFolder string) e
 }
 
 // RunPeriodically runs the RunCmd function periodically based on the given cron period string.
-func (r *Runner) RunPeriodically(cronPeriod string, configFiles []string, configRepo, configFolder string) {
+func (r *Runner) RunPeriodically(cronPeriod string, params RunParams) {
 	c := cron.New()
 
 	c.AddFunc(cronPeriod, func() {
-		err := r.RunCmd(configFiles, configRepo, configFolder)
+		err := r.RunCmd(params)
 		if err != nil {
 			r.log.Errorf("error on run periodically: %w", err)
 		}

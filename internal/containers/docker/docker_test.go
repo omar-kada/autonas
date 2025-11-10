@@ -37,9 +37,9 @@ func newManagerWithMocks(mocker *Mocker) *Manager {
 
 var (
 	mockConfig = config.Config{
-		AutonasHost:     "localhost",
-		ServicesPath:    "/services",
-		DataPath:        "/data",
+		Extra: map[string]any{
+			"AUTONAS_HOST": "localhost",
+		},
 		EnabledServices: []string{"svc1"},
 		Services: map[string]config.ServiceConfig{
 			"svc1": {
@@ -61,8 +61,6 @@ func TestDeployServices_SingleService(t *testing.T) {
 
 	wantEnv := strings.Join([]string{
 		"AUTONAS_HOST=localhost",
-		"SERVICES_PATH=" + filepath.Clean("/services"),
-		"DATA_PATH=" + filepath.Clean("/data/svc1"),
 		"PORT=8080",
 		"VERSION=v1",
 		"NEW_FIELD=new_value",
@@ -73,7 +71,7 @@ func TestDeployServices_SingleService(t *testing.T) {
 			"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "up", "-d"},
 		).Return(nil),
 	)
-	err := manager.DeployServices(mockConfig)
+	err := manager.DeployServices(mockConfig, "/services")
 	assert.NoError(t, err)
 }
 
@@ -127,7 +125,7 @@ func TestDeployServices_Errors(t *testing.T) {
 			manager := newManagerWithMocks(mocker)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("RunCommand", "docker", mock.Anything).Return(tc.errors.runCmdErr)
-			err := manager.DeployServices(mockConfig)
+			err := manager.DeployServices(mockConfig, "/services")
 			// TODO : add tests for aggregared errors
 			assert.ErrorIs(t, err, tc.expectedError)
 

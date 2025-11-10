@@ -40,17 +40,17 @@ type Deployer struct {
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
-func (d *Deployer) DeployServices(configFolder string, currentCfg, cfg config.Config) error {
+func (d *Deployer) DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
-	if err := d.containersManager.RemoveServices(toBeRemoved, currentCfg.ServicesPath); err != nil {
+	if err := d.containersManager.RemoveServices(toBeRemoved, servicesDir); err != nil {
 		return err
 	}
 
-	d.log.Debugf("copying files from %s to %s", configFolder+"/services", cfg.ServicesPath)
+	d.log.Debugf("copying files from %s to %s", configFolder+"/services", servicesDir)
 
 	for _, service := range cfg.EnabledServices {
 		src := filepath.Join(configFolder, "services", service)
-		dst := filepath.Join(cfg.ServicesPath, service)
+		dst := filepath.Join(servicesDir, service)
 		if err := d._copyFunc(src, dst); err != nil {
 			return fmt.Errorf("error while copying service "+service+" %w", err)
 		}
@@ -58,7 +58,7 @@ func (d *Deployer) DeployServices(configFolder string, currentCfg, cfg config.Co
 
 	if os.Getenv("ENV") == "DEV" {
 		// allow auto removing of copied services while testing
-		err := filepath.WalkDir(cfg.ServicesPath, func(path string, _ fs.DirEntry, _ error) error {
+		err := filepath.WalkDir(servicesDir, func(path string, _ fs.DirEntry, _ error) error {
 			err := os.Chmod(path, 0777)
 			return err
 		})
@@ -68,7 +68,7 @@ func (d *Deployer) DeployServices(configFolder string, currentCfg, cfg config.Co
 	}
 
 	d.log.Debugf("deploying enabled services: %v\n", cfg.EnabledServices)
-	if err := d.containersManager.DeployServices(cfg); err != nil {
+	if err := d.containersManager.DeployServices(cfg, servicesDir); err != nil {
 		return err
 	}
 	return nil
