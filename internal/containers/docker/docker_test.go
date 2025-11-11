@@ -22,16 +22,16 @@ func (m *Mocker) WriteToFile(filePath string, content string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) RunCommand(cmd string, cmdArgs ...string) error {
+func (m *Mocker) Run(cmd string, cmdArgs ...string) error {
 	args := m.Called(cmd, cmdArgs)
 	return args.Error(0)
 }
 
 func newManagerWithMocks(mocker *Mocker) *Manager {
 	return &Manager{
-		log:              logger.New(true),
-		_writeToFileFunc: mocker.WriteToFile,
-		_runCommandFunc:  mocker.RunCommand,
+		log:       logger.New(true),
+		writer:    mocker,
+		cmdRunner: mocker,
 	}
 }
 
@@ -68,7 +68,7 @@ func TestDeployServices_SingleService(t *testing.T) {
 	mock.InOrder(
 		mocker.On("WriteToFile", filepath.Clean("/services/svc1/.env"), wantEnv).Return(nil),
 		mocker.On(
-			"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "up", "-d"},
+			"Run", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "up", "-d"},
 		).Return(nil),
 	)
 	err := manager.DeployServices(mockConfig, "/services")
@@ -79,10 +79,10 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker := &Mocker{}
 	manager := newManagerWithMocks(mocker)
 	mocker.On(
-		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "down"},
+		"Run", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc1"), "down"},
 	).Return(nil)
 	mocker.On(
-		"RunCommand", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc2"), "down"},
+		"Run", "docker", []string{"compose", "--project-directory", filepath.Clean("/services/svc2"), "down"},
 	).Return(fmt.Errorf("mock error"))
 	err := manager.RemoveServices([]string{"svc1", "svc2"}, "/services")
 
@@ -124,7 +124,7 @@ func TestDeployServices_Errors(t *testing.T) {
 			mocker := &Mocker{}
 			manager := newManagerWithMocks(mocker)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
-			mocker.On("RunCommand", "docker", mock.Anything).Return(tc.errors.runCmdErr)
+			mocker.On("Run", "docker", mock.Anything).Return(tc.errors.runCmdErr)
 			err := manager.DeployServices(mockConfig, "/services")
 			// TODO : add tests for aggregared errors
 			assert.ErrorIs(t, err, tc.expectedError)

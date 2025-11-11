@@ -7,13 +7,17 @@ import (
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/docker"
 	"omar-kada/autonas/internal/containers/model"
+	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/logger"
 	"os"
 	"path/filepath"
 	"slices"
-
-	copydir "github.com/otiai10/copy"
 )
+
+// Deployer abstracts service deployment operations
+type Deployer interface {
+	DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error
+}
 
 // NewDockerDeployer creates a new deployer that uses docker for containers
 func NewDockerDeployer(log logger.Logger) Deployer {
@@ -22,25 +26,23 @@ func NewDockerDeployer(log logger.Logger) Deployer {
 
 // NewDeployer creates a new Deployer instance
 func NewDeployer(containersManager model.Manager, log logger.Logger) Deployer {
-	return Deployer{
+	return deployer{
 		log:               log,
 		containersManager: containersManager,
-
-		_copyFunc: copydir.Copy,
+		copyer:            files.NewCopier(),
 	}
 }
 
-// Deployer is responsible for deploying the services
-type Deployer struct {
+// deployer is responsible for deploying the services
+type deployer struct {
 	log               logger.Logger
 	containersManager model.Manager
-
-	_copyFunc func(srcFolder, servicesPath string, _ ...copydir.Options) error
+	copyer            files.Copier
 }
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
-func (d *Deployer) DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error {
+func (d deployer) DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
 	if err := d.containersManager.RemoveServices(toBeRemoved, servicesDir); err != nil {
 		return err
@@ -51,7 +53,7 @@ func (d *Deployer) DeployServices(configFolder, servicesDir string, currentCfg, 
 	for _, service := range cfg.EnabledServices {
 		src := filepath.Join(configFolder, "services", service)
 		dst := filepath.Join(servicesDir, service)
-		if err := d._copyFunc(src, dst); err != nil {
+		if err := d.copyer.Copy(src, dst); err != nil {
 			return fmt.Errorf("error while copying service "+service+" %w", err)
 		}
 	}

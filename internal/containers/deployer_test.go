@@ -11,8 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	copydir "github.com/otiai10/copy"
 )
 
 type Mocker struct {
@@ -30,8 +28,8 @@ func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) Copy(srcFolder, servicesPath string, opts ...copydir.Options) error {
-	args := m.Called(srcFolder, servicesPath, opts)
+func (m *Mocker) Copy(srcFolder, servicesPath string) error {
+	args := m.Called(srcFolder, servicesPath)
 	return args.Error(0)
 }
 
@@ -44,11 +42,11 @@ var (
 	}
 )
 
-func newDeployerWithMocks(mocker *Mocker) *Deployer {
-	return &Deployer{
+func newDeployerWithMocks(mocker *Mocker) *deployer {
+	return &deployer{
 		log:               logger.New(true),
 		containersManager: mocker,
-		_copyFunc:         mocker.Copy,
+		copyer:            mocker,
 	}
 }
 
@@ -61,11 +59,11 @@ func TestDeployServices_Success(t *testing.T) {
 		).Return(nil),
 
 		mocker.On(
-			"Copy", "configFolder/services/svc2", "/services/svc2", []copydir.Options(nil),
+			"Copy", "configFolder/services/svc2", "/services/svc2",
 		).Return(nil),
 
 		mocker.On(
-			"Copy", "configFolder/services/svc3", "/services/svc3", []copydir.Options(nil),
+			"Copy", "configFolder/services/svc3", "/services/svc3",
 		).Return(nil),
 
 		mocker.On(
@@ -125,11 +123,11 @@ func TestDeployServices_Errors(t *testing.T) {
 				).Return(tc.errors.removeErr),
 
 				mocker.On(
-					"Copy", "configFolder/services/svc2", "/services/svc2", []copydir.Options(nil),
+					"Copy", "configFolder/services/svc2", "/services/svc2",
 				).Return(tc.errors.copyErr),
 
 				mocker.On(
-					"Copy", "configFolder/services/svc3", "/services/svc3", []copydir.Options(nil),
+					"Copy", "configFolder/services/svc3", "/services/svc3",
 				).Return(tc.errors.copyErr),
 
 				mocker.On(

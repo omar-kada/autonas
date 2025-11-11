@@ -1,7 +1,7 @@
 package git
 
 import (
-	"omar-kada/autonas/internal/testutil"
+	"omar-kada/autonas/testutil"
 	"os"
 	"testing"
 
@@ -37,15 +37,16 @@ func assertFileContent(t *testing.T, filePath string, wantContent string) {
 	}
 }
 
-func TestSyncCode_HappyPath(t *testing.T) {
+func TestSync_HappyPath(t *testing.T) {
+	syncer := NewSyncer()
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", "dummy readme")
 	clonePath := t.TempDir() + "/clone-repo"
 
-	err := SyncCode(remoteRepoPath, "main", clonePath)
+	err := syncer.Sync(remoteRepoPath, "main", clonePath)
 	if err != nil {
-		t.Fatalf("SyncCode failed: %v", err)
+		t.Fatalf("Sync failed: %v", err)
 	}
 
 	assertFileContent(t, clonePath+"/README.md", "dummy readme")
@@ -53,43 +54,47 @@ func TestSyncCode_HappyPath(t *testing.T) {
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "NEWFILE.txt", "new file content")
 
-	err = SyncCode(remoteRepoPath, "main", clonePath)
+	err = syncer.Sync(remoteRepoPath, "main", clonePath)
 	if err != nil {
-		t.Fatalf("SyncCode failed: %v", err)
+		t.Fatalf("Sync failed: %v", err)
 	}
 
 	assertFileContent(t, clonePath+"/NEWFILE.txt", "new file content")
 
 }
 
-func TestSyncCode_NoChanges(t *testing.T) {
+func TestSync_NoChanges(t *testing.T) {
+	syncer := NewSyncer()
+
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	clonePath := t.TempDir() + "/clone-repo"
 
-	err := SyncCode(remoteRepoPath, "main", clonePath)
+	err := syncer.Sync(remoteRepoPath, "main", clonePath)
 	if err != nil {
-		t.Fatalf("SyncCode failed: %v", err)
+		t.Fatalf("Sync failed: %v", err)
 	}
 
-	err = SyncCode(remoteRepoPath, "main", clonePath)
+	err = syncer.Sync(remoteRepoPath, "main", clonePath)
 	if err != NoErrAlreadyUpToDate {
 		t.Fatalf("Expected NoErrAlreadyUpToDate, got: %v", err)
 	}
 }
 
-func TestSyncCode_NonExistentRepo(t *testing.T) {
+func TestSync_NonExistentRepo(t *testing.T) {
+	syncer := NewSyncer()
 	clonePath := t.TempDir() + "/clone-repo"
-	err := SyncCode("/path/does/not/exist", "main", clonePath)
+	err := syncer.Sync("/path/does/not/exist", "main", clonePath)
 	if err == nil {
 		t.Fatalf("Expected error for non-existent repo, got nil")
 	}
 }
 
-func TestSyncCode_NonExistentBranch(t *testing.T) {
+func TestSync_NonExistentBranch(t *testing.T) {
+	syncer := NewSyncer()
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	clonePath := t.TempDir() + "/clone-repo"
 
-	err := SyncCode(remoteRepoPath, "non-existent-branch", clonePath)
+	err := syncer.Sync(remoteRepoPath, "non-existent-branch", clonePath)
 	if err == nil {
 		t.Fatalf("Expected error for non-existent branch, got nil")
 	}

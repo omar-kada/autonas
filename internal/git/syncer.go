@@ -13,10 +13,23 @@ var (
 	NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 )
 
-// SyncCode clones or updates a Git repository at the specified path,
+// Syncer is responsible for syncing files from repo
+type Syncer interface {
+	Sync(repoURL, branch, path string) error
+}
+
+// Syncer is responsible for syncing files from repo
+type syncer struct{}
+
+// NewSyncer creates a new Syncer and returns it
+func NewSyncer() Syncer {
+	return syncer{}
+}
+
+// Sync clones or updates a Git repository at the specified path,
 // checking out the specified branch.
 // returns NoErrAlreadyUpToDate if the repository is already up to date.
-func SyncCode(repoURL, branch, path string) error {
+func (s syncer) Sync(repoURL, branch, path string) error {
 	_, err := git.PlainClone(path, false, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.NewBranchReferenceName(branch),

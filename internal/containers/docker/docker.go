@@ -2,33 +2,29 @@
 package docker
 
 import (
-	"context"
 	"fmt"
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/shell"
 	"path/filepath"
 	"strings"
-
-	"github.com/moby/moby/client"
 )
 
 // New creates an instance of Manager for docker containers
 func New(log logger.Logger) *Manager {
 	return &Manager{
-		log:              log,
-		_writeToFileFunc: files.WriteToFile,
-		_runCommandFunc:  shell.RunCommand,
+		log:       log,
+		writer:    files.NewWriter(),
+		cmdRunner: shell.NewRunner(),
 	}
 }
 
 // Manager manages Docker Compose services.
 type Manager struct {
-	log              logger.Logger
-	_writeToFileFunc func(filePath string, content string) error
-	_runCommandFunc  func(cmd string, args ...string) error
+	log       logger.Logger
+	writer    files.Writer
+	cmdRunner shell.Runner
 }
 
 // RemoveServices stops and removes Docker Compose services.
@@ -68,7 +64,7 @@ func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
 
 func (d Manager) composeUp(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
-	if err := d._runCommandFunc("docker", args...); err != nil {
+	if err := d.cmdRunner.Run("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
 	return nil
@@ -76,7 +72,7 @@ func (d Manager) composeUp(composePath string) error {
 
 func (d Manager) composeDown(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "down"}
-	if err := d._runCommandFunc("docker", args...); err != nil {
+	if err := d.cmdRunner.Run("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}
 	return nil
@@ -91,12 +87,12 @@ func (d Manager) generateEnvFile(cfg config.Config, servicesDir, service string)
 	}
 
 	envFilePath := filepath.Join(servicesDir, service, ".env")
-	return d._writeToFileFunc(envFilePath, content.String())
+	return d.writer.WriteToFile(envFilePath, content.String())
 }
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (d Manager) GetManagedContainers() (map[string][]model.Summary, error) {
+/*func (d Manager) GetManagedContainers() (map[string][]model.Summary, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -145,4 +141,4 @@ func (d Manager) GetManagedContainers() (map[string][]model.Summary, error) {
 		}
 	}
 	return matches, nil
-}
+}*/

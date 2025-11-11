@@ -7,8 +7,20 @@ import (
 	"os/exec"
 )
 
-// RunCommand runs a shell command and returns error if any
-func RunCommand(cmd string, args ...string) error {
+// Runner abstracts writing content to a file
+type Runner interface {
+	Run(cmd string, args ...string) error
+}
+
+type cmdRunner struct{}
+
+// NewRunner creates and new Writer and returns it
+func NewRunner() Runner {
+	return cmdRunner{}
+}
+
+// Run runs a shell command and returns error if any
+func (r cmdRunner) Run(cmd string, args ...string) error {
 	path, err := exec.LookPath(cmd)
 	if err != nil {
 		return fmt.Errorf("executable not found: %w", err)

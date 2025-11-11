@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"omar-kada/autonas/internal/containers/docker"
+	"omar-kada/autonas/internal/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,6 +49,9 @@ func TestFileGeneration(t *testing.T) {
 			"DATA_PATH: " + dataDir,
 			"enabled_services:",
 			"  - homepage",
+			"services:",
+			"  homepage:",
+			"    port : 12345",
 		}, "\n")), 0777)
 	assert.NoError(t, err, "error while creating config file")
 
@@ -56,16 +61,14 @@ func TestFileGeneration(t *testing.T) {
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
-		"BUILD_CONTEXT": ".",
-		"VARSION":       "local",
-		"CONFIG_FILES":  configFiles,
-		"CONFIG_REPO":   "https://github.com/omar-kada/autonas-config",
-		"CRON_PERIOD":   "*/10 * * * *",
-		"SERVICES_PATH": servicesDir,
-		"CONFIG_PATH":   configDir,
-		"ENV":           "DEV",
-		"UID":           fmt.Sprint(os.Getuid()),
-		"GID":           fmt.Sprint(os.Getgid()),
+		"CONFIG_FILES": configFiles,
+		"CONFIG_REPO":  "https://github.com/omar-kada/autonas-config",
+		"CRON_PERIOD":  "*/10 * * * *",
+		"SERVICES_DIR": servicesDir,
+		"CONFIG_PATH":  configDir,
+		"ENV":          "DEV",
+		"UID":          fmt.Sprint(os.Getuid()),
+		"GID":          fmt.Sprint(os.Getgid()),
 	})
 
 	assert.NoError(t, err, "failed to load compose")
@@ -93,6 +96,13 @@ func TestFileGeneration(t *testing.T) {
 
 	homepageContainers, _ := waitForComposeStack(ctx, targetWorkDir, 2*time.Minute)
 	assert.NotEmpty(t, homepageContainers, "homepage container not found")
+
+	t.Cleanup(func() {
+		/// cleanup homepage container after test finishes
+		dockerDeployer := docker.New(logger.New(true))
+		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
+	})
+
 }
 
 func printContainerLogs(ctx context.Context, t *testing.T, composeEnv *compose.DockerCompose) {

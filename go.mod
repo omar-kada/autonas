@@ -6,6 +6,7 @@ toolchain go1.24.10
 
 require (
 	github.com/docker/compose/v2 v2.40.2
+	github.com/docker/docker v28.5.1+incompatible
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moby/moby/client v0.1.0-beta.2
@@ -13,6 +14,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
+	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/compose v0.40.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/tools v0.38.0
@@ -65,7 +67,6 @@ require (
 	github.com/docker/cli v28.5.1+incompatible // indirect
 	github.com/docker/cli-docs-tool v0.10.0 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v28.5.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go v1.5.1-1.0.20160303222718-d30aec9fd63c // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
@@ -167,7 +168,6 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/testcontainers/testcontainers-go v0.40.0 // indirect
 	github.com/theupdateframework/notary v0.7.0 // indirect
 	github.com/tilt-dev/fsnotify v1.4.8-0.20220602155310-fff9c274a375 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect

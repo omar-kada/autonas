@@ -7,16 +7,16 @@ import (
 )
 
 func TestRunCommand_Success(t *testing.T) {
-	err := RunCommand("go", "help")
+	err := NewRunner().Run("go", "help")
 	assert.NoError(t, err)
 }
 
 func TestRunCommand_NoArgs(t *testing.T) {
-	err := RunCommand("go")
+	err := NewRunner().Run("go")
 	assert.ErrorContains(t, err, "exit status 2")
 }
 
 func TestRunCommand_NotFound(t *testing.T) {
-	err := RunCommand("dummyCmd")
+	err := NewRunner().Run("dummyCmd")
 	assert.ErrorContains(t, err, "executable not found")
 }

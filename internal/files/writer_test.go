@@ -12,7 +12,7 @@ func TestWriteToFile_Success(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 	content := "KEY1=VALUE1\nKEY2=VALUE2"
-	err = WriteToFile(tmpFile.Name(), content)
+	err = NewWriter().WriteToFile(tmpFile.Name(), content)
 	if err != nil {
 		t.Fatalf("WriteToFile failed: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestWriteToFile_Success(t *testing.T) {
 func TestWriteToFile_Error(t *testing.T) {
 	// Attempt to write to an invalid path
 	invalidPath := "/invalid_path/testfile.env"
-	err := WriteToFile(invalidPath, "KEY=VALUE")
+	err := NewWriter().WriteToFile(invalidPath, "KEY=VALUE")
 	if err == nil {
 		t.Fatalf("Expected error when writing to invalid path, got nil")
 	}
