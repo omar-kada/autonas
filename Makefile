@@ -11,7 +11,7 @@ test:
 	go test ./internal/...
 
 test-int:
-	(docker rmi autonas:local --force || true) && go test ./integration/... -v -count=1
+	(docker rmi autonas:local --force || true) && go test ./integration_tests/... -v -count=1
 
 cover-html:
 	go test -coverprofile=coverage.out ./internal/... && \

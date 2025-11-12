@@ -17,8 +17,8 @@ type Mocker struct {
 	model.Manager
 }
 
-func (m *Mocker) RemoveServices(services []string, servicesPath string) error {
-	args := m.Called(services, servicesPath)
+func (m *Mocker) RemoveServices(services []string, servicesDir string) error {
+	args := m.Called(services, servicesDir)
 	return args.Error(0)
 }
 
@@ -27,8 +27,8 @@ func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) Copy(srcFolder, servicesPath string) error {
-	args := m.Called(srcFolder, servicesPath)
+func (m *Mocker) Copy(srcDir, servicesDir string) error {
+	args := m.Called(srcDir, servicesDir)
 	return args.Error(0)
 }
 
@@ -58,18 +58,18 @@ func TestDeployServices_Success(t *testing.T) {
 		).Return(nil),
 
 		mocker.On(
-			"Copy", "configFolder/services/svc2", "/services/svc2",
+			"Copy", "configDir/services/svc2", "/services/svc2",
 		).Return(nil),
 
 		mocker.On(
-			"Copy", "configFolder/services/svc3", "/services/svc3",
+			"Copy", "configDir/services/svc3", "/services/svc3",
 		).Return(nil),
 
 		mocker.On(
 			"DeployServices", mockConfigNew, "/services",
 		).Return(nil),
 	)
-	err := deployer.DeployServices("configFolder", "/services", mockConfigOld, mockConfigNew)
+	err := deployer.DeployServices("configDir", "/services", mockConfigOld, mockConfigNew)
 	assert.NoError(t, err)
 }
 
@@ -120,11 +120,11 @@ func TestDeployServices_Errors(t *testing.T) {
 				).Return(tc.errors.removeErr),
 
 				mocker.On(
-					"Copy", "configFolder/services/svc2", "/services/svc2",
+					"Copy", "configDir/services/svc2", "/services/svc2",
 				).Return(tc.errors.copyErr),
 
 				mocker.On(
-					"Copy", "configFolder/services/svc3", "/services/svc3",
+					"Copy", "configDir/services/svc3", "/services/svc3",
 				).Return(tc.errors.copyErr),
 
 				mocker.On(
@@ -132,7 +132,7 @@ func TestDeployServices_Errors(t *testing.T) {
 				).Return(tc.errors.deployErr),
 			)
 
-			err := deployer.DeployServices("configFolder", "/services", mockConfigOld, mockConfigNew)
+			err := deployer.DeployServices("configDir", "/services", mockConfigOld, mockConfigNew)
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
 		})

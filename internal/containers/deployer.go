@@ -16,7 +16,7 @@ import (
 
 // Deployer abstracts service deployment operations
 type Deployer interface {
-	DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error
+	DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error
 }
 
 // NewDockerDeployer creates a new deployer that uses docker for containers
@@ -42,16 +42,16 @@ type deployer struct {
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
-func (d deployer) DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error {
+func (d deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
 	if err := d.containersManager.RemoveServices(toBeRemoved, servicesDir); err != nil {
 		return err
 	}
 
-	d.log.Debugf("copying files from %s to %s", configFolder+"/services", servicesDir)
+	d.log.Debugf("copying files from %s to %s", configDir+"/services", servicesDir)
 
 	for _, service := range cfg.EnabledServices {
-		src := filepath.Join(configFolder, "services", service)
+		src := filepath.Join(configDir, "services", service)
 		dst := filepath.Join(servicesDir, service)
 		if err := d.copyer.Copy(src, dst); err != nil {
 			return fmt.Errorf("error while copying service "+service+" %w", err)

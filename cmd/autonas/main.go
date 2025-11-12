@@ -20,16 +20,19 @@ tool config (cmd args, or ENV variables):
   - files : list of config files names [default : config.yaml]
   - repo : config Repo [Required]
   - branch : repo branch [default: main]
-  - services-directory : target services folder [Required]
+  - services-directory : target services directory [Required]
+  - config-directory : extra config files directory [default to /config]
   - working-directory : directory where temp files will be created [default "."]
   - cron : CRON schedule [Optional]
 
 deployment config files (everything reltaed to deployed services):
-  - services-directory : target services folder
-  - data-directory : target data folder
-  - global variables available to all services
-  - enabledServices
-  - different services specific variables
+	should I use a yaml UI configurator (and some fields where user can choose one or the other ) ?
+	- global variables available to all services
+	- enabledServices
+	- different services specific variables
+	[USER CAN HANDLE]
+	- services-directory : target services directory
+	- data-directory : target data directory
 */
 
 func main() {

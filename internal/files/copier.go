@@ -4,18 +4,18 @@ import (
 	"github.com/otiai10/copy"
 )
 
-// Copier abstracts copying folder
+// Copier abstracts copying directory
 type Copier interface {
 	Copy(src, dest string) error
 }
 
-type folderCopier struct{}
+type directoryCopier struct{}
 
 // NewCopier creates and new Copier and returns it
 func NewCopier() Copier {
-	return folderCopier{}
+	return directoryCopier{}
 }
 
-func (folderCopier) Copy(src, dst string) error {
+func (directoryCopier) Copy(src, dst string) error {
 	return copy.Copy(src, dst)
 }

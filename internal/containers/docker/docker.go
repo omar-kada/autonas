@@ -28,10 +28,10 @@ type Manager struct {
 }
 
 // RemoveServices stops and removes Docker Compose services.
-func (d Manager) RemoveServices(services []string, servicesPath string) error {
+func (d Manager) RemoveServices(services []string, servicesDir string) error {
 	d.log.Debugf("services %s will be removed if running.", services)
 	for _, serviceName := range services {
-		err := d.composeDown(filepath.Join(servicesPath, serviceName))
+		err := d.composeDown(filepath.Join(servicesDir, serviceName))
 		if err != nil {
 			d.log.Errorf("Error running docker compose down for %s: %v", serviceName, err)
 		}

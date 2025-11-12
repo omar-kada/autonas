@@ -39,9 +39,9 @@ func envUnset(key string) func() {
 
 var mockConfig = config.Config{
 	Extra: map[string]any{
-		"AutonasHost":  "localhost",
-		"ServicesPath": "/services",
-		"DataPath":     "/data",
+		"AutonasHost": "localhost",
+		"ServicesDir": "/services",
+		"DataPath":    "/data",
 	},
 	EnabledServices: []string{"svc1"},
 	Services: map[string]config.ServiceConfig{
@@ -66,8 +66,8 @@ func (m *Mocker) Sync(repoURL string, branch string, path string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) DeployServices(configFolder, servicesDir string, currentCfg, cfg config.Config) error {
-	args := m.Called(configFolder, servicesDir, currentCfg, cfg)
+func (m *Mocker) DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error {
+	args := m.Called(configDir, servicesDir, currentCfg, cfg)
 	return args.Error(0)
 }
 

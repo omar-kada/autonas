@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	_configDir   defaults.VarKey = "config-dir"
 	_files       defaults.VarKey = "files"
 	_branch      defaults.VarKey = "branch"
 	_repo        defaults.VarKey = "repo"
@@ -26,6 +27,7 @@ const (
 )
 
 var varInfoMap = defaults.VariableInfoMap{
+	_configDir:   {EnvKey: "AUTONAS_CONFIG_DIR", DefaultValue: nil},
 	_files:       {EnvKey: "AUTONAS_CONFIG_FILES", DefaultValue: []string{"config.yaml"}},
 	_repo:        {EnvKey: "AUTONAS_CONFIG_REPO", DefaultValue: nil},
 	_branch:      {EnvKey: "AUTONAS_CONFIG_BRANCH", DefaultValue: "main"},
@@ -88,7 +90,7 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
 			params := getParamsWithDefaults(params)
-			r.Log.Debugf("input params are : %v", params)
+
 			r.RunOnce(params)
 			if params.CronPeriod != "" {
 				r.RunPeriodically(params)
@@ -106,7 +108,7 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 		getDefaultString("directory where autonas data will be stored", _workingDir))
 	runCmd.Flags().StringVarP(&(params.ServicesDir), string(_servicesDir), "s", "",
 		getDefaultString("directory where services compose stacks will be stored", _servicesDir))
-	runCmd.Flags().StringVarP(&(params.CronPeriod), string(_cronPeriod), "c", "",
+	runCmd.Flags().StringVarP(&(params.CronPeriod), string(_cronPeriod), "p", "",
 		getDefaultString("cron period string", _cronPeriod))
 	return runCmd
 }
