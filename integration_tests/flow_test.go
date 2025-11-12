@@ -29,18 +29,18 @@ func TestFileGeneration(t *testing.T) {
 		// disable auto clean up of temp directory in github runner (because of permissions issue)
 		// it will be handled by the runner itsef
 		baseDir = "/tmp/integration-tests"
-		os.MkdirAll(baseDir, 0777)
+		os.MkdirAll(baseDir, 0750)
 	}
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
 	configDir := filepath.Join(baseDir, "config")
-	os.Mkdir(servicesDir, 0777)
-	os.Mkdir(dataDir, 0777)
-	os.Mkdir(configDir, 0777)
+	os.Mkdir(servicesDir, 0750)
+	os.Mkdir(dataDir, 0750)
+	os.Mkdir(configDir, 0750)
 
-	os.Chmod(servicesDir, 0777)
-	os.Chmod(dataDir, 0777)
+	os.Chmod(servicesDir, 0750)
+	os.Chmod(dataDir, 0750)
 
 	err := os.WriteFile(filepath.Join(configDir, "config.yaml"),
 		[]byte(strings.Join([]string{
@@ -52,7 +52,7 @@ func TestFileGeneration(t *testing.T) {
 			"services:",
 			"  homepage:",
 			"    port : 12345",
-		}, "\n")), 0777)
+		}, "\n")), 0750)
 	assert.NoError(t, err, "error while creating config file")
 
 	const configFiles = "config.default.yaml,/config/config.yaml"

@@ -37,7 +37,7 @@ func TestCopy_Success_NestedDirectories(t *testing.T) {
 
 	// Create nested directory structure
 	nestedDir := filepath.Join(srcDir, "subdir", "nested")
-	err := os.MkdirAll(nestedDir, 0755)
+	err := os.MkdirAll(nestedDir, 0750)
 	assert.NoError(t, err, "Failed to create nested directory")
 
 	// Create files in nested directories
