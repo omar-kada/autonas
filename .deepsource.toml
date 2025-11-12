@@ -6,6 +6,10 @@ name = "go"
   [analyzers.meta]
   import_root = "github.com/omar-kada/autonas"
 
+[[analyzers]]
+name = "test-coverage"
+enabled = true
+
 [[transformers]]
 name = "gofumpt"
 
