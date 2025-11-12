@@ -36,6 +36,9 @@ deployment config files (everything reltaed to deployed services):
 */
 
 func main() {
+	retcode := 0
+	defer func() { os.Exit(retcode) }()
+
 	env := strings.ToUpper(os.Getenv("ENV"))
 	log := logger.New(env == "DEV")
 	defer log.Sync()
@@ -45,6 +48,6 @@ func main() {
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Errorf("error on the root command : %w", err)
-		os.Exit(1)
+		retcode = 1 // it exits with code 1
 	}
 }
