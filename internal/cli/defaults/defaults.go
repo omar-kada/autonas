@@ -50,7 +50,6 @@ func EnvOrDefaultFn(varInfoMap VariableInfoMap) func(value string, key VarKey) s
 // priority is : cli argument > env variable > default value
 func EnvOrDefaultSliceFn(varInfoMap VariableInfoMap) func(value []string, key VarKey) []string {
 	return func(value []string, key VarKey) []string {
-
 		if len(value) > 0 {
 			return value
 		}

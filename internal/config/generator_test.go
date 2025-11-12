@@ -18,7 +18,8 @@ func TestDecodeConfig(t *testing.T) {
 		"AUTONAS_HOST": "localhost",
 		"DATA_PATH":    "/data",
 		"enabled_services": []any{
-			"svc1"},
+			"svc1",
+		},
 		"services": map[string]any{
 			"svc1": map[string]any{
 				"PORT":      8080,
@@ -81,7 +82,6 @@ func TestLoadConfig_SuccessWithOverride(t *testing.T) {
 
 	for _, testFile := range testTable {
 		t.Run(testFile, func(t *testing.T) {
-
 			inputs, want := extractTestCase(t, testFile)
 			wantCfg, err := decodeConfig(want)
 			if err != nil {
@@ -96,7 +96,6 @@ func TestLoadConfig_SuccessWithOverride(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestLoadConfig_FileError(t *testing.T) {

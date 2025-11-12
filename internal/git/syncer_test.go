@@ -60,7 +60,6 @@ func TestSync_HappyPath(t *testing.T) {
 	}
 
 	assertFileContent(t, clonePath+"/NEWFILE.txt", "new file content")
-
 }
 
 func TestSync_NoChanges(t *testing.T) {

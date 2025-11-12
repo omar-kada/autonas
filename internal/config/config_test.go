@@ -7,7 +7,6 @@ import (
 
 func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 	cfg := Config{
-
 		Extra: map[string]any{
 			"GLOBAL": "g",
 		},
