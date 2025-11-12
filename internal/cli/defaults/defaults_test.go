@@ -1,7 +1,6 @@
 package defaults
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,13 +33,11 @@ func TestEnvOrDefaultFn_Priorities(t *testing.T) {
 	}
 	envOrDefault := EnvOrDefaultFn(varMap)
 
-	orig := os.Getenv("ENV_KEY")
-	defer os.Setenv("ENV_KEY", orig)
-	os.Setenv("ENV_KEY", "envValue")
+	t.Setenv("ENV_KEY", "envValue")
 
 	assert.Equal(t, "cliValue", envOrDefault("cliValue", key), "CLI value has most priority")
 	assert.Equal(t, "envValue", envOrDefault("", key), "ENV value has 2nd most priority")
-	os.Unsetenv("ENV_KEY")
+	t.Setenv("ENV_KEY", "")
 	assert.Equal(t, "default", envOrDefault("", key), "default value has least priority")
 }
 
@@ -54,13 +51,11 @@ func TestEnvOrDefaultSliceFn_Priorities(t *testing.T) {
 	}
 	envOrDefaultSlice := EnvOrDefaultSliceFn(varMap)
 
-	orig := os.Getenv("ENV_KEY")
-	defer os.Setenv("ENV_KEY", orig)
-	os.Setenv("ENV_KEY", "e1,e2")
+	t.Setenv("ENV_KEY", "e1,e2")
 	envValue := []string{"e1", "e2"}
 
 	assert.Equal(t, cliValue, envOrDefaultSlice(cliValue, key), "CLI value has most priority")
 	assert.Equal(t, envValue, envOrDefaultSlice(nil, key), "ENV value has 2nd most priority")
-	os.Unsetenv("ENV_KEY")
+	t.Setenv("ENV_KEY", "")
 	assert.Equal(t, defaultValue, envOrDefaultSlice(nil, key), "default value has least priority")
 }

@@ -4,38 +4,11 @@ import (
 	"errors"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/logger"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-// envSet sets environment variables and returns a cleanup function to restore them.
-// Usage: defer envSet("KEY", "value")()
-func envSet(key, value string) func() {
-	original, exists := os.LookupEnv(key)
-	os.Setenv(key, value)
-	return func() {
-		if exists {
-			os.Setenv(key, original)
-		} else {
-			os.Unsetenv(key)
-		}
-	}
-}
-
-// envUnset unsets an environment variable and returns a cleanup function to restore it.
-// Usage: defer envUnset("KEY")()
-func envUnset(key string) func() {
-	original, exists := os.LookupEnv(key)
-	os.Unsetenv(key)
-	return func() {
-		if exists {
-			os.Setenv(key, original)
-		}
-	}
-}
 
 var mockConfig = config.Config{
 	Extra: map[string]any{
@@ -207,12 +180,12 @@ func TestGetParamsWithDefaults_AllCliValuesProvided(t *testing.T) {
 }
 
 func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
-	defer envSet("AUTONAS_CONFIG_REPO", "https://env.com/repo.git")()
-	defer envSet("AUTONAS_CONFIG_BRANCH", "env-branch")()
-	defer envSet("AUTONAS_WORKING_DIR", "/env/work")()
-	defer envSet("AUTONAS_SERVICES_DIR", "/env/services")()
-	defer envSet("AUTONAS_CRON_PERIOD", "*/5 * * * *")()
-	defer envSet("AUTONAS_CONFIG_FILES", "env1.yaml,env2.yaml")()
+	t.Setenv("AUTONAS_CONFIG_REPO", "https://env.com/repo.git")
+	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
+	t.Setenv("AUTONAS_WORKING_DIR", "/env/work")
+	t.Setenv("AUTONAS_SERVICES_DIR", "/env/services")
+	t.Setenv("AUTONAS_CRON_PERIOD", "*/5 * * * *")
+	t.Setenv("AUTONAS_CONFIG_FILES", "env1.yaml,env2.yaml")
 
 	params := runParams{}
 
@@ -228,12 +201,12 @@ func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
 
 func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
 	// Clear environment variables
-	defer envUnset("AUTONAS_CONFIG_REPO")()
-	defer envUnset("AUTONAS_CONFIG_BRANCH")()
-	defer envUnset("AUTONAS_WORKING_DIR")()
-	defer envUnset("AUTONAS_SERVICES_DIR")()
-	defer envUnset("AUTONAS_CRON_PERIOD")()
-	defer envUnset("AUTONAS_CONFIG_FILES")()
+	t.Setenv("AUTONAS_CONFIG_REPO", "")
+	t.Setenv("AUTONAS_CONFIG_BRANCH", "")
+	t.Setenv("AUTONAS_WORKING_DIR", "")
+	t.Setenv("AUTONAS_SERVICES_DIR", "")
+	t.Setenv("AUTONAS_CRON_PERIOD", "")
+	t.Setenv("AUTONAS_CONFIG_FILES", "")
 
 	params := runParams{}
 
@@ -251,7 +224,7 @@ func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
 
 func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
 	// CLI values should take priority over env variables and defaults
-	defer envSet("AUTONAS_CONFIG_BRANCH", "env-branch")()
+	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
 
 	params := runParams{
 		Branch: "cli-branch",
@@ -265,8 +238,8 @@ func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
 
 func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
 	// Test a mix of CLI values, env variables, and defaults
-	defer envSet("AUTONAS_CONFIG_BRANCH", "env-branch")()
-	defer envUnset("AUTONAS_WORKING_DIR")()
+	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
+	t.Setenv("AUTONAS_WORKING_DIR", "")
 
 	params := runParams{
 		ConfigFiles: []string{"cli.yaml"}, // From CLI
