@@ -1,0 +1,13 @@
+version = 1
+
+[[analyzers]]
+name = "go"
+
+  [analyzers.meta]
+  import_root = "github.com/omar-kada/autonas"
+
+[[transformers]]
+name = "gofumpt"
+
+[[transformers]]
+name = "gofmt"
