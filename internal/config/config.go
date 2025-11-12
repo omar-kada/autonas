@@ -28,7 +28,7 @@ type Variable struct {
 
 // PerService generates a slice of configuration variables for a specific service
 func (cfg Config) PerService(service string) []Variable {
-	serviceConfig := []Variable{}
+	var serviceConfig []Variable
 
 	for key, value := range cfg.Extra {
 		serviceConfig = append(serviceConfig,
