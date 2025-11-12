@@ -22,7 +22,7 @@ func NewGenerator() Generator {
 }
 
 // FromFiles reads YAML files, merges them (later files override earlier ones),
-func (g generator) FromFiles(files []string) (Config, error) {
+func (generator) FromFiles(files []string) (Config, error) {
 	merged := make(map[string]any)
 
 	for _, file := range files {

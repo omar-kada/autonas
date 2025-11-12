@@ -27,7 +27,7 @@ func NewSyncer() Syncer {
 // Sync clones or updates a Git repository at the specified path,
 // checking out the specified branch.
 // returns NoErrAlreadyUpToDate if the repository is already up to date.
-func (s syncer) Sync(repoURL, branch, path string) error {
+func (syncer) Sync(repoURL, branch, path string) error {
 	_, err := git.PlainClone(path, false, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.NewBranchReferenceName(branch),
