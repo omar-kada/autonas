@@ -14,8 +14,7 @@ type Generator interface {
 }
 
 // generator is responsible for creating Config from sources
-type generator struct {
-}
+type generator struct{}
 
 // NewGenerator creates a new Generator and returns it
 func NewGenerator() Generator {

@@ -33,7 +33,6 @@ deployment config files (everything reltaed to deployed services):
 */
 
 func main() {
-
 	env := strings.ToUpper(os.Getenv("ENV"))
 	log := logger.New(env == "DEV")
 	defer log.Sync()

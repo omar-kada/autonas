@@ -35,25 +35,23 @@ func newManagerWithMocks(mocker *Mocker) *Manager {
 	}
 }
 
-var (
-	mockConfig = config.Config{
-		Extra: map[string]any{
-			"AUTONAS_HOST": "localhost",
+var mockConfig = config.Config{
+	Extra: map[string]any{
+		"AUTONAS_HOST": "localhost",
+	},
+	EnabledServices: []string{"svc1"},
+	Services: map[string]config.ServiceConfig{
+		"svc1": {
+			Port:    8080,
+			Version: "v1",
+			Extra:   map[string]any{"NEW_FIELD": "new_value"},
 		},
-		EnabledServices: []string{"svc1"},
-		Services: map[string]config.ServiceConfig{
-			"svc1": {
-				Port:    8080,
-				Version: "v1",
-				Extra:   map[string]any{"NEW_FIELD": "new_value"},
-			},
-			"svc2": {
-				Port:    9090,
-				Version: "v2",
-			},
+		"svc2": {
+			Port:    9090,
+			Version: "v2",
 		},
-	}
-)
+	},
+}
 
 func TestDeployServices_SingleService(t *testing.T) {
 	mocker := &Mocker{}
@@ -120,7 +118,6 @@ func TestDeployServices_Errors(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			mocker := &Mocker{}
 			manager := newManagerWithMocks(mocker)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
@@ -128,7 +125,6 @@ func TestDeployServices_Errors(t *testing.T) {
 			err := manager.DeployServices(mockConfig, "/services")
 			// TODO : add tests for aggregared errors
 			assert.ErrorIs(t, err, tc.expectedError)
-
 		})
 	}
 }

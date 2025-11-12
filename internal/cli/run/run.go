@@ -16,12 +16,14 @@ import (
 	"go.uber.org/zap"
 )
 
-const _files defaults.VarKey = "files"
-const _branch defaults.VarKey = "branch"
-const _repo defaults.VarKey = "repo"
-const _workingDir defaults.VarKey = "working-dir"
-const _servicesDir defaults.VarKey = "services-dir"
-const _cronPeriod defaults.VarKey = "cron-period"
+const (
+	_files       defaults.VarKey = "files"
+	_branch      defaults.VarKey = "branch"
+	_repo        defaults.VarKey = "repo"
+	_workingDir  defaults.VarKey = "working-dir"
+	_servicesDir defaults.VarKey = "services-dir"
+	_cronPeriod  defaults.VarKey = "cron-period"
+)
 
 var varInfoMap = defaults.VariableInfoMap{
 	_files:       {EnvKey: "AUTONAS_CONFIG_FILES", DefaultValue: []string{"config.yaml"}},
@@ -32,9 +34,11 @@ var varInfoMap = defaults.VariableInfoMap{
 	_cronPeriod:  {EnvKey: "AUTONAS_CRON_PERIOD", DefaultValue: nil},
 }
 
-var getDefaultString = defaults.GetDefaultStringFn(varInfoMap)
-var envOrDefault = defaults.EnvOrDefaultFn(varInfoMap)
-var envOrDefaultSlice = defaults.EnvOrDefaultSliceFn(varInfoMap)
+var (
+	getDefaultString  = defaults.GetDefaultStringFn(varInfoMap)
+	envOrDefault      = defaults.EnvOrDefaultFn(varInfoMap)
+	envOrDefaultSlice = defaults.EnvOrDefaultSliceFn(varInfoMap)
+)
 
 // Cmd abstracts the dependencies of the run command
 type Cmd struct {
@@ -78,7 +82,6 @@ func New(log logger.Logger) Cmd {
 
 // ToCobraCommand transforms the run command to cobra.Command
 func (r *Cmd) ToCobraCommand() *cobra.Command {
-
 	params := runParams{}
 	runCmd := &cobra.Command{
 		Use:   "run",
@@ -110,12 +113,10 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 
 // RunOnce performs the main operations of fetching config, loading it, and deploying services.
 func (r *Cmd) RunOnce(params runParams) error {
-
 	syncErr := r.Syncer.Sync(params.Repo, params.Branch, params.WorkingDir)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("error getting config repo:  %w", syncErr)
-
 	}
 
 	for i, file := range params.ConfigFiles {
@@ -124,7 +125,6 @@ func (r *Cmd) RunOnce(params runParams) error {
 		}
 	}
 	cfg, err := r.ConfigGenerator.FromFiles(params.ConfigFiles)
-
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}

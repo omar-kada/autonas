@@ -9,7 +9,7 @@ import (
 type Manager interface {
 	RemoveServices(services []string, servicesPath string) error
 	DeployServices(cfg config.Config, servicesDir string) error
-	//GetManagedContainers() (map[string][]Summary, error)
+	// GetManagedContainers() (map[string][]Summary, error)
 }
 
 // Summary is the domain view of a managed container.

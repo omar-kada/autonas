@@ -102,5 +102,4 @@ func TestCopy_Success_EmptyDirectory(t *testing.T) {
 	// Verify destination exists
 	_, err = os.Stat(dstDir)
 	assert.NoError(t, err, "Destination directory should exist")
-
 }

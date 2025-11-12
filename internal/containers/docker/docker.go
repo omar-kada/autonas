@@ -29,7 +29,6 @@ type Manager struct {
 
 // RemoveServices stops and removes Docker Compose services.
 func (d Manager) RemoveServices(services []string, servicesPath string) error {
-
 	d.log.Debugf("services %s will be removed if running.", services)
 	for _, serviceName := range services {
 		err := d.composeDown(filepath.Join(servicesPath, serviceName))
@@ -44,7 +43,6 @@ func (d Manager) RemoveServices(services []string, servicesPath string) error {
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
 func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
-
 	if len(cfg.EnabledServices) == 0 {
 		d.log.Warnf("No enabled_services specified in config. Skipping .env generation and compose up.")
 		return nil

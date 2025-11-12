@@ -102,7 +102,6 @@ func TestFileGeneration(t *testing.T) {
 		dockerDeployer := docker.New(logger.New(true))
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
 	})
-
 }
 
 func printContainerLogs(ctx context.Context, t *testing.T, composeEnv *compose.DockerCompose) {

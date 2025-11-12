@@ -6,7 +6,6 @@ import (
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/logger"
-
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -87,7 +86,6 @@ type ExpectedErrors struct {
 }
 
 func TestDeployServices_Errors(t *testing.T) {
-
 	testCases := []struct {
 		name          string
 		errors        ExpectedErrors
@@ -113,7 +111,6 @@ func TestDeployServices_Errors(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			mocker := &Mocker{}
 			deployer := newDeployerWithMocks(mocker)
 

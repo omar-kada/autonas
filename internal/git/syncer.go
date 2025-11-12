@@ -8,10 +8,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-var (
-	// NoErrAlreadyUpToDate is returned when the repository is already up to date.
-	NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
-)
+// NoErrAlreadyUpToDate is returned when the repository is already up to date.
+var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 
 // Syncer is responsible for syncing files from repo
 type Syncer interface {

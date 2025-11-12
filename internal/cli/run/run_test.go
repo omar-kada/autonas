@@ -39,7 +39,6 @@ func envUnset(key string) func() {
 
 var mockConfig = config.Config{
 	Extra: map[string]any{
-
 		"AutonasHost":  "localhost",
 		"ServicesPath": "/services",
 		"DataPath":     "/data",
@@ -146,7 +145,6 @@ var (
 )
 
 func TestRunCmd_Errors(t *testing.T) {
-
 	testCases := []struct {
 		name          string
 		mockValues    ExpectedValues
