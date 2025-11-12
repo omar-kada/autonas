@@ -23,14 +23,8 @@ func TestFileGeneration(t *testing.T) {
 	ctx := context.Background()
 
 	// Given
-
-	baseDir := t.TempDir()
-	if os.Getenv("GITHUB_RUNNER") == "true" {
-		// disable auto clean up of temp directory in github runner (because of permissions issue)
-		// it will be handled by the runner itsef
-		baseDir = "/tmp/integration-tests"
-		os.MkdirAll(baseDir, 0750)
-	}
+	baseDir, err := os.MkdirTemp("", "flow_test_*")
+	assert.NoError(t, err)
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
@@ -39,10 +33,7 @@ func TestFileGeneration(t *testing.T) {
 	os.Mkdir(dataDir, 0750)
 	os.Mkdir(configDir, 0750)
 
-	os.Chmod(servicesDir, 0750)
-	os.Chmod(dataDir, 0750)
-
-	err := os.WriteFile(filepath.Join(configDir, "config.yaml"),
+	err = os.WriteFile(filepath.Join(configDir, "config.yaml"),
 		[]byte(strings.Join([]string{
 			"AUTONAS_HOST: test",
 			"SERVICES_PATH: " + servicesDir,
@@ -101,6 +92,12 @@ func TestFileGeneration(t *testing.T) {
 		/// cleanup homepage container after test finishes
 		dockerDeployer := docker.New(logger.New(true))
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
+	})
+
+	t.Cleanup(func() {
+		err = os.RemoveAll(baseDir)
+		// print warning in case of errors that may occur in ci
+		fmt.Printf("WARN : error while cleaning up test files : %v\n", err)
 	})
 }
 

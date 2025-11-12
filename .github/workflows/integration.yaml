@@ -29,7 +29,6 @@ jobs:
           go test ./integration_tests/... -v
         env:
           DOCKER_HOST: unix:///var/run/docker.sock
-          GITHUB_RUNNER: true
           
       - name: Cleanup
         if: always()

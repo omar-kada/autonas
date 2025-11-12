@@ -3,13 +3,11 @@ package containers
 
 import (
 	"fmt"
-	"io/fs"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/docker"
 	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/logger"
-	"os"
 	"path/filepath"
 	"slices"
 )
@@ -55,17 +53,6 @@ func (d deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg 
 		dst := filepath.Join(servicesDir, service)
 		if err := d.copyer.Copy(src, dst); err != nil {
 			return fmt.Errorf("error while copying service "+service+" %w", err)
-		}
-	}
-
-	if os.Getenv("ENV") == "DEV" {
-		// allow auto removing of copied services while testing
-		err := filepath.WalkDir(servicesDir, func(path string, _ fs.DirEntry, _ error) error {
-			err := os.Chmod(path, 0777)
-			return err
-		})
-		if err != nil {
-			return err
 		}
 	}
 
