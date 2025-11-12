@@ -16,6 +16,6 @@ func NewCopier() Copier {
 	return folderCopier{}
 }
 
-func (c folderCopier) Copy(src, dst string) error {
+func (folderCopier) Copy(src, dst string) error {
 	return copy.Copy(src, dst)
 }

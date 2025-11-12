@@ -20,7 +20,7 @@ func NewRunner() Runner {
 }
 
 // Run runs a shell command and returns error if any
-func (r cmdRunner) Run(cmd string, args ...string) error {
+func (cmdRunner) Run(cmd string, args ...string) error {
 	path, err := exec.LookPath(cmd)
 	if err != nil {
 		return fmt.Errorf("executable not found: %w", err)

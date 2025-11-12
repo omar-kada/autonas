@@ -19,7 +19,7 @@ func NewWriter() Writer {
 }
 
 // WriteToFile writes the content map as key=value pairs to a file at filePath.
-func (w fileWriter) WriteToFile(filePath string, content string) error {
+func (fileWriter) WriteToFile(filePath string, content string) error {
 	f, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("error creating file at %s: %v", filePath, err)
