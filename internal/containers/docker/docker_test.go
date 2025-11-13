@@ -60,14 +60,15 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	manager := newManagerWithMocks(mocker)
 
 	baseDir := t.TempDir()
-	envFilePath := filepath.Join(baseDir, "/svc1/.env")
+	envFilePath := filepath.Join(baseDir, "svc1", ".env")
 	err := os.Mkdir(filepath.Join(baseDir, "svc1"), 0750)
 	assert.NoError(t, err)
 
-	err = files.NewWriter().WriteToFile(envFilePath, strings.Join([]string{
-		"CUSTOM_VAR=will not be overridden",
-		"PORT=80",
-	}, "\n"))
+	err = files.NewWriter().WriteToFile(
+		envFilePath,
+		"CUSTOM_VAR=will not be overridden\n"+
+			"PORT=80",
+	)
 
 	assert.NoError(t, err)
 
@@ -83,7 +84,7 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	mock.InOrder(
 		mocker.On("WriteToFile", envFilePath, wantEnv).Return(nil),
 		mocker.On(
-			"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "/svc1"), "up", "-d"},
+			"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
 		).Return(nil),
 	)
 	err = manager.DeployServices(mockConfig, baseDir)
