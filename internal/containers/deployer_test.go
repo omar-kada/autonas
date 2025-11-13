@@ -50,7 +50,8 @@ var (
 		Services: map[string]config.ServiceConfig{
 			"svc1": {Disabled: true},
 			"svc2": {},
-			"svc3": {}},
+			"svc3": {},
+		},
 	}
 )
 

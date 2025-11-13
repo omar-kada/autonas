@@ -43,11 +43,11 @@ var mockConfig = config.Config{
 	},
 	Services: map[string]config.ServiceConfig{
 		"svc1": {
-
 			Extra: map[string]any{
 				"Port":      "8080",
 				"Version":   "v1",
-				"NEW_FIELD": "new_value"},
+				"NEW_FIELD": "new_value",
+			},
 		},
 		"svc2": {
 			Disabled: true,
