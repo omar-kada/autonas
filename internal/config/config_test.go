@@ -3,6 +3,8 @@ package config
 import (
 	"reflect"
 	"testing"
+
+	"github.com/elliotchance/orderedmap/v3"
 )
 
 func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
@@ -20,12 +22,12 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 	}
 
 	got := cfg.PerService("svc")
-	want := []Variable{
-		{Key: "GLOBAL", Value: "g"},
-		{Key: "PORT", Value: "8080"},
-		{Key: "VERSION", Value: "v1"},
-		{Key: "SVC_EXTRA", Value: "s"},
-	}
+	want := orderedmap.NewOrderedMapWithElements(
+		&orderedmap.Element[string, string]{Key: "GLOBAL", Value: "g"},
+		&orderedmap.Element[string, string]{Key: "PORT", Value: "8080"},
+		&orderedmap.Element[string, string]{Key: "VERSION", Value: "v1"},
+		&orderedmap.Element[string, string]{Key: "SVC_EXTRA", Value: "s"},
+	)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ConfigPerService mismatch\nwant=%#v\ngot =%#v", want, got)
 	}

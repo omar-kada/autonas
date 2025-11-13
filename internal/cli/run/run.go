@@ -17,23 +17,25 @@ import (
 )
 
 const (
-	_configDir   defaults.VarKey = "config-dir"
-	_files       defaults.VarKey = "files"
-	_branch      defaults.VarKey = "branch"
-	_repo        defaults.VarKey = "repo"
-	_workingDir  defaults.VarKey = "working-dir"
-	_servicesDir defaults.VarKey = "services-dir"
-	_cronPeriod  defaults.VarKey = "cron-period"
+	_configDir    defaults.VarKey = "config-dir"
+	_files        defaults.VarKey = "files"
+	_branch       defaults.VarKey = "branch"
+	_repo         defaults.VarKey = "repo"
+	_workingDir   defaults.VarKey = "working-dir"
+	_servicesDir  defaults.VarKey = "services-dir"
+	_cronPeriod   defaults.VarKey = "cron-period"
+	_addWritePerm defaults.VarKey = "add-write-perm"
 )
 
 var varInfoMap = defaults.VariableInfoMap{
-	_configDir:   {EnvKey: "AUTONAS_CONFIG_DIR", DefaultValue: nil},
-	_files:       {EnvKey: "AUTONAS_CONFIG_FILES", DefaultValue: []string{"config.yaml"}},
-	_repo:        {EnvKey: "AUTONAS_CONFIG_REPO", DefaultValue: nil},
-	_branch:      {EnvKey: "AUTONAS_CONFIG_BRANCH", DefaultValue: "main"},
-	_workingDir:  {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
-	_servicesDir: {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
-	_cronPeriod:  {EnvKey: "AUTONAS_CRON_PERIOD", DefaultValue: nil},
+	_configDir:    {EnvKey: "AUTONAS_CONFIG_DIR", DefaultValue: nil},
+	_files:        {EnvKey: "AUTONAS_CONFIG_FILES", DefaultValue: []string{"config.yaml"}},
+	_repo:         {EnvKey: "AUTONAS_CONFIG_REPO", DefaultValue: nil},
+	_branch:       {EnvKey: "AUTONAS_CONFIG_BRANCH", DefaultValue: "main"},
+	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
+	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
+	_cronPeriod:   {EnvKey: "AUTONAS_CRON_PERIOD", DefaultValue: nil},
+	_addWritePerm: {DefaultValue: false},
 }
 
 var (
@@ -53,22 +55,24 @@ type Cmd struct {
 }
 
 type runParams struct {
-	ConfigFiles []string
-	Repo        string
-	Branch      string
-	WorkingDir  string
-	ServicesDir string
-	CronPeriod  string
+	ConfigFiles  []string
+	Repo         string
+	Branch       string
+	WorkingDir   string
+	ServicesDir  string
+	CronPeriod   string
+	AddWritePerm bool
 }
 
 func getParamsWithDefaults(p runParams) runParams {
 	return runParams{
-		ConfigFiles: envOrDefaultSlice(p.ConfigFiles, _files),
-		Repo:        envOrDefault(p.Repo, _repo),
-		Branch:      envOrDefault(p.Branch, _branch),
-		WorkingDir:  envOrDefault(p.WorkingDir, _workingDir),
-		ServicesDir: envOrDefault(p.ServicesDir, _servicesDir),
-		CronPeriod:  envOrDefault(p.CronPeriod, _cronPeriod),
+		ConfigFiles:  envOrDefaultSlice(p.ConfigFiles, _files),
+		Repo:         envOrDefault(p.Repo, _repo),
+		Branch:       envOrDefault(p.Branch, _branch),
+		WorkingDir:   envOrDefault(p.WorkingDir, _workingDir),
+		ServicesDir:  envOrDefault(p.ServicesDir, _servicesDir),
+		CronPeriod:   envOrDefault(p.CronPeriod, _cronPeriod),
+		AddWritePerm: p.AddWritePerm,
 	}
 }
 
@@ -90,7 +94,11 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
 			params := getParamsWithDefaults(params)
-
+			if params.AddWritePerm {
+				r.Deployer.AddPermission(0666)
+			} else {
+				r.Deployer.AddPermission(0000)
+			}
 			r.RunOnce(params)
 			if params.CronPeriod != "" {
 				r.RunPeriodically(params)
@@ -110,6 +118,8 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 		getDefaultString("directory where services compose stacks will be stored", _servicesDir))
 	runCmd.Flags().StringVarP(&(params.CronPeriod), string(_cronPeriod), "p", "",
 		getDefaultString("cron period string", _cronPeriod))
+	runCmd.Flags().BoolVar(&(params.AddWritePerm), string(_addWritePerm), false,
+		getDefaultString("when true, the tool adds write permission to config files", _addWritePerm))
 	return runCmd
 }
 

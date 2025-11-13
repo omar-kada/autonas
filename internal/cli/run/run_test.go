@@ -4,6 +4,7 @@ import (
 	"errors"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/logger"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,6 +43,10 @@ func (m *Mocker) Sync(repoURL string, branch string, path string) error {
 func (m *Mocker) DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error {
 	args := m.Called(configDir, servicesDir, currentCfg, cfg)
 	return args.Error(0)
+}
+
+func (m *Mocker) AddPermission(perm os.FileMode) {
+	m.Called(perm)
 }
 
 type ExpectedValues struct {

@@ -1,12 +1,15 @@
 package files
 
 import (
+	"os"
+
 	"github.com/otiai10/copy"
 )
 
 // Copier abstracts copying directory
 type Copier interface {
 	Copy(src, dest string) error
+	CopyWithAddPerm(src, dst string, permission os.FileMode) error
 }
 
 type directoryCopier struct{}
@@ -18,4 +21,10 @@ func NewCopier() Copier {
 
 func (directoryCopier) Copy(src, dst string) error {
 	return copy.Copy(src, dst)
+}
+
+func (directoryCopier) CopyWithAddPerm(src, dst string, permission os.FileMode) error {
+	return copy.Copy(src, dst, copy.Options{
+		PermissionControl: copy.AddPermission(permission),
+	})
 }

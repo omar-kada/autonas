@@ -4,6 +4,8 @@ package config
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/elliotchance/orderedmap/v3"
 )
 
 // ServiceConfig represents configuration for an individual service.
@@ -27,26 +29,22 @@ type Variable struct {
 }
 
 // PerService generates a slice of configuration variables for a specific service
-func (cfg Config) PerService(service string) []Variable {
-	var serviceConfig []Variable
+func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, string] {
+	serviceConfig := orderedmap.NewOrderedMap[string, string]()
 
 	for key, value := range cfg.Extra {
-		serviceConfig = append(serviceConfig,
-			Variable{Key: key, Value: fmt.Sprint(value)})
+		serviceConfig.Set(key, fmt.Sprint(value))
 	}
 	if svcVars, ok := cfg.Services[service]; ok {
 		if svcVars.Port != 0 {
-			serviceConfig = append(serviceConfig,
-				Variable{Key: "PORT", Value: strconv.Itoa(svcVars.Port)})
+			serviceConfig.Set("PORT", strconv.Itoa(svcVars.Port))
 		}
 		if svcVars.Version != "" {
-			serviceConfig = append(serviceConfig,
-				Variable{Key: "VERSION", Value: svcVars.Version})
+			serviceConfig.Set("VERSION", svcVars.Version)
 		}
 
 		for key, value := range svcVars.Extra {
-			serviceConfig = append(serviceConfig,
-				Variable{Key: key, Value: fmt.Sprint(value)})
+			serviceConfig.Set(key, fmt.Sprint(value))
 		}
 	}
 	return serviceConfig

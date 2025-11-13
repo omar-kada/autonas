@@ -6,6 +6,7 @@ import (
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/logger"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,11 @@ func (m *Mocker) Copy(srcDir, servicesDir string) error {
 	return args.Error(0)
 }
 
+func (m *Mocker) CopyWithAddPerm(srcDir, servicesDir string, permission os.FileMode) error {
+	args := m.Called(srcDir, servicesDir, permission)
+	return args.Error(0)
+}
+
 var (
 	mockConfigOld = config.Config{
 		EnabledServices: []string{"svc1", "svc2"},
@@ -46,6 +52,7 @@ func newDeployerWithMocks(mocker *Mocker) *deployer {
 		log:               logger.New(true),
 		containersManager: mocker,
 		copyer:            mocker,
+		addPerm:           0000,
 	}
 }
 
@@ -58,11 +65,11 @@ func TestDeployServices_Success(t *testing.T) {
 		).Return(nil),
 
 		mocker.On(
-			"Copy", "configDir/services/svc2", "/services/svc2",
+			"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
 		).Return(nil),
 
 		mocker.On(
-			"Copy", "configDir/services/svc3", "/services/svc3",
+			"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 		).Return(nil),
 
 		mocker.On(
@@ -120,11 +127,11 @@ func TestDeployServices_Errors(t *testing.T) {
 				).Return(tc.errors.removeErr),
 
 				mocker.On(
-					"Copy", "configDir/services/svc2", "/services/svc2",
+					"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
 				).Return(tc.errors.copyErr),
 
 				mocker.On(
-					"Copy", "configDir/services/svc3", "/services/svc3",
+					"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 				).Return(tc.errors.copyErr),
 
 				mocker.On(
