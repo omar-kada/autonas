@@ -17,9 +17,6 @@ func TestDecodeConfig(t *testing.T) {
 	input := map[string]any{
 		"AUTONAS_HOST": "localhost",
 		"DATA_PATH":    "/data",
-		"enabled_services": []any{
-			"svc1",
-		},
 		"services": map[string]any{
 			"svc1": map[string]any{
 				"PORT":      8080,
@@ -27,8 +24,9 @@ func TestDecodeConfig(t *testing.T) {
 				"NEW_FIELD": "new_value",
 			},
 			"svc2": map[string]any{
-				"PORT":    9090,
-				"VERSION": "v2",
+				"Disabled": true,
+				"Port":     9090,
+				"Version":  "v2",
 			},
 		},
 	}
@@ -37,16 +35,20 @@ func TestDecodeConfig(t *testing.T) {
 			"AUTONAS_HOST": "localhost",
 			"DATA_PATH":    "/data",
 		},
-		EnabledServices: []string{"svc1"},
 		Services: map[string]ServiceConfig{
 			"svc1": {
-				Port:    8080,
-				Version: "v1",
-				Extra:   map[string]any{"NEW_FIELD": "new_value"},
+				Extra: map[string]any{
+					"NEW_FIELD": "new_value",
+					"PORT":      8080,
+					"VERSION":   "v1",
+				},
 			},
 			"svc2": {
-				Port:    9090,
-				Version: "v2",
+				Disabled: true,
+				Extra: map[string]any{
+					"Port":    9090,
+					"Version": "v2",
+				},
 			},
 		},
 	}

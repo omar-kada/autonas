@@ -41,16 +41,20 @@ var mockConfig = config.Config{
 	Extra: map[string]any{
 		"AUTONAS_HOST": "localhost",
 	},
-	EnabledServices: []string{"svc1"},
 	Services: map[string]config.ServiceConfig{
 		"svc1": {
-			Port:    8080,
-			Version: "v1",
-			Extra:   map[string]any{"NEW_FIELD": "new_value"},
+
+			Extra: map[string]any{
+				"Port":      "8080",
+				"Version":   "v1",
+				"NEW_FIELD": "new_value"},
 		},
 		"svc2": {
-			Port:    9090,
-			Version: "v2",
+			Disabled: true,
+			Extra: map[string]any{
+				"Port":    "9090",
+				"Version": "v2",
+			},
 		},
 	},
 }
