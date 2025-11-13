@@ -52,7 +52,8 @@ ARG AUTONAS_CONFIG_REPO
 ARG AUTONAS_CONFIG_BRANCH
 ARG AUTONAS_CRON_PERIOD
 ARG AUTONAS_SERVICES_DIR
+ARG AUTONAS_ADD_WRITE_PERM
 ARG ENV
 
 # Start the application
-CMD ["sh", "-c", "ls -lau /autonas && /autonas/autonas run -d /autonas/config"]
+CMD ["sh", "-c", "ls -lau /autonas && /autonas/autonas run -d /autonas/config --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]

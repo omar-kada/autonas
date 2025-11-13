@@ -8,6 +8,7 @@ services:
       AUTONAS_CONFIG_REPO: "${CONFIG_REPO}" # URL of the git repo where configuration will be fetched
       AUTONAS_CRON_PERIOD: "${CRON_PERIOD}" # CRON expression of when sync should be done
       AUTONAS_SERVICES_DIR: "${SERVICES_DIR}" # directory where compose stacks will be stored
+      AUTONAS_ADD_WRITE_PERM: "${ADD_WRITE_PERM}" # adding write permissions to pulled config files
       ENV: "${ENV}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

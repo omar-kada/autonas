@@ -26,6 +26,14 @@ func TestFileGeneration(t *testing.T) {
 	baseDir, err := os.MkdirTemp("", "flow_test_*")
 	assert.NoError(t, err)
 
+	t.Cleanup(func() {
+		err = os.RemoveAll(baseDir)
+		// print warning in case of errors that may occur in ci
+		if err != nil {
+			fmt.Printf("WARN : error while cleaning up test files : %v\n", err)
+		}
+	})
+
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
 	configDir := filepath.Join(baseDir, "config")
@@ -52,14 +60,15 @@ func TestFileGeneration(t *testing.T) {
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
-		"CONFIG_FILES": configFiles,
-		"CONFIG_REPO":  "https://github.com/omar-kada/autonas-config",
-		"CRON_PERIOD":  "*/10 * * * *",
-		"SERVICES_DIR": servicesDir,
-		"CONFIG_PATH":  configDir,
-		"ENV":          "DEV",
-		"UID":          fmt.Sprint(os.Getuid()),
-		"GID":          fmt.Sprint(os.Getgid()),
+		"CONFIG_FILES":   configFiles,
+		"CONFIG_REPO":    "https://github.com/omar-kada/autonas-config",
+		"CRON_PERIOD":    "*/10 * * * *",
+		"SERVICES_DIR":   servicesDir,
+		"CONFIG_PATH":    configDir,
+		"ADD_WRITE_PERM": "true",
+		"ENV":            "DEV",
+		"UID":            fmt.Sprint(os.Getuid()),
+		"GID":            fmt.Sprint(os.Getgid()),
 	})
 
 	assert.NoError(t, err, "failed to load compose")
@@ -92,12 +101,6 @@ func TestFileGeneration(t *testing.T) {
 		/// cleanup homepage container after test finishes
 		dockerDeployer := docker.New(logger.New(true))
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
-	})
-
-	t.Cleanup(func() {
-		err = os.RemoveAll(baseDir)
-		// print warning in case of errors that may occur in ci
-		fmt.Printf("WARN : error while cleaning up test files : %v\n", err)
 	})
 }
 

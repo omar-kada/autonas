@@ -8,6 +8,7 @@ import (
 	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/logger"
+	"os"
 	"path/filepath"
 	"slices"
 )
@@ -15,6 +16,7 @@ import (
 // Deployer abstracts service deployment operations
 type Deployer interface {
 	DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error
+	AddPermission(perm os.FileMode)
 }
 
 // NewDockerDeployer creates a new deployer that uses docker for containers
@@ -24,7 +26,7 @@ func NewDockerDeployer(log logger.Logger) Deployer {
 
 // NewDeployer creates a new Deployer instance
 func NewDeployer(containersManager model.Manager, log logger.Logger) Deployer {
-	return deployer{
+	return &deployer{
 		log:               log,
 		containersManager: containersManager,
 		copyer:            files.NewCopier(),
@@ -36,11 +38,12 @@ type deployer struct {
 	log               logger.Logger
 	containersManager model.Manager
 	copyer            files.Copier
+	addPerm           os.FileMode
 }
 
 // DeployServices handles the deployment/removal of services based on the current and new configuration.
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
-func (d deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error {
+func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
 	if err := d.containersManager.RemoveServices(toBeRemoved, servicesDir); err != nil {
 		return err
@@ -51,7 +54,7 @@ func (d deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg 
 	for _, service := range cfg.EnabledServices {
 		src := filepath.Join(configDir, "services", service)
 		dst := filepath.Join(servicesDir, service)
-		if err := d.copyer.Copy(src, dst); err != nil {
+		if err := d.copyer.CopyWithAddPerm(src, dst, d.addPerm); err != nil {
 			return fmt.Errorf("error while copying service "+service+" %w", err)
 		}
 	}
@@ -61,6 +64,10 @@ func (d deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg 
 		return err
 	}
 	return nil
+}
+
+func (d *deployer) AddPermission(perm os.FileMode) {
+	d.addPerm = perm
 }
 
 func getUnusedServices(currentCfg, cfg config.Config) []string {

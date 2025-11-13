@@ -7,9 +7,9 @@ toolchain go1.24.10
 require (
 	github.com/docker/compose/v2 v2.40.2
 	github.com/docker/docker v28.5.1+incompatible
+	github.com/elliotchance/orderedmap/v3 v3.1.0
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/moby/moby/client v0.1.0-beta.2
 	github.com/otiai10/copy v1.14.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.10.1
@@ -126,7 +126,6 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/go-archive v0.1.0 // indirect
 	github.com/moby/locker v1.0.1 // indirect
-	github.com/moby/moby/api v1.52.0-beta.2 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
