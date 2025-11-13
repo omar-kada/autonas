@@ -40,10 +40,18 @@ func (m *Mocker) CopyWithAddPerm(srcDir, servicesDir string, permission os.FileM
 
 var (
 	mockConfigOld = config.Config{
-		EnabledServices: []string{"svc1", "svc2"},
+		Services: map[string]config.ServiceConfig{
+			"svc1": {},
+			"svc2": {},
+			"svc3": {Disabled: true},
+		},
 	}
 	mockConfigNew = config.Config{
-		EnabledServices: []string{"svc2", "svc3"},
+		Services: map[string]config.ServiceConfig{
+			"svc1": {Disabled: true},
+			"svc2": {},
+			"svc3": {},
+		},
 	}
 )
 

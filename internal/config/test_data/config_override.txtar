@@ -21,6 +21,6 @@ DATA_PATH: /data
 SERVICES_PATH: /services
 services:
   svc:
-    port: 2000
-    version: v2
+    PORT: 2000
+    VERSION: v2
     NEW_FIELD: new_value

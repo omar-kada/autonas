@@ -51,7 +51,8 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 
 	d.log.Debugf("copying files from %s to %s", configDir+"/services", servicesDir)
 
-	for _, service := range cfg.EnabledServices {
+	enabledServiecs := cfg.GetEnabledServices()
+	for _, service := range enabledServiecs {
 		src := filepath.Join(configDir, "services", service)
 		dst := filepath.Join(servicesDir, service)
 		if err := d.copyer.CopyWithAddPerm(src, dst, d.addPerm); err != nil {
@@ -59,7 +60,7 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 		}
 	}
 
-	d.log.Debugf("deploying enabled services: %v\n", cfg.EnabledServices)
+	d.log.Debugf("deploying enabled services: %v\n", enabledServiecs)
 	if err := d.containersManager.DeployServices(cfg, servicesDir); err != nil {
 		return err
 	}
@@ -72,8 +73,10 @@ func (d *deployer) AddPermission(perm os.FileMode) {
 
 func getUnusedServices(currentCfg, cfg config.Config) []string {
 	var unusedServices []string
-	for _, serviceName := range currentCfg.EnabledServices {
-		if !slices.Contains(cfg.EnabledServices, serviceName) {
+	currentlyEnabled := currentCfg.GetEnabledServices()
+	shouldBeEnabled := cfg.GetEnabledServices()
+	for _, serviceName := range currentlyEnabled {
+		if !slices.Contains(shouldBeEnabled, serviceName) {
 			unusedServices = append(unusedServices, serviceName)
 		}
 	}

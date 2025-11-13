@@ -46,12 +46,13 @@ func (d Manager) RemoveServices(services []string, servicesDir string) error {
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
 func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
-	if len(cfg.EnabledServices) == 0 {
+	enabledServices := cfg.GetEnabledServices()
+	if len(enabledServices) == 0 {
 		d.log.Warnf("No enabled_services specified in config. Skipping .env generation and compose up.")
 		return nil
 	}
 
-	for _, service := range cfg.EnabledServices {
+	for _, service := range enabledServices {
 		if err := d.generateEnvFile(cfg, servicesDir, service); err != nil {
 			d.log.Errorf("Error creating env file for %s: %v", service, err)
 		}

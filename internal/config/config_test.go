@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/elliotchance/orderedmap/v3"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
@@ -14,9 +15,9 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 		},
 		Services: map[string]ServiceConfig{
 			"svc": {
-				Port:    8080,
-				Version: "v1",
-				Extra:   map[string]any{"SVC_EXTRA": "s"},
+				Extra: map[string]any{
+					"SVC_EXTRA": "s",
+				},
 			},
 		},
 	}
@@ -24,11 +25,33 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 	got := cfg.PerService("svc")
 	want := orderedmap.NewOrderedMapWithElements(
 		&orderedmap.Element[string, string]{Key: "GLOBAL", Value: "g"},
-		&orderedmap.Element[string, string]{Key: "PORT", Value: "8080"},
-		&orderedmap.Element[string, string]{Key: "VERSION", Value: "v1"},
 		&orderedmap.Element[string, string]{Key: "SVC_EXTRA", Value: "s"},
 	)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ConfigPerService mismatch\nwant=%#v\ngot =%#v", want, got)
 	}
+}
+
+func TestGetEnabledServices_FiltersCorrectly(t *testing.T) {
+	cfg := Config{
+		Extra: map[string]any{
+			"GLOBAL": "g",
+		},
+		Services: map[string]ServiceConfig{
+			"svc": {
+				Extra: map[string]any{
+					"SVC_EXTRA": "s",
+				},
+			},
+			"svc2": {
+				Disabled: true,
+				Extra: map[string]any{
+					"SVC_EXTRA": "s",
+				},
+			},
+		},
+	}
+
+	want := []string{"svc"}
+	assert.EqualValues(t, want, cfg.GetEnabledServices())
 }

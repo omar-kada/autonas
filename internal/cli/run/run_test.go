@@ -17,11 +17,12 @@ var mockConfig = config.Config{
 		"ServicesDir": "/services",
 		"DataPath":    "/data",
 	},
-	EnabledServices: []string{"svc1"},
 	Services: map[string]config.ServiceConfig{
 		"svc1": {
-			Port:    8080,
-			Version: "v1",
+			Extra: map[string]any{
+				"Port":    8080,
+				"Version": "v1",
+			},
 		},
 	},
 }
