@@ -22,6 +22,7 @@ func NewCopier() Copier {
 func (directoryCopier) Copy(src, dst string) error {
 	return copy.Copy(src, dst)
 }
+
 func (directoryCopier) CopyWithAddPerm(src, dst string, permission os.FileMode) error {
 	return copy.Copy(src, dst, copy.Options{
 		PermissionControl: copy.AddPermission(permission),

@@ -107,6 +107,7 @@ func (d Manager) generateEnvFile(cfg config.Config, servicesDir, service string)
 
 	return d.writer.WriteToFile(envFilePath, content.String())
 }
+
 func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 	_, err := os.Stat(path)
 	if err != nil {
@@ -126,7 +127,6 @@ func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 		if len(splitLine) > 1 {
 			envMap.Set(strings.ToUpper(splitLine[0]), rawLine)
 		} else {
-
 			envMap.Set(fmt.Sprint(index), rawLine)
 		}
 	}
