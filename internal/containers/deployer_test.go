@@ -73,17 +73,16 @@ func TestDeployServices_Success(t *testing.T) {
 		).Return(nil),
 
 		mocker.On(
-			"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
-		).Return(nil),
-
-		mocker.On(
-			"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
-		).Return(nil),
-
-		mocker.On(
 			"DeployServices", mockConfigNew, "/services",
 		).Return(nil),
 	)
+	mocker.On(
+		"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
+	).Return(nil)
+
+	mocker.On(
+		"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
+	).Return(nil)
 	err := deployer.DeployServices("configDir", "/services", mockConfigOld, mockConfigNew)
 	assert.NoError(t, err)
 }
@@ -135,18 +134,17 @@ func TestDeployServices_Errors(t *testing.T) {
 				).Return(tc.errors.removeErr),
 
 				mocker.On(
-					"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
-				).Return(tc.errors.copyErr),
-
-				mocker.On(
-					"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
-				).Return(tc.errors.copyErr),
-
-				mocker.On(
 					"DeployServices", mockConfigNew, "/services",
 				).Return(tc.errors.deployErr),
 			)
 
+			mocker.On(
+				"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
+			).Return(tc.errors.copyErr)
+
+			mocker.On(
+				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
+			).Return(tc.errors.copyErr)
 			err := deployer.DeployServices("configDir", "/services", mockConfigOld, mockConfigNew)
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))

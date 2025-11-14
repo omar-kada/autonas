@@ -17,7 +17,7 @@ a Linux environement with `docker` installed
 ## Getting started
 
 
-1. Create a configuration repo containing all your compose stacks with this structure (for example : [AutoNAS Config](https://github.com/omar-kada/autonas-config))
+1. **Create a configuration repo** containing all your compose stacks with this structure (for example : [AutoNAS Config](https://github.com/omar-kada/autonas-config))
 ```
 services/
 ├── service1/
@@ -28,7 +28,7 @@ services/
     └── .env        
 ```
 
-2. Copy  the `compose.yaml` file your system and fill the needed variables (make sure to read the comments about each variable), here are the main ones : 
+2. **Copy  the `compose.yaml` file your system** and fill the needed variables (make sure to read the comments about each variable), here are the main ones : 
 
 ```yaml
 SERVICES_DIR : where the stack configuration will be stored
@@ -38,7 +38,7 @@ CONFIG_BRANCH: branch used to pull from the repo
 CRON_PERIOD: cron schedule of when the periodic deployement will be executed
 ```
 
-3. Create a `config.yaml` file and define the services you want to deploy :
+3. **Create a `config.yaml` file** and define the services you want to deploy :
 
 ```yaml
 ENV_VAR: value # will be available in all services
@@ -52,8 +52,13 @@ services:
     Disabled: true # if Disabled, service will not be deployed
 ```
 
-4. Run the stack using : 
+4. **Run the stack** using : 
 ```bash
 docker compose up -d
 ```
+Once the container starts, it will :
+1. **Pull the stacks from the repo**
+2. **Deploy or remove services** based on the configuration
+3. **Schedule the next runs** based on `CRON_PERIOD`
 
+When the stacks are updated in the repo, AutoNAS will **redploy only the changed stacks** in the next scheduled run
