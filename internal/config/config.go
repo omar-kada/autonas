@@ -20,12 +20,6 @@ type Config struct {
 	Extra    map[string]any           `mapstructure:",remain"`
 }
 
-// Variable represent an environement variable
-type Variable struct {
-	Key   string
-	Value string
-}
-
 // PerService generates a slice of configuration variables for a specific service
 func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, string] {
 	serviceConfig := orderedmap.NewOrderedMap[string, string]()

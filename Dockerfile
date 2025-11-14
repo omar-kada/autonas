@@ -47,13 +47,7 @@ COPY --from=builder /autonas/autonas /autonas/
 
 RUN chmod -R 755 /autonas
 
-ARG AUTONAS_CONFIG_FILES
-ARG AUTONAS_CONFIG_REPO
-ARG AUTONAS_CONFIG_BRANCH
-ARG AUTONAS_CRON_PERIOD
-ARG AUTONAS_SERVICES_DIR
-ARG AUTONAS_ADD_WRITE_PERM
-ARG ENV
+ARG AUTONAS_WORKING_DIR="/autonas/config"
 
 # Start the application
-CMD ["sh", "-c", "ls -lau /autonas && /autonas/autonas run -d /autonas/config --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]
+CMD ["sh", "-c", "ls -lau /autonas && /autonas/autonas run -d ${AUTONAS_WORKING_DIR} --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]

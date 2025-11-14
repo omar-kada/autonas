@@ -8,7 +8,6 @@ import (
 	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/logger"
-	"path/filepath"
 	"reflect"
 
 	"github.com/robfig/cron/v3"
@@ -131,11 +130,6 @@ func (r *Cmd) RunOnce(params runParams) error {
 		return fmt.Errorf("error getting config repo:  %w", syncErr)
 	}
 
-	for i, file := range params.ConfigFiles {
-		if !filepath.IsAbs(file) {
-			params.ConfigFiles[i] = filepath.Join(params.WorkingDir, params.ConfigFiles[i])
-		}
-	}
 	cfg, err := r.ConfigGenerator.FromFiles(params.ConfigFiles)
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
