@@ -1,72 +1,59 @@
 # Autonas
 
-AutoNAS is a simple tool that allows to handle docker compose stacks deployements through a configuration in a git repo, that uses [Homepage](https://gethomepage.dev/) as a dashboard.
+AutoNAS is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
+Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible**. without the need to have heavy tooling or dependencies.
 
 ## Requirements
 
 a Linux environement with `docker` installed
 
-## Main flow
+## Features
 
-once launched, the tool will do the following :
+1. Easy service customization through a simple configuration file
+2. Minimal, clean structure — no unnecessary scaffolding
+3. No special syntax, compose stacks configuration are kept in their original form
+4. Works on any Docker-capable system
 
-1. sync the configuration files & check for changes
-2. copy the services folder into `SERVICES_PATH`
-3. generate `.env` file for each compose stack
-4. run `docker compose up` on all the activated services
+## Getting started
 
-## How to use
 
-First the tool is installed (preferably using docker)
-
-**WIP**
-
-A configuraiton repo (or directory) is needed, you can use [AutoNAS Config](https://github.com/omar-kada/autonas-config) for inspiration.
-
-start by copying `config.example.yaml` to `config.yaml` and fill the required global configuration variables (see [below](#global-configuration))
-
-at last, run `autonas` ( WIP will become a separate docker image )
-
-```bash
-autonas run -c config.default.yaml,config.yaml -r https://github.com/omar-kada/autonas-config
+1. Create a configuration repo containing all your compose stacks with this structure (for example : [AutoNAS Config](https://github.com/omar-kada/autonas-config))
+```
+services/
+├── service1/
+|   ├── compose.yaml
+|   └── .env        
+└── service2/
+    ├── compose.yaml
+    └── .env        
 ```
 
-it takes two arguments :
-
-- configuration files (-c) : list of configuration files for all the services (last one has more priority).
-- repository (-r) : git repo used to manage the deployed services.
-
-## Global configuration
-
-- **AUTONAS_HOST** : hostname (needed for Homepage configuration for example)
-- **SERVICES_PATH** : directory that will contain the services compose files and the generated .env variables file with any configuraiton included
-- **DATA_PATH** : directory where all the containers data will be stored
-- **enabled_services** : list of enabled services that will be deployed
-
-## Service-specific configuraiton
-
-to add service specific configuration, you just need to add a section `<service_name>:` and below it all the configuration needed
-the main properties that will be used for each service are
-
-- **PORT** : the port where the service will be exposed
-- **VERSION** : the version of the image
-- **DESCRIPTION** : optional text that will be displayed in `Homepage` (defaults to service name)
-- **ICON** : optional icon name for `Homepage` (defaults to service name)
-
-any other fields will be copied into the `.env` file related to each service
-
-## Example of `config.yaml`
+2. Copy  the `compose.yaml` file your system and fill the needed variables (make sure to read the comments about each variable), here are the main ones : 
 
 ```yaml
-AUTONAS_HOST: "<hostname>"
-SERVICES_PATH: "/path/to/directory/where/services/are/stored"
-DATA_PATH: "/path/to/data/folder"
+SERVICES_DIR : where the stack configuration will be stored
+CONFIG_FILES : list of configuration files (last has more priority)
+CONFIG_REPO : repository containing the stack definition
+CONFIG_BRANCH: branch used to pull from the repo
+CRON_PERIOD: cron schedule of when the periodic deployement will be executed
+```
 
-enabled_services: # list of services to install
-  - homepage
-  - dockge
+3. Create a `config.yaml` file and define the services you want to deploy :
+
+```yaml
+ENV_VAR: value # will be available in all services
 
 services:
-  homepage:
-    PORT: 1234
+  service1: 
+    ENV_VAR: override value # will override global value for this service
+    SERVICE_SPECIFIC_VAR: another_value
+  
+  service2:
+    Disabled: true # if Disabled, service will not be deployed
 ```
+
+4. Run the stack using : 
+```bash
+docker compose up -d
+```
+
