@@ -57,7 +57,7 @@ func TestFileGeneration(t *testing.T) {
 		}, "\n")), 0750)
 	assert.NoError(t, err, "error while creating config file")
 
-	const configFiles = "/config/config.yaml" // realtive to docker container
+	const configFiles = "/config/config.yaml" // relative to docker container
 
 	// When
 	// Start docker-compose environment
