@@ -45,6 +45,7 @@ type deployer struct {
 // It accepts a ServiceManager to allow injection in tests; callers can pass DefaultServices.
 func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(currentCfg, cfg)
+	// TODO : check if the stack is up before calling RemoveServices
 	if err := d.containersManager.RemoveServices(toBeRemoved, servicesDir); err != nil {
 		return err
 	}

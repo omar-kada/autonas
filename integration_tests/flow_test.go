@@ -37,9 +37,12 @@ func TestFileGeneration(t *testing.T) {
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
 	configDir := filepath.Join(baseDir, "config")
-	os.Mkdir(servicesDir, 0750)
-	os.Mkdir(dataDir, 0750)
-	os.Mkdir(configDir, 0750)
+	err = os.Mkdir(servicesDir, 0750)
+	assert.NoError(t, err)
+	err = os.Mkdir(dataDir, 0750)
+	assert.NoError(t, err)
+	err = os.Mkdir(configDir, 0750)
+	assert.NoError(t, err)
 
 	err = os.WriteFile(filepath.Join(configDir, "config.yaml"),
 		[]byte(strings.Join([]string{
@@ -54,13 +57,13 @@ func TestFileGeneration(t *testing.T) {
 		}, "\n")), 0750)
 	assert.NoError(t, err, "error while creating config file")
 
-	const configFiles = "config.default.yaml,/config/config.yaml"
+	const configFiles = "/config/config.yaml" // realtive to docker container
 
 	// When
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
-		"CONFIG_FILES":   configFiles,
+		"CONFIG_FILES":   filepath.Join(configFiles),
 		"CONFIG_REPO":    "https://github.com/omar-kada/autonas-config",
 		"CRON_PERIOD":    "*/10 * * * *",
 		"SERVICES_DIR":   servicesDir,
