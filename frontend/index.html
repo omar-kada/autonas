@@ -1,0 +1,30 @@
+<head>
+    <title> AutoNAS </title>
+</head>
+<body>
+
+
+    <script>
+        // Create a connection to your local server
+const socket = new WebSocket('ws://localhost:8080/ws');
+
+
+// Listen for connection open
+socket.onopen = (event) => {
+  console.log('Connection opened');
+  socket.send('Hello from the browser console!');
+};
+
+// Listen for messages from the server
+socket.onmessage = (event) => {
+  console.log('Received:', event.data);
+};
+
+// Listen for errors
+socket.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
+    </script>
+PLaceholder for front end
+
+</body>

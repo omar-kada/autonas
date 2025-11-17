@@ -1,4 +1,4 @@
-package run
+package cli
 
 import (
 	"errors"
@@ -74,7 +74,7 @@ func mockReturnValues(m *Mocker, val ExpectedValues) {
 
 func newRunnerWithMocks(mocker *Mocker) *Cmd {
 	return &Cmd{
-		Log:             logger.New(true),
+		log:             logger.New(true),
 		Deployer:        mocker,
 		ConfigGenerator: mocker,
 		Syncer:          mocker,

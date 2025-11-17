@@ -44,10 +44,12 @@ RUN mkdir /autonas/config
 WORKDIR /autonas
 
 COPY --from=builder /autonas/autonas /autonas/
+COPY frontend /autonas/frontend
 
 RUN chmod -R 755 /autonas
 
-ARG AUTONAS_WORKING_DIR="/autonas/config"
+ENV AUTONAS_WORKING_DIR="/autonas/config"
+EXPOSE 8080
 
 # Start the application
-CMD ["sh", "-c", "ls -lau /autonas && /autonas/autonas run -d ${AUTONAS_WORKING_DIR} --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]
+CMD ["sh", "-c", "/autonas/autonas run -d ${AUTONAS_WORKING_DIR} --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]
