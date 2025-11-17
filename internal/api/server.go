@@ -29,7 +29,6 @@ func NewServer(store storage.Storage, log logger.Logger) *Server {
 
 // ListenAndServe initializes handler routes and serves on the given port
 func (s *Server) ListenAndServe(port int) error {
-
 	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend")}))
 	http.HandleFunc("/login", s.loginHandler.handle)
 	http.HandleFunc("/ws", s.websocketHandler.handle)
