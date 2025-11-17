@@ -6,9 +6,10 @@ import (
 	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/storage"
 	"strconv"
+	"time"
 )
 
-// Server is responsile for listening and mapping http requests
+// Server is responsible for listening and mapping http requests
 type Server struct {
 	log              logger.Logger
 	store            storage.Storage
@@ -28,10 +29,16 @@ func NewServer(store storage.Storage, log logger.Logger) *Server {
 
 // ListenAndServe initializes handler routes and serves on the given port
 func (s *Server) ListenAndServe(port int) error {
-	fs := http.FileServer(http.Dir("./frontend"))
-	http.Handle("/", fs)
+
+	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend")}))
 	http.HandleFunc("/login", s.loginHandler.handle)
 	http.HandleFunc("/ws", s.websocketHandler.handle)
 	s.log.Infof("Server starting on : %s", port)
-	return http.ListenAndServe(":"+strconv.Itoa(port), nil)
+
+	server := &http.Server{
+		Addr:              ":" + strconv.Itoa(port),
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+
+	return server.ListenAndServe()
 }

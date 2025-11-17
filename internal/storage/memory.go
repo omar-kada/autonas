@@ -9,6 +9,6 @@ func NewMemoryStorage() *MemoryStorage {
 }
 
 // GetCurrentStacks returns currently stored stacks
-func (m *MemoryStorage) GetCurrentStacks() []string {
+func (*MemoryStorage) GetCurrentStacks() []string {
 	return []string{"test"}
 }

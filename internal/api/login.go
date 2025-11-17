@@ -19,7 +19,7 @@ func newLoginHandler(store storage.Storage, log logger.Logger) *LoginHandler {
 	}
 }
 
-func (h *LoginHandler) handle(w http.ResponseWriter, r *http.Request) {
+func (*LoginHandler) handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
