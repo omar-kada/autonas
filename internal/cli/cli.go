@@ -10,8 +10,7 @@ import (
 
 // NewRootCmd creates a new command with default dependencies
 func NewRootCmd(store storage.Storage, log logger.Logger) *cobra.Command {
-
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "autonas",
 		Short: "AutoNAS CLI",
 	}
