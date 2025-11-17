@@ -70,7 +70,6 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 
 // WithPermission adds permission to created files by the deployer
 func (d *deployer) WithPermission(perm os.FileMode) Deployer {
-
 	deployer := newDeployer(d.containersManager, d.log)
 	deployer.addPerm = perm
 	return deployer
