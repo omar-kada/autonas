@@ -43,9 +43,9 @@ var varInfoMap = defaults.VariableInfoMap{
 // Cmd abstracts the dependencies of the run command
 type Cmd struct {
 	log             logger.Logger
-	Deployer        containers.Deployer
-	ConfigGenerator config.Generator
-	Syncer          git.Syncer
+	deployer        containers.Deployer
+	configGenerator config.Generator
+	syncer          git.Syncer
 	store           storage.Storage
 
 	currentCfg config.Config
@@ -78,9 +78,9 @@ func getParamsWithDefaults(p runParams) runParams {
 func newRunCmd(store storage.Storage, log logger.Logger) Cmd {
 	return Cmd{
 		log:             log,
-		Deployer:        containers.NewDockerDeployer(log),
-		ConfigGenerator: config.NewGenerator(),
-		Syncer:          git.NewSyncer(),
+		deployer:        containers.NewDockerDeployer(log),
+		configGenerator: config.NewGenerator(),
+		syncer:          git.NewSyncer(),
 		store:           store,
 	}
 }
@@ -116,9 +116,7 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 // DoRun executes the run command based on the input params
 func (r *Cmd) DoRun(params runParams) {
 	if params.AddWritePerm {
-		r.Deployer.AddPermission(0666)
-	} else {
-		r.Deployer.AddPermission(0000)
+		r.deployer = r.deployer.WithPermission(0666)
 	}
 	r.RunOnce(params)
 	if params.CronPeriod != "" {
@@ -131,13 +129,13 @@ func (r *Cmd) DoRun(params runParams) {
 
 // RunOnce performs the main operations of fetching config, loading it, and deploying services.
 func (r *Cmd) RunOnce(params runParams) error {
-	syncErr := r.Syncer.Sync(params.Repo, params.Branch, params.WorkingDir)
+	syncErr := r.syncer.Sync(params.Repo, params.Branch, params.WorkingDir)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("error getting config repo:  %w", syncErr)
 	}
 
-	cfg, err := r.ConfigGenerator.FromFiles(params.ConfigFiles)
+	cfg, err := r.configGenerator.FromFiles(params.ConfigFiles)
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
@@ -150,7 +148,7 @@ func (r *Cmd) RunOnce(params runParams) error {
 	}
 
 	// Copy all files from ./services to SERVICES_PATH
-	err = r.Deployer.DeployServices(params.WorkingDir, params.ServicesDir, r.currentCfg, cfg)
+	err = r.deployer.DeployServices(params.WorkingDir, params.ServicesDir, r.currentCfg, cfg)
 	if err != nil {
 		return fmt.Errorf("error deploying services: %w", err)
 	}

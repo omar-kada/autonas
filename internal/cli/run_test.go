@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"omar-kada/autonas/internal/config"
+	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/logger"
 	"os"
 	"testing"
@@ -46,8 +47,9 @@ func (m *Mocker) DeployServices(configDir, servicesDir string, currentCfg, cfg c
 	return args.Error(0)
 }
 
-func (m *Mocker) AddPermission(perm os.FileMode) {
-	m.Called(perm)
+func (m *Mocker) WithPermission(perm os.FileMode) containers.Deployer {
+	args := m.Called(perm)
+	return args.Get(0).(containers.Deployer)
 }
 
 type ExpectedValues struct {
@@ -75,9 +77,9 @@ func mockReturnValues(m *Mocker, val ExpectedValues) {
 func newRunnerWithMocks(mocker *Mocker) *Cmd {
 	return &Cmd{
 		log:             logger.New(true),
-		Deployer:        mocker,
-		ConfigGenerator: mocker,
-		Syncer:          mocker,
+		deployer:        mocker,
+		configGenerator: mocker,
+		syncer:          mocker,
 	}
 }
 
