@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +30,6 @@ func (m *Mocker) Run(cmd string, cmdArgs ...string) error {
 
 func newManagerWithMocks(mocker *Mocker) *Manager {
 	return &Manager{
-		log:       logger.New(true),
 		writer:    mocker,
 		cmdRunner: mocker,
 	}

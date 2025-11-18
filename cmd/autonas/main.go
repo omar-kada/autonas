@@ -2,8 +2,8 @@
 package main
 
 import (
+	"log/slog"
 	"omar-kada/autonas/internal/cli"
-	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/storage"
 	"os"
 	"strings"
@@ -13,15 +13,19 @@ func main() {
 	retcode := 0
 	defer func() { os.Exit(retcode) }()
 
-	log := logger.New(strings.ToUpper(os.Getenv("ENV")) == "DEV")
-	defer log.Sync()
+	isDev := strings.ToUpper(os.Getenv("ENV")) == "DEV"
+	if isDev {
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	} else {
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
+	}
 
 	store := storage.NewMemoryStorage()
 
 	// Add subcommands
-	rootCmd := cli.NewRootCmd(store, log)
+	rootCmd := cli.NewRootCmd(store)
 	if err := rootCmd.Execute(); err != nil {
-		log.Errorf("error on the root command : %w", err)
+		slog.Error("error executing root command", "error", err)
 		retcode = 1 // it exits with code 1
 	}
 }

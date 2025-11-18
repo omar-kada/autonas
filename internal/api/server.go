@@ -3,8 +3,8 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
-	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/storage"
 	"strconv"
 	"time"
@@ -18,7 +18,6 @@ type Server interface {
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	log              logger.Logger
 	store            storage.Storage
 	loginHandler     *LoginHandler
 	websocketHandler *WebsocketHandler
@@ -27,12 +26,11 @@ type HTTPServer struct {
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.Storage, log logger.Logger) Server {
+func NewServer(store storage.Storage) Server {
 	return &HTTPServer{
-		log:              log,
 		store:            store,
-		loginHandler:     newLoginHandler(store, log),
-		websocketHandler: newWebsocketHandler(store, log),
+		loginHandler:     newLoginHandler(store),
+		websocketHandler: newWebsocketHandler(store),
 	}
 }
 
@@ -41,7 +39,7 @@ func (s *HTTPServer) ListenAndServe(port int) error {
 	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend")}))
 	http.HandleFunc("/login", s.loginHandler.handle)
 	http.HandleFunc("/ws", s.websocketHandler.handle)
-	s.log.Infof("Server starting on : %s", port)
+	slog.Info("Server starting on ", "port", port)
 
 	s.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(port),

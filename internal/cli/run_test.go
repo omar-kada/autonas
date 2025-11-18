@@ -5,7 +5,6 @@ import (
 	"errors"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers"
-	"omar-kada/autonas/internal/logger"
 	"os"
 	"testing"
 	"time"
@@ -87,7 +86,6 @@ func mockReturnValues(m *Mocker, val ExpectedValues) {
 
 func newRunnerWithMocks(mocker *Mocker) *Cmd {
 	return &Cmd{
-		log:             logger.New(true),
 		deployer:        mocker,
 		configGenerator: mocker,
 		syncer:          mocker,

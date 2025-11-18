@@ -2,19 +2,16 @@ package api
 
 import (
 	"net/http"
-	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/storage"
 )
 
 // LoginHandler processes login Http requests
 type LoginHandler struct {
-	log   logger.Logger
 	store storage.Storage
 }
 
-func newLoginHandler(store storage.Storage, log logger.Logger) *LoginHandler {
+func newLoginHandler(store storage.Storage) *LoginHandler {
 	return &LoginHandler{
-		log:   log,
 		store: store,
 	}
 }

@@ -1,8 +1,8 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
-	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/storage"
 
 	"github.com/gorilla/websocket"
@@ -10,19 +10,17 @@ import (
 
 // WebsocketHandler processes websocker requests
 type WebsocketHandler struct {
-	log   logger.Logger
 	store storage.Storage
 }
 
-func newWebsocketHandler(store storage.Storage, log logger.Logger) *WebsocketHandler {
+func newWebsocketHandler(store storage.Storage) *WebsocketHandler {
 	return &WebsocketHandler{
-		log:   log,
 		store: store,
 	}
 }
 
-func (h *WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {
-	h.log.Debugf("WebSocket connection attempt from: %s, %v", r.RemoteAddr, r)
+func (*WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("WebSocket connection attempt from ", "addr", r.RemoteAddr, "request", r)
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -37,7 +35,7 @@ func (h *WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		h.log.Errorf("Upgrade error: %s", err)
+		slog.Error("Upgrade error", "error", err)
 		http.Error(w, "error upgrading "+err.Error(), http.StatusInsufficientStorage)
 		return
 	}
@@ -46,14 +44,14 @@ func (h *WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
-			h.log.Errorf("Read error: %s", err)
+			slog.Error("Read error", "error", err)
 			break
 		}
 
-		h.log.Infof("Received: %s", p)
+		slog.Info("Received ", "payload", p)
 
 		if err := conn.WriteMessage(messageType, p); err != nil {
-			h.log.Errorf("Write error: %s", err)
+			slog.Error("Write error", "error", err)
 			break
 		}
 	}

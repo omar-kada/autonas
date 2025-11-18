@@ -3,9 +3,9 @@ package docker
 
 import (
 	"fmt"
+	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/shell"
 	"os"
 	"path/filepath"
@@ -15,9 +15,8 @@ import (
 )
 
 // New creates an instance of Manager for docker containers
-func New(log logger.Logger) *Manager {
+func New() *Manager {
 	return &Manager{
-		log:       log,
 		writer:    files.NewWriter(),
 		cmdRunner: shell.NewRunner(),
 	}
@@ -25,18 +24,17 @@ func New(log logger.Logger) *Manager {
 
 // Manager manages Docker Compose services.
 type Manager struct {
-	log       logger.Logger
 	writer    files.Writer
 	cmdRunner shell.Runner
 }
 
 // RemoveServices stops and removes Docker Compose services.
 func (d Manager) RemoveServices(services []string, servicesDir string) error {
-	d.log.Debugf("services %s will be removed if running.", services)
+	slog.Debug("these services will be removed if running.", "services", services)
 	for _, serviceName := range services {
 		err := d.composeDown(filepath.Join(servicesDir, serviceName))
 		if err != nil {
-			d.log.Errorf("Error running docker compose down for %s: %v", serviceName, err)
+			slog.Error("Error running docker compose down for %s: %v", serviceName, err)
 		}
 	}
 
@@ -48,16 +46,16 @@ func (d Manager) RemoveServices(services []string, servicesDir string) error {
 func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
 	enabledServices := cfg.GetEnabledServices()
 	if len(enabledServices) == 0 {
-		d.log.Warnf("No enabled_services specified in config. Skipping .env generation and compose up.")
+		slog.Warn("No enabled_services specified in config. Skipping .env generation and compose up.")
 		return nil
 	}
 
 	for _, service := range enabledServices {
 		if err := d.generateEnvFile(cfg, servicesDir, service); err != nil {
-			d.log.Errorf("Error creating env file for %s: %v", service, err)
+			slog.Error("Error creating env file", "service", service, "error", err)
 		}
 		if err := d.composeUp(filepath.Join(servicesDir, service)); err != nil {
-			d.log.Errorf("Error running docker compose for %s: %v", service, err)
+			slog.Error("Error running docker compose", "service", service, "error", err)
 		}
 	}
 	// TODO : return aggregated error instead of nil

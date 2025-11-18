@@ -2,18 +2,17 @@ package cli
 
 import (
 	"fmt"
+	"log/slog"
 	"omar-kada/autonas/internal/api"
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/git"
-	"omar-kada/autonas/internal/logger"
 	"omar-kada/autonas/internal/storage"
 	"reflect"
 
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 const (
@@ -42,7 +41,6 @@ var varInfoMap = defaults.VariableInfoMap{
 
 // Cmd abstracts the dependencies of the run command
 type Cmd struct {
-	log             logger.Logger
 	deployer        containers.Deployer
 	configGenerator config.Generator
 	syncer          git.Syncer
@@ -76,14 +74,13 @@ func getParamsWithDefaults(p runParams) runParams {
 	}
 }
 
-func newRunCmd(store storage.Storage, log logger.Logger) Cmd {
+func newRunCmd(store storage.Storage) Cmd {
 	return Cmd{
-		log:             log,
-		deployer:        containers.NewDockerDeployer(log),
+		deployer:        containers.NewDockerDeployer(),
 		configGenerator: config.NewGenerator(),
 		syncer:          git.NewSyncer(),
 		store:           store,
-		server:          api.NewServer(store, log),
+		server:          api.NewServer(store),
 	}
 }
 
@@ -141,11 +138,11 @@ func (r *Cmd) RunOnce(params runParams) error {
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
-	r.log.Debug("Final consolidated config", zap.Any("config", cfg))
+	slog.Debug("Final consolidated config", "config", cfg)
 
 	// check if the config changed from last run
 	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(r.currentCfg, cfg) {
-		r.log.Info("Configuration and repository are up to date. No changes detected.")
+		slog.Info("Configuration and repository are up to date. No changes detected.")
 		return nil
 	}
 
@@ -165,7 +162,7 @@ func (r *Cmd) RunPeriodically(params runParams) {
 	c.AddFunc(params.CronPeriod, func() {
 		err := r.RunOnce(params)
 		if err != nil {
-			r.log.Errorf("error on run periodically: %w", err)
+			slog.Error("error on run periodically", "error", err)
 		}
 	})
 
