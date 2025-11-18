@@ -38,18 +38,18 @@ RUN apt update && apt install --yes --no-install-recommends \
 ARG UID=1000
 ARG GID=1000
 
-RUN mkdir /autonas
-RUN mkdir /autonas/config
+RUN mkdir /app
+RUN mkdir /app/config
 
-WORKDIR /autonas
+WORKDIR /app
 
-COPY --from=builder /autonas/autonas /autonas/
-COPY frontend /autonas/frontend
+COPY --from=builder /autonas/autonas /app/
+COPY frontend /app/frontend
 
-RUN chmod -R 755 /autonas
+RUN chmod -R 744 /app
 
-ENV AUTONAS_WORKING_DIR="/autonas/config"
+ENV AUTONAS_WORKING_DIR="/app/config"
 EXPOSE 8080
 
 # Start the application
-CMD ["sh", "-c", "/autonas/autonas run -d ${AUTONAS_WORKING_DIR} --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]
+CMD ["sh", "-c", "/app/autonas run -d ${AUTONAS_WORKING_DIR} --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]
