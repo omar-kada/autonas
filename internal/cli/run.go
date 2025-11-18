@@ -47,6 +47,7 @@ type Cmd struct {
 	configGenerator config.Generator
 	syncer          git.Syncer
 	store           storage.Storage
+	server          api.Server
 
 	currentCfg config.Config
 }
@@ -82,6 +83,7 @@ func newRunCmd(store storage.Storage, log logger.Logger) Cmd {
 		configGenerator: config.NewGenerator(),
 		syncer:          git.NewSyncer(),
 		store:           store,
+		server:          api.NewServer(store, log),
 	}
 }
 
@@ -123,7 +125,7 @@ func (r *Cmd) DoRun(params runParams) {
 		go r.RunPeriodically(params)
 	}
 
-	go api.NewServer(r.store, r.log).ListenAndServe(params.Port)
+	go r.server.ListenAndServe(params.Port)
 	select {}
 }
 

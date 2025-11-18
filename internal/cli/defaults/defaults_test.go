@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetDefaultStringFn_WithDefault(t *testing.T) {
+func TestGetDefaultString_WithDefault(t *testing.T) {
 	varMap := VariableInfoMap{
 		"k1": {EnvKey: "E1", DefaultValue: "d1"},
 	}
@@ -16,7 +16,7 @@ func TestGetDefaultStringFn_WithDefault(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestGetDefaultStringFn_NoDefault(t *testing.T) {
+func TestGetDefaultString_NoDefault(t *testing.T) {
 	varMap := VariableInfoMap{
 		"k1": {EnvKey: "E1", DefaultValue: nil},
 	}
@@ -26,7 +26,7 @@ func TestGetDefaultStringFn_NoDefault(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestEnvOrDefaultFn_Priorities(t *testing.T) {
+func TestEnvOrDefault_Priorities(t *testing.T) {
 	key := VarKey("varName")
 	varMap := VariableInfoMap{
 		key: {EnvKey: "ENV_KEY", DefaultValue: "default"},
@@ -40,7 +40,7 @@ func TestEnvOrDefaultFn_Priorities(t *testing.T) {
 	assert.Equal(t, "default", varMap.EnvOrDefault("", key), "default value has least priority")
 }
 
-func TestEnvOrDefaultSliceFn_Priorities(t *testing.T) {
+func TestEnvOrDefaultSlice_Priorities(t *testing.T) {
 	key := VarKey("sliceVarName")
 	cliValue := []string{"x", "y"}
 	defaultValue := []string{"a"}
@@ -56,4 +56,35 @@ func TestEnvOrDefaultSliceFn_Priorities(t *testing.T) {
 	assert.Equal(t, envValue, varMap.EnvOrDefaultSlice(nil, key), "ENV value has 2nd most priority")
 	t.Setenv("ENV_KEY", "")
 	assert.Equal(t, defaultValue, varMap.EnvOrDefaultSlice(nil, key), "default value has least priority")
+}
+
+func TestEnvOrDefaultInt_Priorities(t *testing.T) {
+	key := VarKey("intVarName")
+	cliValue := 123
+	defaultValue := 456
+
+	varMap := VariableInfoMap{
+		key: {EnvKey: "ENV_KEY", DefaultValue: defaultValue},
+	}
+
+	t.Setenv("ENV_KEY", "789")
+	envValue := 789
+
+	assert.Equal(t, cliValue, varMap.EnvOrDefaultInt(cliValue, key), "CLI value has most priority")
+	assert.Equal(t, envValue, varMap.EnvOrDefaultInt(0, key), "ENV value has 2nd most priority")
+	t.Setenv("ENV_KEY", "")
+	assert.Equal(t, defaultValue, varMap.EnvOrDefaultInt(0, key), "default value has least priority")
+}
+
+func TestEnvOrDefaultInt_InvalidEnvValue(t *testing.T) {
+	key := VarKey("intVarName")
+	defaultValue := 456
+
+	varMap := VariableInfoMap{
+		key: {EnvKey: "ENV_KEY", DefaultValue: defaultValue},
+	}
+
+	t.Setenv("ENV_KEY", "invalid")
+
+	assert.Equal(t, defaultValue, varMap.EnvOrDefaultInt(0, key), "Invalid ENV value should fall back to default")
 }

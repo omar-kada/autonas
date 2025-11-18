@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/logger"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,6 +54,15 @@ func (m *Mocker) WithPermission(perm os.FileMode) containers.Deployer {
 	return args.Get(0).(containers.Deployer)
 }
 
+func (m *Mocker) ListenAndServe(port int) error {
+	args := m.Called(port)
+	return args.Error(0)
+}
+
+func (m *Mocker) Shutdown(ctx context.Context) {
+	m.Called(ctx)
+}
+
 type ExpectedValues struct {
 	generateConfig       config.Config
 	generateErr          error
@@ -80,6 +91,7 @@ func newRunnerWithMocks(mocker *Mocker) *Cmd {
 		deployer:        mocker,
 		configGenerator: mocker,
 		syncer:          mocker,
+		server:          mocker,
 	}
 }
 
@@ -260,4 +272,30 @@ func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
 	assert.Equal(t, []string{"cli.yaml"}, result.ConfigFiles)
 	assert.Equal(t, "cli-branch", result.Branch)
 	assert.Equal(t, "./config", result.WorkingDir) // Should use default
+}
+
+func TestDoRun_WithAddWritePerm(t *testing.T) {
+	mocker := &Mocker{}
+	runner := newRunnerWithMocks(mocker)
+
+	// Mock the WithPermission method to return a new deployer with the expected permission
+	expectedDeployer := &Mocker{}
+	mocker.On("WithPermission", os.FileMode(0666)).Return(expectedDeployer)
+	mocker.On("Sync", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mocker.On("FromFiles", mock.Anything).Return(config.Config{}, nil)
+	mocker.On("ListenAndServe", 8080).Return(nil)
+
+	// Mock the RunOnce method to return nil
+	expectedDeployer.On("DeployServices", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	params := runParams{
+		AddWritePerm: true,
+		Port:         8080,
+	}
+
+	// Run the DoRun method in a goroutine to avoid blocking
+	go runner.DoRun(params)
+	time.Sleep(20 * time.Millisecond)
+	// Verify that the WithPermission method is called with the expected permission
+	mocker.AssertCalled(t, "WithPermission", os.FileMode(0666))
 }

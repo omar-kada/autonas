@@ -52,7 +52,7 @@ func (varInfoMap VariableInfoMap) EnvOrDefaultInt(value int, key VarKey) int {
 	varInfo := varInfoMap[key]
 	if envValue := os.Getenv(varInfo.EnvKey); envValue != "" {
 		val, err := strconv.Atoi(envValue)
-		if err != nil {
+		if err == nil {
 			return val
 		}
 	}
