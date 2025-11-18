@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/model"
-	"omar-kada/autonas/internal/logger"
 	"os"
 	"testing"
 
@@ -57,7 +56,6 @@ var (
 
 func newDeployerWithMocks(mocker *Mocker) *deployer {
 	return &deployer{
-		log:               logger.New(true),
 		containersManager: mocker,
 		copyer:            mocker,
 		addPerm:           0000,

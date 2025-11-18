@@ -3,11 +3,11 @@ package containers
 
 import (
 	"fmt"
+	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers/docker"
 	"omar-kada/autonas/internal/containers/model"
 	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/logger"
 	"os"
 	"path/filepath"
 	"slices"
@@ -20,14 +20,13 @@ type Deployer interface {
 }
 
 // NewDockerDeployer creates a new deployer that uses docker for containers
-func NewDockerDeployer(log logger.Logger) Deployer {
-	return newDeployer(docker.New(log), log)
+func NewDockerDeployer() Deployer {
+	return newDeployer(docker.New())
 }
 
 // newDeployer creates a new Deployer instance
-func newDeployer(containersManager model.Manager, log logger.Logger) *deployer {
+func newDeployer(containersManager model.Manager) *deployer {
 	return &deployer{
-		log:               log,
 		containersManager: containersManager,
 		copyer:            files.NewCopier(),
 	}
@@ -35,7 +34,6 @@ func newDeployer(containersManager model.Manager, log logger.Logger) *deployer {
 
 // deployer is responsible for deploying the services
 type deployer struct {
-	log               logger.Logger
 	containersManager model.Manager
 	copyer            files.Copier
 	addPerm           os.FileMode
@@ -50,7 +48,7 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 		return err
 	}
 
-	d.log.Debugf("copying files from %s to %s", configDir+"/services", servicesDir)
+	slog.Debug("copying files from src to dst", "src", configDir+"/services", "dst", servicesDir)
 
 	enabledServiecs := cfg.GetEnabledServices()
 	for _, service := range enabledServiecs {
@@ -61,7 +59,7 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 		}
 	}
 
-	d.log.Debugf("deploying enabled services: %v\n", enabledServiecs)
+	slog.Debug("deploying enabled services", "services", enabledServiecs)
 	if err := d.containersManager.DeployServices(cfg, servicesDir); err != nil {
 		return err
 	}
@@ -70,7 +68,7 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 
 // WithPermission adds permission to created files by the deployer
 func (d *deployer) WithPermission(perm os.FileMode) Deployer {
-	deployer := newDeployer(d.containersManager, d.log)
+	deployer := newDeployer(d.containersManager)
 	deployer.addPerm = perm
 	return deployer
 }
