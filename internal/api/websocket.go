@@ -19,7 +19,7 @@ func newWebsocketHandler(store storage.Storage) *WebsocketHandler {
 	}
 }
 
-func (h *WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {
+func (*WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("WebSocket connection attempt from ", "addr", r.RemoteAddr, "request", r)
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
