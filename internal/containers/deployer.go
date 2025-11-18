@@ -16,16 +16,16 @@ import (
 // Deployer abstracts service deployment operations
 type Deployer interface {
 	DeployServices(configDir, servicesDir string, currentCfg, cfg config.Config) error
-	AddPermission(perm os.FileMode)
+	WithPermission(perm os.FileMode) Deployer
 }
 
 // NewDockerDeployer creates a new deployer that uses docker for containers
 func NewDockerDeployer(log logger.Logger) Deployer {
-	return NewDeployer(docker.New(log), log)
+	return newDeployer(docker.New(log), log)
 }
 
-// NewDeployer creates a new Deployer instance
-func NewDeployer(containersManager model.Manager, log logger.Logger) Deployer {
+// newDeployer creates a new Deployer instance
+func newDeployer(containersManager model.Manager, log logger.Logger) *deployer {
 	return &deployer{
 		log:               log,
 		containersManager: containersManager,
@@ -68,8 +68,11 @@ func (d *deployer) DeployServices(configDir, servicesDir string, currentCfg, cfg
 	return nil
 }
 
-func (d *deployer) AddPermission(perm os.FileMode) {
-	d.addPerm = perm
+// WithPermission adds permission to created files by the deployer
+func (d *deployer) WithPermission(perm os.FileMode) Deployer {
+	deployer := newDeployer(d.containersManager, d.log)
+	deployer.addPerm = perm
+	return deployer
 }
 
 func getUnusedServices(currentCfg, cfg config.Config) []string {

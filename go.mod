@@ -9,6 +9,7 @@ require (
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/elliotchance/orderedmap/v3 v3.1.0
 	github.com/go-git/go-git/v5 v5.16.3
+	github.com/gorilla/websocket v1.5.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/otiai10/copy v1.14.1
 	github.com/robfig/cron/v3 v3.0.1
@@ -100,7 +101,6 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect

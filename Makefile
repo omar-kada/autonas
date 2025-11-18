@@ -1,3 +1,7 @@
+
+build:
+	go build -o autonas ./cmd/autonas
+
 run:
 	go run ./cmd/autonas run
 
@@ -13,9 +17,6 @@ test:
 test-int:
 	(docker rmi autonas:local --force || true) && go test ./integration_tests/... -v -count=1
 
-cover-html:
+test-cover:
 	go test -coverprofile=coverage.out ./internal/... && \
 	go tool cover -html=coverage.out
-
-build:
-	go build -o autonas ./cmd/autonas

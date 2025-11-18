@@ -3,6 +3,8 @@ services:
     build: .
     image: autonas:local
     container_name: autonas
+    ports:
+      - 8080:8080
     environment:
       AUTONAS_CONFIG_FILES: "${CONFIG_FILES}" # list of the configuration files that will define what should be deployed
       # in case the config files are inside the repo, just use ${AUTONAS_WORKING_DIR}/config-file-name.yaml

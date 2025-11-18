@@ -1,13 +1,14 @@
-// Package run provides the run command executor
-package run
+package cli
 
 import (
 	"fmt"
+	"omar-kada/autonas/internal/api"
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/containers"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/logger"
+	"omar-kada/autonas/internal/storage"
 	"reflect"
 
 	"github.com/robfig/cron/v3"
@@ -24,6 +25,7 @@ const (
 	_servicesDir  defaults.VarKey = "services-dir"
 	_cronPeriod   defaults.VarKey = "cron-period"
 	_addWritePerm defaults.VarKey = "add-write-perm"
+	_port         defaults.VarKey = "port"
 )
 
 var varInfoMap = defaults.VariableInfoMap{
@@ -35,20 +37,17 @@ var varInfoMap = defaults.VariableInfoMap{
 	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
 	_cronPeriod:   {EnvKey: "AUTONAS_CRON_PERIOD", DefaultValue: nil},
 	_addWritePerm: {DefaultValue: false},
+	_port:         {DefaultValue: 8080},
 }
-
-var (
-	getDefaultString  = defaults.GetDefaultStringFn(varInfoMap)
-	envOrDefault      = defaults.EnvOrDefaultFn(varInfoMap)
-	envOrDefaultSlice = defaults.EnvOrDefaultSliceFn(varInfoMap)
-)
 
 // Cmd abstracts the dependencies of the run command
 type Cmd struct {
-	Log             logger.Logger
-	Deployer        containers.Deployer
-	ConfigGenerator config.Generator
-	Syncer          git.Syncer
+	log             logger.Logger
+	deployer        containers.Deployer
+	configGenerator config.Generator
+	syncer          git.Syncer
+	store           storage.Storage
+	server          api.Server
 
 	currentCfg config.Config
 }
@@ -61,27 +60,30 @@ type runParams struct {
 	ServicesDir  string
 	CronPeriod   string
 	AddWritePerm bool
+	Port         int
 }
 
 func getParamsWithDefaults(p runParams) runParams {
 	return runParams{
-		ConfigFiles:  envOrDefaultSlice(p.ConfigFiles, _files),
-		Repo:         envOrDefault(p.Repo, _repo),
-		Branch:       envOrDefault(p.Branch, _branch),
-		WorkingDir:   envOrDefault(p.WorkingDir, _workingDir),
-		ServicesDir:  envOrDefault(p.ServicesDir, _servicesDir),
-		CronPeriod:   envOrDefault(p.CronPeriod, _cronPeriod),
+		ConfigFiles:  varInfoMap.EnvOrDefaultSlice(p.ConfigFiles, _files),
+		Repo:         varInfoMap.EnvOrDefault(p.Repo, _repo),
+		Branch:       varInfoMap.EnvOrDefault(p.Branch, _branch),
+		WorkingDir:   varInfoMap.EnvOrDefault(p.WorkingDir, _workingDir),
+		ServicesDir:  varInfoMap.EnvOrDefault(p.ServicesDir, _servicesDir),
+		CronPeriod:   varInfoMap.EnvOrDefault(p.CronPeriod, _cronPeriod),
 		AddWritePerm: p.AddWritePerm,
+		Port:         varInfoMap.EnvOrDefaultInt(p.Port, _port),
 	}
 }
 
-// New creates a new run.Cmd instance with default dependencies.
-func New(log logger.Logger) Cmd {
+func newRunCmd(store storage.Storage, log logger.Logger) Cmd {
 	return Cmd{
-		Log:             log,
-		Deployer:        containers.NewDockerDeployer(log),
-		ConfigGenerator: config.NewGenerator(),
-		Syncer:          git.NewSyncer(),
+		log:             log,
+		deployer:        containers.NewDockerDeployer(log),
+		configGenerator: config.NewGenerator(),
+		syncer:          git.NewSyncer(),
+		store:           store,
+		server:          api.NewServer(store, log),
 	}
 }
 
@@ -92,58 +94,63 @@ func (r *Cmd) ToCobraCommand() *cobra.Command {
 		Use:   "run",
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
-			params := getParamsWithDefaults(params)
-			if params.AddWritePerm {
-				r.Deployer.AddPermission(0666)
-			} else {
-				r.Deployer.AddPermission(0000)
-			}
-			r.RunOnce(params)
-			if params.CronPeriod != "" {
-				r.RunPeriodically(params)
-			}
+			r.DoRun(getParamsWithDefaults(params))
 		},
 	}
 
 	runCmd.Flags().StringSliceVarP(&(params.ConfigFiles), string(_files), "f", nil,
-		getDefaultString("YAML config files", _files))
+		varInfoMap.GetDefaultString("YAML config files", _files))
 	runCmd.Flags().StringVarP(&(params.Repo), string(_repo), "r", "",
-		getDefaultString("repository URL to fetch config files & services", _repo))
+		varInfoMap.GetDefaultString("repository URL to fetch config files & services", _repo))
 	runCmd.Flags().StringVarP(&(params.Branch), string(_branch), "b", "",
-		getDefaultString("branch to be used in the repo", _branch))
+		varInfoMap.GetDefaultString("branch to be used in the repo", _branch))
 	runCmd.Flags().StringVarP(&(params.WorkingDir), string(_workingDir), "d", "",
-		getDefaultString("directory where autonas data will be stored", _workingDir))
+		varInfoMap.GetDefaultString("directory where autonas data will be stored", _workingDir))
 	runCmd.Flags().StringVarP(&(params.ServicesDir), string(_servicesDir), "s", "",
-		getDefaultString("directory where services compose stacks will be stored", _servicesDir))
+		varInfoMap.GetDefaultString("directory where services compose stacks will be stored", _servicesDir))
 	runCmd.Flags().StringVarP(&(params.CronPeriod), string(_cronPeriod), "p", "",
-		getDefaultString("cron period string", _cronPeriod))
+		varInfoMap.GetDefaultString("cron period string", _cronPeriod))
 	runCmd.Flags().BoolVar(&(params.AddWritePerm), string(_addWritePerm), false,
-		getDefaultString("when true, the tool adds write permission to config files", _addWritePerm))
+		varInfoMap.GetDefaultString("when true, the tool adds write permission to config files", _addWritePerm))
 	return runCmd
+}
+
+// DoRun executes the run command based on the input params
+func (r *Cmd) DoRun(params runParams) {
+	if params.AddWritePerm {
+		r.deployer = r.deployer.WithPermission(0666)
+	}
+	r.RunOnce(params)
+	if params.CronPeriod != "" {
+		go r.RunPeriodically(params)
+	}
+
+	go r.server.ListenAndServe(params.Port)
+	select {}
 }
 
 // RunOnce performs the main operations of fetching config, loading it, and deploying services.
 func (r *Cmd) RunOnce(params runParams) error {
-	syncErr := r.Syncer.Sync(params.Repo, params.Branch, params.WorkingDir)
+	syncErr := r.syncer.Sync(params.Repo, params.Branch, params.WorkingDir)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("error getting config repo:  %w", syncErr)
 	}
 
-	cfg, err := r.ConfigGenerator.FromFiles(params.ConfigFiles)
+	cfg, err := r.configGenerator.FromFiles(params.ConfigFiles)
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
 	}
-	r.Log.Debug("Final consolidated config", zap.Any("config", cfg))
+	r.log.Debug("Final consolidated config", zap.Any("config", cfg))
 
 	// check if the config changed from last run
 	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(r.currentCfg, cfg) {
-		r.Log.Info("Configuration and repository are up to date. No changes detected.")
+		r.log.Info("Configuration and repository are up to date. No changes detected.")
 		return nil
 	}
 
 	// Copy all files from ./services to SERVICES_PATH
-	err = r.Deployer.DeployServices(params.WorkingDir, params.ServicesDir, r.currentCfg, cfg)
+	err = r.deployer.DeployServices(params.WorkingDir, params.ServicesDir, r.currentCfg, cfg)
 	if err != nil {
 		return fmt.Errorf("error deploying services: %w", err)
 	}
@@ -158,7 +165,7 @@ func (r *Cmd) RunPeriodically(params runParams) {
 	c.AddFunc(params.CronPeriod, func() {
 		err := r.RunOnce(params)
 		if err != nil {
-			r.Log.Errorf("error on run periodically: %w", err)
+			r.log.Errorf("error on run periodically: %w", err)
 		}
 	})
 
