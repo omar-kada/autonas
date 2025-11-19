@@ -18,21 +18,21 @@ import (
 )
 
 // NewManager creates an instance of Manager for docker containers
-func NewManager() *Manager {
-	return &Manager{
+func NewManager() *Deployer {
+	return &Deployer{
 		writer:    files.NewWriter(),
 		cmdRunner: shell.NewRunner(),
 	}
 }
 
-// Manager manages Docker Compose services.
-type Manager struct {
+// Deployer manages Docker Compose services.
+type Deployer struct {
 	writer    files.Writer
 	cmdRunner shell.Runner
 }
 
 // RemoveServices stops and removes Docker Compose services.
-func (d Manager) RemoveServices(services []string, servicesDir string) error {
+func (d Deployer) RemoveServices(services []string, servicesDir string) error {
 	slog.Debug("these services will be removed if running.", "services", services)
 	for _, serviceName := range services {
 		err := d.composeDown(filepath.Join(servicesDir, serviceName))
@@ -46,7 +46,7 @@ func (d Manager) RemoveServices(services []string, servicesDir string) error {
 }
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
-func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
+func (d Deployer) DeployServices(cfg config.Config, servicesDir string) error {
 	enabledServices := cfg.GetEnabledServices()
 	if len(enabledServices) == 0 {
 		slog.Warn("No enabled_services specified in config. Skipping .env generation and compose up.")
@@ -65,7 +65,7 @@ func (d Manager) DeployServices(cfg config.Config, servicesDir string) error {
 	return nil
 }
 
-func (d Manager) composeUp(composePath string) error {
+func (d Deployer) composeUp(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
 	if err := d.cmdRunner.Run("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
@@ -73,7 +73,7 @@ func (d Manager) composeUp(composePath string) error {
 	return nil
 }
 
-func (d Manager) composeDown(composePath string) error {
+func (d Deployer) composeDown(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "down"}
 	if err := d.cmdRunner.Run("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
@@ -81,7 +81,7 @@ func (d Manager) composeDown(composePath string) error {
 	return nil
 }
 
-func (d Manager) generateEnvFile(cfg config.Config, servicesDir, service string) error {
+func (d Deployer) generateEnvFile(cfg config.Config, servicesDir, service string) error {
 	serviceCfg := cfg.PerService(service)
 	envFilePath := filepath.Join(servicesDir, service, ".env")
 
@@ -137,7 +137,7 @@ func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (d Manager) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (Deployer) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
 	cli, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

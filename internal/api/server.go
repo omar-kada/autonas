@@ -27,12 +27,12 @@ type HTTPServer struct {
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.Storage, deployer process.Manager) Server {
+func NewServer(store storage.Storage, manager process.Manager) Server {
 	return &HTTPServer{
 		store:            store,
 		loginHandler:     newLoginHandler(store),
 		websocketHandler: newWebsocketHandler(store),
-		statusHandler:    newStatusHandler(deployer),
+		statusHandler:    newStatusHandler(manager),
 	}
 }
 

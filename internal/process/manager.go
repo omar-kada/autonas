@@ -33,9 +33,9 @@ type Manager interface {
 	SyncPeriodically() error
 }
 
-// NewManager creates a new Deployer instance
+// NewManager creates a new Manager instance
 func NewManager(
-	deployerParams ManagerParams,
+	managerParams ManagerParams,
 	containersDeployer Deployer,
 	copier files.Copier,
 	fetcher git.Fetcher,
@@ -46,7 +46,7 @@ func NewManager(
 		copier:             copier,
 		fetcher:            fetcher,
 		configGenerator:    configGenerator,
-		params:             deployerParams,
+		params:             managerParams,
 	}
 }
 

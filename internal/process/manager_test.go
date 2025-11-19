@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func newDeployerWithMocks(mocker *Mocker, params ManagerParams) *manager {
+func newManagerWithMocks(mocker *Mocker, params ManagerParams) *manager {
 	return &manager{
 		containersDeployer: mocker,
 		copier:             mocker,
@@ -81,12 +81,12 @@ func newDeployerWithMocks(mocker *Mocker, params ManagerParams) *manager {
 
 func TestDeployServices_Success(t *testing.T) {
 	mocker := &Mocker{}
-	deployer := newDeployerWithMocks(mocker, ManagerParams{
+	manager := newManagerWithMocks(mocker, ManagerParams{
 		ServicesDir: "/services",
 		WorkingDir:  "configDir",
 		ConfigFile:  "config.yaml",
 	})
-	deployer.currentCfg = mockConfigOld
+	manager.currentCfg = mockConfigOld
 	mock.InOrder(
 		mocker.On(
 			"RemoveServices", []string{"svc1"}, "/services",
@@ -103,7 +103,7 @@ func TestDeployServices_Success(t *testing.T) {
 	mocker.On(
 		"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 	).Return(nil)
-	err := deployer.removeAndDeployStacks(mockConfigOld, mockConfigNew)
+	err := manager.removeAndDeployStacks(mockConfigOld, mockConfigNew)
 	assert.NoError(t, err)
 }
 
@@ -146,12 +146,12 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			deployer := newDeployerWithMocks(mocker, ManagerParams{
+			manager := newManagerWithMocks(mocker, ManagerParams{
 				ServicesDir: "/services",
 				WorkingDir:  "configDir",
 				ConfigFile:  "config.yaml",
 			})
-			deployer.currentCfg = mockConfigOld
+			manager.currentCfg = mockConfigOld
 
 			mock.InOrder(
 				mocker.On(
@@ -170,7 +170,7 @@ func TestDeployServices_Errors(t *testing.T) {
 			mocker.On(
 				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 			).Return(tc.errors.copyErr)
-			err := deployer.removeAndDeployStacks(mockConfigOld, mockConfigNew)
+			err := manager.removeAndDeployStacks(mockConfigOld, mockConfigNew)
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
 		})

@@ -82,7 +82,7 @@ func doRun(params RunParams) error {
 		addPerm = os.FileMode(0666)
 	}
 	store := storage.NewMemoryStorage()
-	deployer := process.NewManager(
+	manager := process.NewManager(
 		process.ManagerParams{
 			AddPerm:     addPerm,
 			ServicesDir: params.ServicesDir,
@@ -94,10 +94,10 @@ func doRun(params RunParams) error {
 		git.NewFetcher(),
 		config.NewGenerator())
 
-	if err := deployer.SyncDeployment(); err != nil {
+	if err := manager.SyncDeployment(); err != nil {
 		slog.Error("error while deploying services", "error", err)
 		return err
 	}
-	server := api.NewServer(store, deployer)
+	server := api.NewServer(store, manager)
 	return server.ListenAndServe(params.Port)
 }
