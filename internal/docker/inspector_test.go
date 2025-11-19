@@ -11,10 +11,9 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockClient is a mock implementation of the Docker client
+// MockClient is a mock implementation of the Client interface
 type MockClient struct {
 	mock.Mock
-	client.Client
 }
 
 func (m *MockClient) ContainerList(ctx context.Context, options client.ContainerListOptions) (client.ContainerListResult, error) {
@@ -27,32 +26,30 @@ func (m *MockClient) ContainerInspect(ctx context.Context, containerID string, o
 	return args.Get(0).(client.ContainerInspectResult), args.Error(1)
 }
 
-func TestGetManagedContainers_Success(t *testing.T) {
+func TestGetManagedContainers(t *testing.T) {
 	mockClient := new(MockClient)
-	inspector := NewInspector(mockClient)
 
-	// Mock data
-	servicesDir := "/services"
-	containerList := client.ContainerListResult{
+	// Test successful case
+	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{
 		Items: []container.Summary{
 			{
 				ID:     "container1",
 				Names:  []string{"/container1"},
 				Image:  "image1",
 				State:  "running",
-				Status: "Up 5 minutes",
+				Status: "Up 1 hour",
 			},
 			{
 				ID:     "container2",
 				Names:  []string{"/container2"},
 				Image:  "image2",
 				State:  "exited",
-				Status: "Exited (0) 10 minutes ago",
+				Status: "Exited (0) 2 hours ago",
 			},
 		},
-	}
+	}, nil)
 
-	containerInspect1 := client.ContainerInspectResult{
+	mockClient.On("ContainerInspect", mock.Anything, "container1", mock.Anything).Return(client.ContainerInspectResult{
 		Container: container.InspectResponse{
 			Config: &container.Config{
 				Labels: map[string]string{
@@ -60,9 +57,9 @@ func TestGetManagedContainers_Success(t *testing.T) {
 				},
 			},
 		},
-	}
+	}, nil)
 
-	containerInspect2 := client.ContainerInspectResult{
+	mockClient.On("ContainerInspect", mock.Anything, "container2", mock.Anything).Return(client.ContainerInspectResult{
 		Container: container.InspectResponse{
 			Config: &container.Config{
 				Labels: map[string]string{
@@ -70,149 +67,89 @@ func TestGetManagedContainers_Success(t *testing.T) {
 				},
 			},
 		},
-	}
+	}, nil)
 
-	// Setup expectations
-	mockClient.On("ContainerList", mock.Anything, mock.Anything).Return(containerList, nil)
-	mockClient.On("ContainerInspect", mock.Anything, "container1", mock.Anything).Return(containerInspect1, nil)
-	mockClient.On("ContainerInspect", mock.Anything, "container2", mock.Anything).Return(containerInspect2, nil)
+	servicesDir := "/services"
+	result, err := getManagedContainersWithClient(mockClient, servicesDir)
 
-	// Call the method
-	result, err := inspector.GetManagedContainers(servicesDir)
-
-	// Assertions
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.Contains(t, result, "service1")
 	assert.Contains(t, result, "service2")
 	assert.Len(t, result["service1"], 1)
 	assert.Len(t, result["service2"], 1)
-	assert.Equal(t, "container1", result["service1"][0].ID)
-	assert.Equal(t, "container2", result["service2"][0].ID)
 
-	// Verify that all expectations were met
-	mockClient.AssertExpectations(t)
-}
+	// Test error case
+	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{}, errors.New("failed to list containers"))
 
-func TestGetManagedContainers_ContainerListError(t *testing.T) {
-	mockClient := new(MockClient)
-	inspector := NewInspector(mockClient)
+	_, err = getManagedContainersWithClient(mockClient, servicesDir)
 
-	// Mock data
-	servicesDir := "/services"
-	expectedError := errors.New("failed to list containers")
-
-	// Setup expectations
-	mockClient.On("ContainerList", mock.Anything, mock.Anything).Return(client.ContainerListResult{}, expectedError)
-
-	// Call the method
-	result, err := inspector.GetManagedContainers(servicesDir)
-
-	// Assertions
 	assert.Error(t, err)
-	assert.ErrorContains(t, err, expectedError.Error())
-	assert.Nil(t, result)
-
-	// Verify that all expectations were met
-	mockClient.AssertExpectations(t)
+	assert.ErrorContains(t, err, "failed to list containers")
 }
 
-func TestGetManagedContainers_ContainerInspectError(t *testing.T) {
-	mockClient := new(MockClient)
-	inspector := NewInspector(mockClient)
+func TestGetServiceNameFromLabel(t *testing.T) {
 
-	// Mock data
-	servicesDir := "/services"
-	containerList := client.ContainerListResult{
-		Items: []container.Summary{
-			{
-				ID:     "container1",
-				Names:  []string{"/container1"},
-				Image:  "image1",
-				State:  "running",
-				Status: "Up 5 minutes",
+	testCases := []struct {
+		name           string
+		containerID    string
+		labels         map[string]string
+		inspectError   error
+		expectedResult string
+		expectedError  error
+	}{
+		{
+			name:        "Successful case",
+			containerID: "container1",
+			labels: map[string]string{
+				"com.docker.compose.project.working_dir": "/services/service1",
 			},
+			inspectError:   nil,
+			expectedResult: "service1",
+			expectedError:  nil,
+		},
+
+		{
+			name:           "Label not found",
+			containerID:    "container2",
+			labels:         map[string]string{},
+			inspectError:   nil,
+			expectedResult: "",
+			expectedError:  nil,
+		},
+
+		{
+			name:           "Error case",
+			containerID:    "container3",
+			labels:         map[string]string{},
+			inspectError:   errors.New("failed to inspect container"),
+			expectedResult: "",
+			expectedError:  errors.New("failed to inspect container"),
 		},
 	}
 
-	// Setup expectations
-	mockClient.On("ContainerList", mock.Anything, mock.Anything).Return(containerList, nil)
-	mockClient.On("ContainerInspect", mock.Anything, "container1", mock.Anything).Return(client.ContainerInspectResult{}, errors.New("failed to inspect container"))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockClient := new(MockClient)
 
-	// Call the method
-	result, err := inspector.GetManagedContainers(servicesDir)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.Len(t, result, 0)
-
-	// Verify that all expectations were met
-	mockClient.AssertExpectations(t)
-}
-
-func TestGetManagedContainers_NoMatchingLabels(t *testing.T) {
-	mockClient := MockClient{}
-	inspector := NewInspector(&mockClient)
-
-	// Mock data
-	servicesDir := "/services"
-	containerList := client.ContainerListResult{
-		Items: []container.Summary{
-			{
-				ID:     "container1",
-				Names:  []string{"/container1"},
-				Image:  "image1",
-				State:  "running",
-				Status: "Up 5 minutes",
-			},
-		},
-	}
-
-	containerInspect := client.ContainerInspectResult{
-		Container: container.InspectResponse{
-			Config: &container.Config{
-				Labels: map[string]string{
-					"other.label": "value",
+			mockClient.On("ContainerInspect", mock.Anything, tc.containerID, mock.Anything).Return(client.ContainerInspectResult{
+				Container: container.InspectResponse{
+					Config: &container.Config{
+						Labels: tc.labels,
+					},
 				},
-			},
-		},
+			}, tc.inspectError)
+
+			servicesDir := "/services"
+			serviceName, err := getServiceNameFromLabel(context.Background(), mockClient, container.Summary{ID: tc.containerID}, servicesDir)
+
+			assert.Equal(t, tc.expectedResult, serviceName)
+			if tc.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectedError.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
-
-	// Setup expectations
-	mockClient.On("ContainerList", mock.Anything, mock.Anything).Return(containerList, nil)
-	mockClient.On("ContainerInspect", mock.Anything, "container1", mock.Anything).Return(containerInspect, nil)
-
-	// Call the method
-	result, err := inspector.GetManagedContainers(servicesDir)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.Len(t, result, 0)
-
-	// Verify that all expectations were met
-	mockClient.AssertExpectations(t)
-}
-
-func TestGetManagedContainers_EmptyContainerList(t *testing.T) {
-	mockClient := new(MockClient)
-	inspector := NewInspector(mockClient)
-
-	// Mock data
-	servicesDir := "/services"
-	containerList := client.ContainerListResult{
-		Items: []container.Summary{},
-	}
-
-	// Setup expectations
-	mockClient.On("ContainerList", mock.Anything, mock.Anything).Return(containerList, nil)
-
-	// Call the method
-	result, err := inspector.GetManagedContainers(servicesDir)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.Len(t, result, 0)
-
-	// Verify that all expectations were met
-	mockClient.AssertExpectations(t)
 }

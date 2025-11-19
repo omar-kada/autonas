@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"log/slog"
 	"omar-kada/autonas/internal/api"
 	"omar-kada/autonas/internal/cli/defaults"
@@ -13,7 +12,6 @@ import (
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 
-	"github.com/moby/moby/client"
 	"github.com/spf13/cobra"
 )
 
@@ -79,15 +77,11 @@ func newRunCommand() *cobra.Command {
 
 func doRun(params RunParams) error {
 	store := storage.NewMemoryStorage()
-	dockerClient, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return fmt.Errorf("failed to create docker client: %w", err)
-	}
 
 	manager := process.NewManager(
 		params.DeploymentParams,
 		docker.NewDeployer(),
-		docker.NewInspector(dockerClient),
+		docker.NewInspector(),
 		files.NewCopier(),
 		git.NewFetcher(),
 		config.NewGenerator())
