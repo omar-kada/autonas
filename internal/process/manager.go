@@ -20,6 +20,10 @@ import (
 type Deployer interface {
 	RemoveServices(services []string, servicesDir string) error
 	DeployServices(cfg config.Config, servicesDir string) error
+}
+
+// Inspector defined operations for info retreival on containers
+type Inspector interface {
 	GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error)
 }
 
@@ -35,26 +39,29 @@ type Manager interface {
 func NewManager(
 	managerParams models.DeploymentParams,
 	containersDeployer Deployer,
+	containersInspector Inspector,
 	copier files.Copier,
 	fetcher git.Fetcher,
 	configGenerator config.Generator,
 ) Manager {
 	return &manager{
-		containersDeployer: containersDeployer,
-		copier:             copier,
-		fetcher:            fetcher,
-		configGenerator:    configGenerator,
-		params:             managerParams,
+		containersDeployer:  containersDeployer,
+		containersInspector: containersInspector,
+		copier:              copier,
+		fetcher:             fetcher,
+		configGenerator:     configGenerator,
+		params:              managerParams,
 	}
 }
 
 // manager is responsible for deploying the services
 type manager struct {
-	containersDeployer Deployer
-	copier             files.Copier
-	fetcher            git.Fetcher
-	configGenerator    config.Generator
-	params             models.DeploymentParams
+	containersDeployer  Deployer
+	containersInspector Inspector
+	copier              files.Copier
+	fetcher             git.Fetcher
+	configGenerator     config.Generator
+	params              models.DeploymentParams
 
 	currentCfg config.Config
 	cron       *cron.Cron
@@ -156,7 +163,7 @@ func (m *manager) removeAndDeployStacks(oldCfg, cfg config.Config) error {
 
 // GetManagedContainers returns a map of all containers managed by the tool
 func (m *manager) GetManagedContainers() (map[string][]models.ContainerSummary, error) {
-	return m.containersDeployer.GetManagedContainers(m.params.ServicesDir)
+	return m.containersInspector.GetManagedContainers(m.params.ServicesDir)
 }
 
 func getUnusedServices(oldCfg, cfg config.Config) []string {

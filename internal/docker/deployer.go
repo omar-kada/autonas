@@ -1,24 +1,21 @@
-// Package containers implements a manager for docker containers
-package containers
+// Package docker implements a manager for docker containers
+package docker
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/shell"
-	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
-	"github.com/moby/moby/client"
 )
 
-// NewManager creates an instance of Manager for docker containers
-func NewManager() *Deployer {
+// NewDeployer creates an instance of Manager for docker containers
+func NewDeployer() *Deployer {
 	return &Deployer{
 		writer:    files.NewWriter(),
 		cmdRunner: shell.NewRunner(),
@@ -133,54 +130,4 @@ func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 		}
 	}
 	return envMap, nil
-}
-
-// GetManagedContainers returns the list of containers (as returned by ContainerList)
-// that are managed by AutoNAS
-func (Deployer) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
-	ctx := context.Background()
-	cli, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create docker client: %w", err)
-	}
-	defer cli.Close()
-
-	summaries, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list containers: %w", err)
-	}
-
-	matches := make(map[string][]models.ContainerSummary)
-	for _, c := range summaries.Items {
-
-		inspect, err := cli.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
-		if err != nil {
-			// don't fail entirely on single-container inspect error; just log and continue
-			slog.Error("Failed to inspect container",
-				"containerId", c.ID,
-				"names", c.Names,
-				"error", err)
-			continue
-		}
-
-		for key, value := range inspect.Container.Config.Labels {
-			slog.Debug(" found label ", "label", key, "value", value, "serviceDir", servicesDir)
-			if strings.EqualFold(key, "com.docker.compose.project.working_dir") {
-				after, found := strings.CutPrefix(value, servicesDir)
-				if found {
-					serviceName, _ := strings.CutPrefix(after, "/")
-					slog.Debug("found prefix", "after", after, "serviceName", serviceName)
-					matches[serviceName] = append(matches[serviceName], models.ContainerSummary{
-						ID:     c.ID,
-						Names:  c.Names,
-						Image:  c.Image,
-						State:  string(c.State),
-						Status: c.Status,
-					})
-					break
-				}
-			}
-		}
-	}
-	return matches, nil
 }
