@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"log/slog"
 	"omar-kada/autonas/internal/api"
 	"omar-kada/autonas/internal/cli/defaults"
@@ -12,7 +11,6 @@ import (
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -30,7 +28,7 @@ var varInfoMap = defaults.VariableInfoMap{
 	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
 	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
 	_addWritePerm: {DefaultValue: false},
-	_port:         {DefaultValue: 8080},
+	_port:         {EnvKey: "AUTONAS_PORT", DefaultValue: 5005},
 }
 
 // RunParams contain parameters of the run command
@@ -40,10 +38,6 @@ type RunParams struct {
 }
 
 func getParamsWithDefaults(p RunParams) RunParams {
-	slog.Warn(fmt.Sprintf("value of configFile before : %s", p.ConfigFile))
-	slog.Warn(fmt.Sprintf("value of env : %s", os.Getenv("AUTONAS_CONFIG_FILE")))
-	slog.Warn(fmt.Sprintf("value of configFile after : %s", varInfoMap.EnvOrDefault(p.ConfigFile, _file)))
-
 	return RunParams{
 		DeploymentParams: models.DeploymentParams{
 			ConfigFile:   varInfoMap.EnvOrDefault(p.ConfigFile, _file),
@@ -76,6 +70,8 @@ func newRunCommand() *cobra.Command {
 		varInfoMap.GetDefaultString("directory where services compose stacks will be stored", _servicesDir))
 	runCmd.Flags().BoolVar(&(params.AddWritePerm), string(_addWritePerm), false,
 		varInfoMap.GetDefaultString("when true, the tool adds write permission to config files", _addWritePerm))
+	runCmd.Flags().IntVarP(&(params.Port), string(_port), "p", 5005,
+		varInfoMap.GetDefaultString("port that will be used for exposing the API", _port))
 	return runCmd
 }
 
