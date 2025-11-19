@@ -14,7 +14,6 @@ import (
 
 type Mocker struct {
 	mock.Mock
-	Manager
 }
 
 func (m *Mocker) RemoveServices(services []string, servicesDir string) error {
@@ -54,32 +53,49 @@ func (m *Mocker) FromFiles(files []string) (config.Config, error) {
 
 var (
 	mockConfigOld = config.Config{
+		Repo:   "https://example.com/repo.git",
+		Branch: "main",
 		Services: map[string]config.ServiceConfig{
-			"svc1": {},
+			"svc1": {
+				Extra: map[string]any{
+					"Port":    8080,
+					"Version": "v1",
+				}},
 			"svc2": {},
 			"svc3": {Disabled: true},
 		},
 	}
 	mockConfigNew = config.Config{
+		Repo:   "https://example.com/repo.git",
+		Branch: "main",
 		Services: map[string]config.ServiceConfig{
-			"svc1": {Disabled: true},
+			"svc1": {
+				Disabled: true,
+				Extra: map[string]any{
+					"Port":    8080,
+					"Version": "v1",
+				}},
 			"svc2": {},
 			"svc3": {},
 		},
 	}
 )
 
-func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *manager {
+func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams, currentCfg config.Config) *manager {
 	return &manager{
 		containersDeployer: mocker,
 		copier:             mocker,
 		fetcher:            mocker,
 		configGenerator:    mocker,
 		params:             params,
+		currentCfg:         currentCfg,
 	}
 }
+func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *manager {
+	return newManagerWithCurrentConfig(mocker, params, config.Config{})
+}
 
-func TestDeployServices_Success(t *testing.T) {
+func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	mocker := &Mocker{}
 	manager := newManagerWithMocks(mocker, models.DeploymentParams{
 		ServicesDir: "/services",
@@ -108,18 +124,19 @@ func TestDeployServices_Success(t *testing.T) {
 }
 
 var (
-	ErrRemove = errors.New("removeServices error")
-	ErrDeploy = errors.New("deployServices error")
-	ErrCopy   = errors.New("copyServices error")
+	ErrRemove   = errors.New("removeServices error")
+	ErrDeploy   = errors.New("deployServices error")
+	ErrCopy     = errors.New("copyServices error")
+	ErrGenerate = errors.New("generate file error")
+	ErrFetch    = errors.New("sync config error")
 )
 
-type ExpectedErrors struct {
-	removeErr error
-	deployErr error
-	copyErr   error
-}
-
-func TestDeployServices_Errors(t *testing.T) {
+func TestRemoveAndDeployStacks_Errors(t *testing.T) {
+	type ExpectedErrors struct {
+		removeErr error
+		deployErr error
+		copyErr   error
+	}
 	testCases := []struct {
 		name          string
 		errors        ExpectedErrors
@@ -173,6 +190,110 @@ func TestDeployServices_Errors(t *testing.T) {
 			err := manager.removeAndDeployStacks(mockConfigOld, mockConfigNew)
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
+		})
+	}
+}
+
+func TestSync_Success(t *testing.T) {
+	mocker := &Mocker{}
+	manager := newManagerWithMocks(mocker, models.DeploymentParams{
+		ServicesDir: "/services",
+		WorkingDir:  ".",
+		ConfigFile:  "config.yaml",
+	})
+
+	wantCfg := mockConfigOld
+
+	mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, nil)
+	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
+	mocker.On("CopyWithAddPerm", "services/svc1", "/services/svc1", os.FileMode(0000)).Once().Return(nil)
+	mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0000)).Once().Return(nil)
+	mocker.On("DeployServices", wantCfg, "/services").Once().Return(nil)
+	err := manager.SyncDeployment()
+	assert.NoError(t, err)
+	mocker.AssertExpectations(t)
+}
+
+func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
+	mocker := &Mocker{}
+	manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{
+		ServicesDir: "/services",
+		WorkingDir:  ".",
+		ConfigFile:  "config.yaml",
+	}, mockConfigOld)
+
+	wantCfg := mockConfigNew
+	manager.params.AddWritePerm = true
+	mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, nil)
+	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
+	mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0666)).Once().Return(nil)
+	mocker.On("CopyWithAddPerm", "services/svc3", "/services/svc3", os.FileMode(0666)).Once().Return(nil)
+	mocker.On("RemoveServices", []string{"svc1"}, "/services").Once().Return(nil)
+	mocker.On("DeployServices", wantCfg, "/services").Once().Return(nil)
+
+	err := manager.SyncDeployment()
+	assert.NoError(t, err)
+	mocker.AssertExpectations(t)
+}
+
+func TestRunCmd_Errors(t *testing.T) {
+	type ExpectedErrors struct {
+		fetchErr    error
+		generateErr error
+		deployErr   error
+		removeErr   error
+		copyErr     error
+	}
+	testCases := []struct {
+		name          string
+		mockValues    ExpectedErrors
+		expectedError error
+	}{
+		{
+			name:          "fetch from repo error",
+			mockValues:    ExpectedErrors{fetchErr: ErrFetch},
+			expectedError: ErrFetch,
+		},
+		{
+			name:          "generateConfigFromFiles error",
+			mockValues:    ExpectedErrors{generateErr: ErrGenerate},
+			expectedError: ErrGenerate,
+		},
+		{
+			name:          "deployServices error",
+			mockValues:    ExpectedErrors{deployErr: ErrDeploy},
+			expectedError: ErrDeploy,
+		},
+		{
+			name:          "removeServices error",
+			mockValues:    ExpectedErrors{removeErr: ErrRemove},
+			expectedError: ErrRemove,
+		},
+		{
+			name:          "copy files error",
+			mockValues:    ExpectedErrors{copyErr: ErrCopy},
+			expectedError: ErrCopy,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mocker := &Mocker{}
+			manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{
+				ServicesDir: "/services",
+				WorkingDir:  ".",
+				ConfigFile:  "config.yaml",
+			}, mockConfigOld)
+			wantCfg := mockConfigNew
+			mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, tc.mockValues.generateErr)
+			mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(tc.mockValues.fetchErr)
+			mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0000)).Once().Return(tc.mockValues.copyErr)
+			mocker.On("CopyWithAddPerm", "services/svc3", "/services/svc3", os.FileMode(0000)).Once().Return(tc.mockValues.copyErr)
+			mocker.On("RemoveServices", []string{"svc1"}, "/services").Once().Return(tc.mockValues.removeErr)
+			mocker.On("DeployServices", wantCfg, "/services").Once().Return(tc.mockValues.deployErr)
+
+			err := manager.SyncDeployment()
+			assert.ErrorIs(t, err, tc.expectedError)
 		})
 	}
 }

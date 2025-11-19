@@ -65,7 +65,7 @@ func (m *manager) SyncDeployment() error {
 	// make sure only one sync job is running at a time
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	slog.Warn(fmt.Sprintf("generating config from %s", m.params.ConfigFile))
+
 	cfg, err := m.configGenerator.FromFiles([]string{m.params.ConfigFile})
 	if err != nil {
 		return fmt.Errorf("error loading config: %w", err)
@@ -128,9 +128,11 @@ func (m *manager) SyncPeriodically() error {
 // removeAndDeployStacks handles the deployment/removal of services based on the current and new configuration.
 func (m *manager) removeAndDeployStacks(oldCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(oldCfg, cfg)
-	// TODO : check if the stack is up before calling RemoveServices
-	if err := m.containersDeployer.RemoveServices(toBeRemoved, m.params.ServicesDir); err != nil {
-		return err
+	if len(toBeRemoved) > 0 {
+		// TODO : check if the stack is up before calling RemoveServices
+		if err := m.containersDeployer.RemoveServices(toBeRemoved, m.params.ServicesDir); err != nil {
+			return err
+		}
 	}
 
 	slog.Debug("copying files from src to dst", "src", m.params.WorkingDir+"/services", "dst", m.params.ServicesDir)
