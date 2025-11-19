@@ -89,7 +89,6 @@ func TestGetManagedContainers(t *testing.T) {
 }
 
 func TestGetServiceNameFromLabel(t *testing.T) {
-
 	testCases := []struct {
 		name           string
 		containerID    string
