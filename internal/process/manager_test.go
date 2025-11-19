@@ -1,10 +1,10 @@
-package containers
+package process
 
 import (
 	"errors"
 	"fmt"
 	"omar-kada/autonas/internal/config"
-	"omar-kada/autonas/internal/containers/model"
+	"omar-kada/autonas/models"
 	"os"
 	"testing"
 
@@ -14,7 +14,7 @@ import (
 
 type Mocker struct {
 	mock.Mock
-	model.Manager
+	Manager
 }
 
 func (m *Mocker) RemoveServices(services []string, servicesDir string) error {
@@ -37,6 +37,21 @@ func (m *Mocker) CopyWithAddPerm(srcDir, servicesDir string, permission os.FileM
 	return args.Error(0)
 }
 
+func (m *Mocker) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
+	args := m.Called(servicesDir)
+	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
+}
+
+func (m *Mocker) Fetch(repo string, branch string, dir string) error {
+	args := m.Called(repo, branch, dir)
+	return args.Error(0)
+}
+
+func (m *Mocker) FromFiles(files []string) (config.Config, error) {
+	args := m.Called(files)
+	return args.Get(0).(config.Config), args.Error(1)
+}
+
 var (
 	mockConfigOld = config.Config{
 		Services: map[string]config.ServiceConfig{
@@ -54,17 +69,24 @@ var (
 	}
 )
 
-func newDeployerWithMocks(mocker *Mocker) *deployer {
-	return &deployer{
-		containersManager: mocker,
-		copyer:            mocker,
-		addPerm:           0000,
+func newDeployerWithMocks(mocker *Mocker, params ManagerParams) *manager {
+	return &manager{
+		containersDeployer: mocker,
+		copier:             mocker,
+		fetcher:            mocker,
+		configGenerator:    mocker,
+		params:             params,
 	}
 }
 
 func TestDeployServices_Success(t *testing.T) {
 	mocker := &Mocker{}
-	deployer := newDeployerWithMocks(mocker)
+	deployer := newDeployerWithMocks(mocker, ManagerParams{
+		ServicesDir: "/services",
+		WorkingDir:  "configDir",
+		ConfigFile:  "config.yaml",
+	})
+	deployer.currentCfg = mockConfigOld
 	mock.InOrder(
 		mocker.On(
 			"RemoveServices", []string{"svc1"}, "/services",
@@ -81,7 +103,7 @@ func TestDeployServices_Success(t *testing.T) {
 	mocker.On(
 		"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 	).Return(nil)
-	err := deployer.DeployServices("configDir", "/services", mockConfigOld, mockConfigNew)
+	err := deployer.removeAndDeployStacks(mockConfigOld, mockConfigNew)
 	assert.NoError(t, err)
 }
 
@@ -124,7 +146,12 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			deployer := newDeployerWithMocks(mocker)
+			deployer := newDeployerWithMocks(mocker, ManagerParams{
+				ServicesDir: "/services",
+				WorkingDir:  "configDir",
+				ConfigFile:  "config.yaml",
+			})
+			deployer.currentCfg = mockConfigOld
 
 			mock.InOrder(
 				mocker.On(
@@ -143,7 +170,7 @@ func TestDeployServices_Errors(t *testing.T) {
 			mocker.On(
 				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 			).Return(tc.errors.copyErr)
-			err := deployer.DeployServices("configDir", "/services", mockConfigOld, mockConfigNew)
+			err := deployer.removeAndDeployStacks(mockConfigOld, mockConfigNew)
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
 		})

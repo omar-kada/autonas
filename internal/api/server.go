@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
 	"strconv"
 	"time"
@@ -21,16 +22,17 @@ type HTTPServer struct {
 	store            storage.Storage
 	loginHandler     *LoginHandler
 	websocketHandler *WebsocketHandler
-
-	server *http.Server
+	statusHandler    *StatusHandler
+	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.Storage) Server {
+func NewServer(store storage.Storage, deployer process.Manager) Server {
 	return &HTTPServer{
 		store:            store,
 		loginHandler:     newLoginHandler(store),
 		websocketHandler: newWebsocketHandler(store),
+		statusHandler:    newStatusHandler(deployer),
 	}
 }
 
@@ -38,6 +40,7 @@ func NewServer(store storage.Storage) Server {
 func (s *HTTPServer) ListenAndServe(port int) error {
 	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend")}))
 	http.HandleFunc("/login", s.loginHandler.handle)
+	http.HandleFunc("/status", s.statusHandler.handle)
 	http.HandleFunc("/ws", s.websocketHandler.handle)
 	slog.Info("Server starting on ", "port", port)
 

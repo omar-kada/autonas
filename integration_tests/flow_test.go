@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"omar-kada/autonas/internal/containers/docker"
+	"omar-kada/autonas/internal/containers"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,6 +48,8 @@ func TestFileGeneration(t *testing.T) {
 			"AUTONAS_HOST: test",
 			"SERVICES_PATH: " + servicesDir,
 			"DATA_PATH: " + dataDir,
+			"repo: \"https://github.com/omar-kada/autonas-config\"",
+			"cron: \"*/10 * * * *\"",
 			"enabled_services:",
 			"  - homepage",
 			"services:",
@@ -62,9 +64,7 @@ func TestFileGeneration(t *testing.T) {
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
-		"CONFIG_FILES":   filepath.Join(configFiles),
-		"CONFIG_REPO":    "https://github.com/omar-kada/autonas-config",
-		"CRON_PERIOD":    "*/10 * * * *",
+		"CONFIG_FILE":    filepath.Join(configFiles),
 		"SERVICES_DIR":   servicesDir,
 		"CONFIG_PATH":    configDir,
 		"ADD_WRITE_PERM": "true",
@@ -101,7 +101,7 @@ func TestFileGeneration(t *testing.T) {
 
 	t.Cleanup(func() {
 		/// cleanup homepage container after test finishes
-		dockerDeployer := docker.New()
+		dockerDeployer := containers.NewManager()
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
 	})
 }

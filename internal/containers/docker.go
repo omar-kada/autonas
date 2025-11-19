@@ -1,21 +1,24 @@
-// Package docker implements a manager for docker containers
-package docker
+// Package containers implements a manager for docker containers
+package containers
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/shell"
+	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
+	"github.com/moby/moby/client"
 )
 
-// New creates an instance of Manager for docker containers
-func New() *Manager {
+// NewManager creates an instance of Manager for docker containers
+func NewManager() *Manager {
 	return &Manager{
 		writer:    files.NewWriter(),
 		cmdRunner: shell.NewRunner(),
@@ -134,9 +137,9 @@ func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-/*func (d Manager) GetManagedContainers() (map[string][]model.Summary, error) {
+func (d Manager) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create docker client: %w", err)
 	}
@@ -147,40 +150,37 @@ func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	matches := make(map[string][]model.Summary)
-	for _, c := range summaries {
-		inspect, err := cli.ContainerInspect(ctx, c.ID)
+	matches := make(map[string][]models.ContainerSummary)
+	for _, c := range summaries.Items {
+
+		inspect, err := cli.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			// don't fail entirely on single-container inspect error; just log and continue
-			d.log.Errorf("Failed to inspect container %s, %s: %v", c.ID, c.Names, err)
+			slog.Error("Failed to inspect container",
+				"containerId", c.ID,
+				"names", c.Names,
+				"error", err)
 			continue
 		}
-		var managed bool
-		var serviceName string
-		for _, env := range inspect.Config.Env {
-			if strings.HasPrefix(env, "AUTONAS_MANAGED=") {
-				managed = true
-			}
-			if strings.HasPrefix(env, "AUTONAS_SERVICE_NAME=") {
-				serviceName = strings.TrimPrefix(env, "AUTONAS_SERVICE_NAME=")
-			}
-			if managed && serviceName != "" {
-				break
-			}
-		}
-		if managed {
-			if serviceName == "" {
-				d.log.Errorf("container %s marked as AUTONAS_MANAGED but missing AUTONAS_SERVICE_NAME", c.ID)
-			} else {
-				matches[serviceName] = append(matches[serviceName], model.Summary{
-					ID:     c.ID,
-					Names:  c.Names,
-					Image:  c.Image,
-					State:  c.State,
-					Status: c.Status,
-				})
+
+		for key, value := range inspect.Container.Config.Labels {
+			slog.Debug(" found label ", "label", key, "value", value, "serviceDir", servicesDir)
+			if strings.EqualFold(key, "com.docker.compose.project.working_dir") {
+				after, found := strings.CutPrefix(value, servicesDir)
+				if found {
+					serviceName, _ := strings.CutPrefix(after, "/")
+					slog.Debug("found prefix", "after", after, "serviceName", serviceName)
+					matches[serviceName] = append(matches[serviceName], models.ContainerSummary{
+						ID:     c.ID,
+						Names:  c.Names,
+						Image:  c.Image,
+						State:  string(c.State),
+						Status: c.Status,
+					})
+					break
+				}
 			}
 		}
 	}
 	return matches, nil
-}*/
+}

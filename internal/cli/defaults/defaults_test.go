@@ -40,24 +40,6 @@ func TestEnvOrDefault_Priorities(t *testing.T) {
 	assert.Equal(t, "default", varMap.EnvOrDefault("", key), "default value has least priority")
 }
 
-func TestEnvOrDefaultSlice_Priorities(t *testing.T) {
-	key := VarKey("sliceVarName")
-	cliValue := []string{"x", "y"}
-	defaultValue := []string{"a"}
-
-	varMap := VariableInfoMap{
-		key: {EnvKey: "ENV_KEY", DefaultValue: defaultValue},
-	}
-
-	t.Setenv("ENV_KEY", "e1,e2")
-	envValue := []string{"e1", "e2"}
-
-	assert.Equal(t, cliValue, varMap.EnvOrDefaultSlice(cliValue, key), "CLI value has most priority")
-	assert.Equal(t, envValue, varMap.EnvOrDefaultSlice(nil, key), "ENV value has 2nd most priority")
-	t.Setenv("ENV_KEY", "")
-	assert.Equal(t, defaultValue, varMap.EnvOrDefaultSlice(nil, key), "default value has least priority")
-}
-
 func TestEnvOrDefaultInt_Priorities(t *testing.T) {
 	key := VarKey("intVarName")
 	cliValue := 123

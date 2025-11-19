@@ -32,16 +32,15 @@ services/
 
 ```yaml
 SERVICES_DIR : where the stack configuration will be stored
-CONFIG_FILES : list of configuration files (last has more priority)
-CONFIG_REPO : repository containing the stack definition
-CONFIG_BRANCH: branch used to pull from the repo
-CRON_PERIOD: cron schedule of when the periodic deployement will be executed
+CONFIG_FILE : path the the yaml configuration file # (default: /config/config.yaml) 
 ```
 
 3. **Create a `config.yaml` file** and define the services you want to deploy :
 
 ```yaml
 ENV_VAR: value # will be available in all services
+repo: "https://github.com/omar-kada/autonas-config"
+cron: "*/10 * * * *"
 
 services:
   service1: 
@@ -49,7 +48,7 @@ services:
     SERVICE_SPECIFIC_VAR: another_value
   
   service2:
-    Disabled: true # if Disabled, service will not be deployed
+    disabled: true # if disabled, service will not be deployed
 ```
 
 4. **Run the stack** using : 

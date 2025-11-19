@@ -11,23 +11,26 @@ import (
 // NoErrAlreadyUpToDate is returned when the repository is already up to date.
 var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 
-// Syncer is responsible for syncing files from repo
-type Syncer interface {
-	Sync(repoURL, branch, path string) error
+// Fetcher is responsible for syncing files from repo
+type Fetcher interface {
+	Fetch(repoURL, branch, path string) error
 }
 
 // Syncer is responsible for syncing files from repo
-type syncer struct{}
+type fetcher struct{}
 
-// NewSyncer creates a new Syncer and returns it
-func NewSyncer() Syncer {
-	return syncer{}
+// NewFetcher creates a new Syncer and returns it
+func NewFetcher() Fetcher {
+	return fetcher{}
 }
 
-// Sync clones or updates a Git repository at the specified path,
+// Fetch clones or updates a Git repository at the specified path,
 // checking out the specified branch.
 // returns NoErrAlreadyUpToDate if the repository is already up to date.
-func (syncer) Sync(repoURL, branch, path string) error {
+func (fetcher) Fetch(repoURL, branch, path string) error {
+	if branch == "" {
+		branch = "main"
+	}
 	_, err := git.PlainClone(path, false, &git.CloneOptions{
 		URL:           repoURL,
 		ReferenceName: plumbing.NewBranchReferenceName(branch),
