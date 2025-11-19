@@ -60,7 +60,8 @@ var (
 				Extra: map[string]any{
 					"Port":    8080,
 					"Version": "v1",
-				}},
+				},
+			},
 			"svc2": {},
 			"svc3": {Disabled: true},
 		},
@@ -74,7 +75,8 @@ var (
 				Extra: map[string]any{
 					"Port":    8080,
 					"Version": "v1",
-				}},
+				},
+			},
 			"svc2": {},
 			"svc3": {},
 		},
@@ -91,6 +93,7 @@ func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams,
 		currentCfg:         currentCfg,
 	}
 }
+
 func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *manager {
 	return newManagerWithCurrentConfig(mocker, params, config.Config{})
 }
