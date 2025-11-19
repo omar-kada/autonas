@@ -8,7 +8,6 @@ import (
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/models"
-	"os"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -26,16 +25,15 @@ type Deployer interface {
 
 // Manager abstracts service deployment operations
 type Manager interface {
-	GetManagedContainers() (map[string][]models.ContainerSummary, error)
-	GetCurrentCfg() config.Config
-
 	SyncDeployment() error
 	SyncPeriodically() error
+
+	GetManagedContainers() (map[string][]models.ContainerSummary, error)
 }
 
 // NewManager creates a new Manager instance
 func NewManager(
-	managerParams ManagerParams,
+	managerParams models.DeploymentParams,
 	containersDeployer Deployer,
 	copier files.Copier,
 	fetcher git.Fetcher,
@@ -50,24 +48,17 @@ func NewManager(
 	}
 }
 
-// ManagerParams are tool params that doesn't change in runtime
-type ManagerParams struct {
-	AddPerm     os.FileMode
-	ServicesDir string
-	WorkingDir  string
-	ConfigFile  string
-}
-
 // manager is responsible for deploying the services
 type manager struct {
 	containersDeployer Deployer
 	copier             files.Copier
 	fetcher            git.Fetcher
 	configGenerator    config.Generator
-	params             ManagerParams
-	currentCfg         config.Config
-	cron               *cron.Cron
-	mu                 sync.Mutex
+	params             models.DeploymentParams
+
+	currentCfg config.Config
+	cron       *cron.Cron
+	mu         sync.Mutex
 }
 
 func (m *manager) SyncDeployment() error {
@@ -98,7 +89,7 @@ func (m *manager) SyncDeployment() error {
 	}
 
 	// check if the config changed from last run
-	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(m.GetCurrentCfg(), cfg) {
+	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(oldConfig, cfg) {
 		slog.Info("Configuration and repository are up to date. No changes detected.")
 		return nil
 	}
@@ -145,10 +136,11 @@ func (m *manager) removeAndDeployStacks(oldCfg, cfg config.Config) error {
 	slog.Debug("copying files from src to dst", "src", m.params.WorkingDir+"/services", "dst", m.params.ServicesDir)
 
 	enabledServiecs := cfg.GetEnabledServices()
+
 	for _, service := range enabledServiecs {
 		src := filepath.Join(m.params.WorkingDir, "services", service)
 		dst := filepath.Join(m.params.ServicesDir, service)
-		if err := m.copier.CopyWithAddPerm(src, dst, m.params.AddPerm); err != nil {
+		if err := m.copier.CopyWithAddPerm(src, dst, m.params.GetAddWritePerm()); err != nil {
 			return fmt.Errorf("error while copying service "+service+" %w", err)
 		}
 	}
@@ -175,8 +167,4 @@ func getUnusedServices(oldCfg, cfg config.Config) []string {
 		}
 	}
 	return unusedServices
-}
-
-func (m *manager) GetCurrentCfg() config.Config {
-	return m.currentCfg
 }

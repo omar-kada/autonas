@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func newManagerWithMocks(mocker *Mocker, params ManagerParams) *manager {
+func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *manager {
 	return &manager{
 		containersDeployer: mocker,
 		copier:             mocker,
@@ -81,7 +81,7 @@ func newManagerWithMocks(mocker *Mocker, params ManagerParams) *manager {
 
 func TestDeployServices_Success(t *testing.T) {
 	mocker := &Mocker{}
-	manager := newManagerWithMocks(mocker, ManagerParams{
+	manager := newManagerWithMocks(mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  "configDir",
 		ConfigFile:  "config.yaml",
@@ -146,7 +146,7 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			manager := newManagerWithMocks(mocker, ManagerParams{
+			manager := newManagerWithMocks(mocker, models.DeploymentParams{
 				ServicesDir: "/services",
 				WorkingDir:  "configDir",
 				ConfigFile:  "config.yaml",

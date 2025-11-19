@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"omar-kada/autonas/models"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,9 +10,11 @@ import (
 func TestGetParamsWithDefaults_AllCliValuesProvided(t *testing.T) {
 	// When all CLI values are provided, they should be returned as-is
 	params := RunParams{
-		ConfigFile:  "custom.yaml",
-		WorkingDir:  "/custom/work",
-		ServicesDir: "/custom/services",
+		DeploymentParams: models.DeploymentParams{
+			ConfigFile:  "custom.yaml",
+			WorkingDir:  "/custom/work",
+			ServicesDir: "/custom/services",
+		},
 	}
 
 	result := getParamsWithDefaults(params)
@@ -56,7 +59,9 @@ func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
 	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
 
 	params := RunParams{
-		ServicesDir: "/s",
+		DeploymentParams: models.DeploymentParams{
+			ServicesDir: "/s",
+		},
 	}
 
 	result := getParamsWithDefaults(params)
@@ -71,9 +76,11 @@ func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
 	t.Setenv("AUTONAS_WORKING_DIR", "")
 
 	params := RunParams{
-		ConfigFile:  "cli.yaml", // From CLI
-		ServicesDir: "/s",       // From CLI (overrides env)
-		// WorkingDir not provided, should use env or default
+		DeploymentParams: models.DeploymentParams{
+			ConfigFile:  "cli.yaml", // From CLI
+			ServicesDir: "/s",       // From CLI (overrides env)
+			// WorkingDir not provided, should use env or default
+		},
 	}
 
 	result := getParamsWithDefaults(params)

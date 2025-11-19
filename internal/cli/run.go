@@ -11,6 +11,7 @@ import (
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/models"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -34,23 +35,25 @@ var varInfoMap = defaults.VariableInfoMap{
 
 // RunParams contain parameters of the run command
 type RunParams struct {
-	ConfigFile   string
-	WorkingDir   string
-	ServicesDir  string
-	AddWritePerm bool
-	Port         int
+	models.DeploymentParams
+	models.ServerParams
 }
 
 func getParamsWithDefaults(p RunParams) RunParams {
 	slog.Warn(fmt.Sprintf("value of configFile before : %s", p.ConfigFile))
 	slog.Warn(fmt.Sprintf("value of env : %s", os.Getenv("AUTONAS_CONFIG_FILE")))
 	slog.Warn(fmt.Sprintf("value of configFile after : %s", varInfoMap.EnvOrDefault(p.ConfigFile, _file)))
+
 	return RunParams{
-		ConfigFile:   varInfoMap.EnvOrDefault(p.ConfigFile, _file),
-		WorkingDir:   varInfoMap.EnvOrDefault(p.WorkingDir, _workingDir),
-		ServicesDir:  varInfoMap.EnvOrDefault(p.ServicesDir, _servicesDir),
-		AddWritePerm: p.AddWritePerm,
-		Port:         varInfoMap.EnvOrDefaultInt(p.Port, _port),
+		DeploymentParams: models.DeploymentParams{
+			ConfigFile:   varInfoMap.EnvOrDefault(p.ConfigFile, _file),
+			WorkingDir:   varInfoMap.EnvOrDefault(p.WorkingDir, _workingDir),
+			ServicesDir:  varInfoMap.EnvOrDefault(p.ServicesDir, _servicesDir),
+			AddWritePerm: p.AddWritePerm,
+		},
+		ServerParams: models.ServerParams{
+			Port: varInfoMap.EnvOrDefaultInt(p.Port, _port),
+		},
 	}
 }
 
@@ -77,18 +80,9 @@ func newRunCommand() *cobra.Command {
 }
 
 func doRun(params RunParams) error {
-	addPerm := os.FileMode(0000)
-	if params.AddWritePerm {
-		addPerm = os.FileMode(0666)
-	}
 	store := storage.NewMemoryStorage()
 	manager := process.NewManager(
-		process.ManagerParams{
-			AddPerm:     addPerm,
-			ServicesDir: params.ServicesDir,
-			WorkingDir:  params.WorkingDir,
-			ConfigFile:  params.ConfigFile,
-		},
+		params.DeploymentParams,
 		containers.NewManager(),
 		files.NewCopier(),
 		git.NewFetcher(),
