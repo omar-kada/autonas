@@ -12,6 +12,9 @@ permissions:
 jobs:
   go:
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v5
         with:

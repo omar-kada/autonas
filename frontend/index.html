@@ -1,30 +1,13 @@
-<head>
-    <title> AutoNAS </title>
-</head>
-<body>
-
-
-    <script>
-        // Create a connection to your local server
-const socket = new WebSocket('ws://localhost:8080/ws');
-
-
-// Listen for connection open
-socket.onopen = (event) => {
-  console.log('Connection opened');
-  socket.send('Hello from the browser console!');
-};
-
-// Listen for messages from the server
-socket.onmessage = (event) => {
-  console.log('Received:', event.data);
-};
-
-// Listen for errors
-socket.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
-    </script>
-PLaceholder for front end
-
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sparrow-sync</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

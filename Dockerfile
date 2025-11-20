@@ -5,10 +5,10 @@ FROM golang:1.25.1-bookworm AS builder
 RUN mkdir /autonas
 WORKDIR /autonas
 
-COPY go.mod go.sum ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
-COPY . .
+COPY backend .
 RUN go build -o autonas /autonas/cmd/autonas/main.go
 
 # ----------- Production Stage -----------
