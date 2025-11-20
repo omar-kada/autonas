@@ -17,14 +17,14 @@ type Mocker struct {
 	mock.Mock
 }
 
-func (m *Mocker) RemoveServices(services []string, servicesDir string) error {
+func (m *Mocker) RemoveServices(services []string, servicesDir string) map[string]error {
 	args := m.Called(services, servicesDir)
-	return args.Error(0)
+	return args.Get(0).(map[string]error)
 }
 
-func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) error {
+func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) map[string]error {
 	args := m.Called(cfg, servicesDir)
-	return args.Error(0)
+	return args.Get(0).(map[string]error)
 }
 
 func (m *Mocker) Copy(srcDir, servicesDir string) error {
@@ -111,11 +111,11 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	mock.InOrder(
 		mocker.On(
 			"RemoveServices", []string{"svc1"}, "/services",
-		).Return(nil),
+		).Return(make(map[string]error)),
 
 		mocker.On(
 			"DeployServices", mockConfigNew, "/services",
-		).Return(nil),
+		).Return(make(map[string]error)),
 	)
 	mocker.On(
 		"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
@@ -138,8 +138,8 @@ var (
 
 func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 	type ExpectedErrors struct {
-		removeErr error
-		deployErr error
+		removeErr map[string]error
+		deployErr map[string]error
 		copyErr   error
 	}
 	testCases := []struct {
@@ -149,12 +149,12 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 	}{
 		{
 			name:          "removeServices error",
-			errors:        ExpectedErrors{removeErr: ErrRemove},
+			errors:        ExpectedErrors{removeErr: map[string]error{"svc1": ErrRemove}},
 			expectedError: ErrRemove,
 		},
 		{
 			name:          "deployServices error",
-			errors:        ExpectedErrors{deployErr: ErrDeploy},
+			errors:        ExpectedErrors{deployErr: map[string]error{"svc1": ErrDeploy}},
 			expectedError: ErrDeploy,
 		},
 
@@ -213,7 +213,7 @@ func TestSync_Success(t *testing.T) {
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
 	mocker.On("CopyWithAddPerm", "services/svc1", "/services/svc1", os.FileMode(0000)).Once().Return(nil)
 	mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0000)).Once().Return(nil)
-	mocker.On("DeployServices", wantCfg, "/services").Once().Return(nil)
+	mocker.On("DeployServices", wantCfg, "/services").Once().Return(map[string]error{})
 	err := manager.SyncDeployment()
 	assert.NoError(t, err)
 	mocker.AssertExpectations(t)
@@ -233,8 +233,8 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
 	mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0666)).Once().Return(nil)
 	mocker.On("CopyWithAddPerm", "services/svc3", "/services/svc3", os.FileMode(0666)).Once().Return(nil)
-	mocker.On("RemoveServices", []string{"svc1"}, "/services").Once().Return(nil)
-	mocker.On("DeployServices", wantCfg, "/services").Once().Return(nil)
+	mocker.On("RemoveServices", []string{"svc1"}, "/services").Once().Return(map[string]error{})
+	mocker.On("DeployServices", wantCfg, "/services").Once().Return(map[string]error{})
 
 	err := manager.SyncDeployment()
 	assert.NoError(t, err)
@@ -245,8 +245,8 @@ func TestRunCmd_Errors(t *testing.T) {
 	type ExpectedErrors struct {
 		fetchErr    error
 		generateErr error
-		deployErr   error
-		removeErr   error
+		deployErr   map[string]error
+		removeErr   map[string]error
 		copyErr     error
 	}
 	testCases := []struct {
@@ -266,12 +266,12 @@ func TestRunCmd_Errors(t *testing.T) {
 		},
 		{
 			name:          "deployServices error",
-			mockValues:    ExpectedErrors{deployErr: ErrDeploy},
+			mockValues:    ExpectedErrors{deployErr: map[string]error{"svc1": ErrDeploy}},
 			expectedError: ErrDeploy,
 		},
 		{
 			name:          "removeServices error",
-			mockValues:    ExpectedErrors{removeErr: ErrRemove},
+			mockValues:    ExpectedErrors{removeErr: map[string]error{"svc1": ErrRemove}},
 			expectedError: ErrRemove,
 		},
 		{
@@ -298,7 +298,7 @@ func TestRunCmd_Errors(t *testing.T) {
 			mocker.On("DeployServices", wantCfg, "/services").Once().Return(tc.mockValues.deployErr)
 
 			err := manager.SyncDeployment()
-			assert.ErrorIs(t, err, tc.expectedError)
+			assert.ErrorContains(t, err, tc.expectedError.Error())
 		})
 	}
 }

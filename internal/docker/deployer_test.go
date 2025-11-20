@@ -85,8 +85,8 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 			"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
 		).Return(nil),
 	)
-	err = manager.DeployServices(mockConfig, baseDir)
-	assert.NoError(t, err)
+	errs := manager.DeployServices(mockConfig, baseDir)
+	assert.Len(t, errs, 0)
 }
 
 func TestRemoveServices_MultipleServices(t *testing.T) {
@@ -100,9 +100,10 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker.On(
 		"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
 	).Return(fmt.Errorf("mock error"))
-	err := manager.RemoveServices([]string{"svc1", "svc2"}, baseDir)
+	errs := manager.RemoveServices([]string{"svc1", "svc2"}, baseDir)
 
-	assert.NoError(t, err)
+	assert.Len(t, errs, 1)
+	assert.ErrorContains(t, errs["svc2"], "mock error")
 }
 
 type ExpectedErrors struct {
@@ -116,7 +117,6 @@ var (
 )
 
 func TestDeployServices_Errors(t *testing.T) {
-	t.Skip("temporarily disabled until deploy returns proper errors")
 	testCases := []struct {
 		name          string
 		errors        ExpectedErrors
@@ -140,9 +140,10 @@ func TestDeployServices_Errors(t *testing.T) {
 			manager := newManagerWithMocks(mocker)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("Run", "docker", mock.Anything).Return(tc.errors.runCmdErr)
-			err := manager.DeployServices(mockConfig, "/services")
+			errs := manager.DeployServices(mockConfig, "/services")
 			// TODO : add tests for aggregared errors
-			assert.ErrorIs(t, err, tc.expectedError)
+			assert.Len(t, errs, 1)
+			assert.ErrorIs(t, errs["svc1"], tc.expectedError)
 		})
 	}
 }

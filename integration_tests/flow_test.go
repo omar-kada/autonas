@@ -50,8 +50,6 @@ func TestFileGeneration(t *testing.T) {
 			"DATA_PATH: " + dataDir,
 			"repo: \"https://github.com/omar-kada/autonas-config\"",
 			"cron: \"*/10 * * * *\"",
-			"enabled_services:",
-			"  - homepage",
 			"services:",
 			"  homepage:",
 			"    port : 12345",
