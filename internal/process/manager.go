@@ -30,7 +30,7 @@ type Inspector interface {
 // Manager abstracts service deployment operations
 type Manager interface {
 	SyncDeployment() error
-	SyncPeriodically() error
+	SyncPeriodically() *cron.Cron
 
 	GetManagedContainers() (map[string][]models.ContainerSummary, error)
 }
@@ -83,10 +83,7 @@ func (m *manager) SyncDeployment() error {
 	m.currentCfg = cfg
 
 	if cfg.CronPeriod != oldConfig.CronPeriod {
-		err = m.SyncPeriodically()
-		if err != nil {
-			return err
-		}
+		m.SyncPeriodically()
 	}
 
 	syncErr := m.fetcher.Fetch(cfg.Repo, cfg.Branch, m.params.WorkingDir)
@@ -109,7 +106,7 @@ func (m *manager) SyncDeployment() error {
 	return nil
 }
 
-func (m *manager) SyncPeriodically() error {
+func (m *manager) SyncPeriodically() *cron.Cron {
 	if m.cron != nil {
 		m.cron.Stop()
 		m.cron = nil
@@ -129,7 +126,8 @@ func (m *manager) SyncPeriodically() error {
 
 	c.Start()
 	m.cron = c
-	return nil
+	slog.Info("values for cron job", "entries", c.Entries())
+	return c
 }
 
 // removeAndDeployStacks handles the deployment/removal of services based on the current and new configuration.

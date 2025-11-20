@@ -27,7 +27,7 @@ func NewInspector() *Inspector {
 
 // GetManagedContainers returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (i Inspector) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (Inspector) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	dockerClient, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create docker client: %w", err)

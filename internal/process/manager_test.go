@@ -7,6 +7,7 @@ import (
 	"omar-kada/autonas/models"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -85,12 +86,13 @@ var (
 
 func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams, currentCfg config.Config) *manager {
 	return &manager{
-		containersDeployer: mocker,
-		copier:             mocker,
-		fetcher:            mocker,
-		configGenerator:    mocker,
-		params:             params,
-		currentCfg:         currentCfg,
+		containersDeployer:  mocker,
+		containersInspector: mocker,
+		copier:              mocker,
+		fetcher:             mocker,
+		configGenerator:     mocker,
+		params:              params,
+		currentCfg:          currentCfg,
 	}
 }
 
@@ -297,6 +299,102 @@ func TestRunCmd_Errors(t *testing.T) {
 
 			err := manager.SyncDeployment()
 			assert.ErrorIs(t, err, tc.expectedError)
+		})
+	}
+}
+
+func TestSyncPeriodically(t *testing.T) {
+	testCases := []struct {
+		name          string
+		currentCfg    config.Config
+		expectedCron  bool
+		expectedError error
+	}{
+		{
+			name: "CronPeriod is set",
+			currentCfg: config.Config{
+				CronPeriod: "*/5 * * * *",
+			},
+			expectedCron:  true,
+			expectedError: nil,
+		},
+		{
+			name: "CronPeriod is not set",
+			currentCfg: config.Config{
+				CronPeriod: "",
+			},
+			expectedCron:  false,
+			expectedError: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mocker := &Mocker{}
+			manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{}, tc.currentCfg)
+
+			cron := manager.SyncPeriodically()
+
+			if tc.expectedCron {
+				assert.NotNil(t, cron)
+				assert.Equal(t, 1, len(cron.Entries()))
+				assert.Less(t, time.Now(), cron.Entries()[0].Next)
+			} else {
+				assert.Nil(t, cron)
+			}
+		})
+	}
+}
+
+func TestGetManagedContainers(t *testing.T) {
+	testCases := []struct {
+		name           string
+		servicesDir    string
+		expectedResult map[string][]models.ContainerSummary
+		expectedError  error
+	}{
+		{
+			name:        "Success",
+			servicesDir: "/services",
+			expectedResult: map[string][]models.ContainerSummary{
+				"service1": {
+					{
+						ID:     "container1",
+						Names:  []string{"/container1"},
+						Image:  "image1",
+						State:  "running",
+						Status: "Up 1 hour",
+					},
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name:           "Error",
+			servicesDir:    "/services",
+			expectedResult: nil,
+			expectedError:  errors.New("failed to get managed containers"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mocker := &Mocker{}
+			manager := newManagerWithMocks(mocker, models.DeploymentParams{
+				ServicesDir: tc.servicesDir,
+			})
+
+			mocker.On("GetManagedContainers", tc.servicesDir).Return(tc.expectedResult, tc.expectedError)
+
+			result, err := manager.GetManagedContainers()
+
+			if tc.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectedError.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, result)
+			}
 		})
 	}
 }
