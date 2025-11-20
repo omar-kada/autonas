@@ -18,8 +18,8 @@ import (
 
 // Deployer defines methods for managing containerized services.
 type Deployer interface {
-	RemoveServices(services []string, servicesDir string) error
-	DeployServices(cfg config.Config, servicesDir string) error
+	RemoveServices(services []string, servicesDir string) map[string]error
+	DeployServices(cfg config.Config, servicesDir string) map[string]error
 }
 
 // Inspector defined operations for info retreival on containers
@@ -135,8 +135,8 @@ func (m *manager) removeAndDeployStacks(oldCfg, cfg config.Config) error {
 	toBeRemoved := getUnusedServices(oldCfg, cfg)
 	if len(toBeRemoved) > 0 {
 		// TODO : check if the stack is up before calling RemoveServices
-		if err := m.containersDeployer.RemoveServices(toBeRemoved, m.params.ServicesDir); err != nil {
-			return err
+		if errs := m.containersDeployer.RemoveServices(toBeRemoved, m.params.ServicesDir); len(errs) > 0 {
+			return fmt.Errorf("error while removing services : %v", errs)
 		}
 	}
 
@@ -144,19 +144,27 @@ func (m *manager) removeAndDeployStacks(oldCfg, cfg config.Config) error {
 
 	enabledServiecs := cfg.GetEnabledServices()
 
+	if errs := m.copyServicesFiles(enabledServiecs); len(errs) > 0 {
+		return fmt.Errorf("error while copying services files : %v", errs)
+	}
+
+	slog.Debug("deploying enabled services", "services", enabledServiecs)
+	if errs := m.containersDeployer.DeployServices(cfg, m.params.ServicesDir); len(errs) > 0 {
+		return fmt.Errorf("error while removing services : %v", errs)
+	}
+	return nil
+}
+
+func (m *manager) copyServicesFiles(enabledServiecs []string) map[string]error {
+	errors := make(map[string]error)
 	for _, service := range enabledServiecs {
 		src := filepath.Join(m.params.WorkingDir, "services", service)
 		dst := filepath.Join(m.params.ServicesDir, service)
 		if err := m.copier.CopyWithAddPerm(src, dst, m.params.GetAddWritePerm()); err != nil {
-			return fmt.Errorf("error while copying service "+service+" %w", err)
+			errors[service] = err
 		}
 	}
-
-	slog.Debug("deploying enabled services", "services", enabledServiecs)
-	if err := m.containersDeployer.DeployServices(cfg, m.params.ServicesDir); err != nil {
-		return err
-	}
-	return nil
+	return errors
 }
 
 // GetManagedContainers returns a map of all containers managed by the tool

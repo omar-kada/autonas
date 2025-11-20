@@ -29,37 +29,41 @@ type Deployer struct {
 }
 
 // RemoveServices stops and removes Docker Compose services.
-func (d Deployer) RemoveServices(services []string, servicesDir string) error {
+func (d Deployer) RemoveServices(services []string, servicesDir string) map[string]error {
 	slog.Debug("these services will be removed if running.", "services", services)
-	for _, serviceName := range services {
-		err := d.composeDown(filepath.Join(servicesDir, serviceName))
+	errors := make(map[string]error)
+	for _, service := range services {
+		err := d.composeDown(filepath.Join(servicesDir, service))
 		if err != nil {
-			slog.Error("Error running docker compose down for %s: %v", serviceName, err)
+			slog.Error("Error running docker compose down for %s: %v", service, err)
+			errors[service] = err
 		}
 	}
 
-	// TODO : return aggregated error instead of nil
-	return nil
+	return errors
 }
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
-func (d Deployer) DeployServices(cfg config.Config, servicesDir string) error {
+func (d Deployer) DeployServices(cfg config.Config, servicesDir string) map[string]error {
 	enabledServices := cfg.GetEnabledServices()
 	if len(enabledServices) == 0 {
-		slog.Warn("No enabled_services specified in config. Skipping .env generation and compose up.")
+		slog.Warn("No enabled services specified in config. Skipping .env generation and compose up.")
 		return nil
 	}
 
+	errors := make(map[string]error)
 	for _, service := range enabledServices {
 		if err := d.generateEnvFile(cfg, servicesDir, service); err != nil {
 			slog.Error("Error creating env file", "service", service, "error", err)
+			errors[service] = err
+			continue
 		}
 		if err := d.composeUp(filepath.Join(servicesDir, service)); err != nil {
 			slog.Error("Error running docker compose", "service", service, "error", err)
+			errors[service] = err
 		}
 	}
-	// TODO : return aggregated error instead of nil
-	return nil
+	return errors
 }
 
 func (d Deployer) composeUp(composePath string) error {

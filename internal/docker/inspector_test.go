@@ -67,17 +67,15 @@ func TestGetManagedContainers(t *testing.T) {
 				},
 			},
 		},
-	}, nil)
+	}, errors.New("failed to inspect container"))
 
 	servicesDir := "/services"
 	result, err := getManagedContainersWithClient(mockClient, servicesDir)
 
 	assert.NoError(t, err)
-	assert.Len(t, result, 2)
+	assert.Len(t, result, 1)
 	assert.Contains(t, result, "service1")
-	assert.Contains(t, result, "service2")
 	assert.Len(t, result["service1"], 1)
-	assert.Len(t, result["service2"], 1)
 
 	// Test error case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{}, errors.New("failed to list containers"))
