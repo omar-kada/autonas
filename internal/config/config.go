@@ -16,8 +16,11 @@ type ServiceConfig struct {
 
 // Config represents the overall configuration structure.
 type Config struct {
-	Services map[string]ServiceConfig `mapstructure:"services"`
-	Extra    map[string]any           `mapstructure:",remain"`
+	Repo       string                   `mapstructure:"repo"`
+	Branch     string                   `mapstructure:"branch"`
+	CronPeriod string                   `mapstructure:"cron"`
+	Services   map[string]ServiceConfig `mapstructure:"services"`
+	Extra      map[string]any           `mapstructure:",remain"`
 }
 
 // PerService generates a slice of configuration variables for a specific service

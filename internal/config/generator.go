@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/mitchellh/mapstructure"
@@ -30,6 +31,8 @@ func (generator) FromFiles(files []string) (Config, error) {
 		if err != nil {
 			return Config{}, fmt.Errorf("error reading config file %s: %w", file, err)
 		}
+
+		slog.Warn(fmt.Sprintf("file content : %s\n", bs))
 
 		var m map[string]any
 		if err := yaml.Unmarshal(bs, &m); err != nil {

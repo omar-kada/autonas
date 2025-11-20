@@ -28,8 +28,8 @@ func (m *Mocker) Run(cmd string, cmdArgs ...string) error {
 	return args.Error(0)
 }
 
-func newManagerWithMocks(mocker *Mocker) *Manager {
-	return &Manager{
+func newManagerWithMocks(mocker *Mocker) *Deployer {
+	return &Deployer{
 		writer:    mocker,
 		cmdRunner: mocker,
 	}

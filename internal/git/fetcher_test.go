@@ -37,16 +37,16 @@ func assertFileContent(t *testing.T, filePath string, wantContent string) {
 	}
 }
 
-func TestSync_HappyPath(t *testing.T) {
-	syncer := NewSyncer()
+func TestFetch_HappyPath(t *testing.T) {
+	fetcher := NewFetcher()
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", "dummy readme")
 	clonePath := t.TempDir() + "/clone-repo"
 
-	err := syncer.Sync(remoteRepoPath, "main", clonePath)
+	err := fetcher.Fetch(remoteRepoPath, "main", clonePath)
 	if err != nil {
-		t.Fatalf("Sync failed: %v", err)
+		t.Fatalf("Fetch failed: %v", err)
 	}
 
 	assertFileContent(t, clonePath+"/README.md", "dummy readme")
@@ -54,46 +54,46 @@ func TestSync_HappyPath(t *testing.T) {
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "NEWFILE.txt", "new file content")
 
-	err = syncer.Sync(remoteRepoPath, "main", clonePath)
+	err = fetcher.Fetch(remoteRepoPath, "main", clonePath)
 	if err != nil {
-		t.Fatalf("Sync failed: %v", err)
+		t.Fatalf("Fetch failed: %v", err)
 	}
 
 	assertFileContent(t, clonePath+"/NEWFILE.txt", "new file content")
 }
 
-func TestSync_NoChanges(t *testing.T) {
-	syncer := NewSyncer()
+func TestFetch_NoChanges(t *testing.T) {
+	fetcher := NewFetcher()
 
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	clonePath := t.TempDir() + "/clone-repo"
 
-	err := syncer.Sync(remoteRepoPath, "main", clonePath)
+	err := fetcher.Fetch(remoteRepoPath, "main", clonePath)
 	if err != nil {
-		t.Fatalf("Sync failed: %v", err)
+		t.Fatalf("Fetch failed: %v", err)
 	}
 
-	err = syncer.Sync(remoteRepoPath, "main", clonePath)
+	err = fetcher.Fetch(remoteRepoPath, "main", clonePath)
 	if err != NoErrAlreadyUpToDate {
 		t.Fatalf("Expected NoErrAlreadyUpToDate, got: %v", err)
 	}
 }
 
-func TestSync_NonExistentRepo(t *testing.T) {
-	syncer := NewSyncer()
+func TestFetch_NonExistentRepo(t *testing.T) {
+	fetcher := NewFetcher()
 	clonePath := t.TempDir() + "/clone-repo"
-	err := syncer.Sync("/path/does/not/exist", "main", clonePath)
+	err := fetcher.Fetch("/path/does/not/exist", "main", clonePath)
 	if err == nil {
 		t.Fatalf("Expected error for non-existent repo, got nil")
 	}
 }
 
-func TestSync_NonExistentBranch(t *testing.T) {
-	syncer := NewSyncer()
+func TestFetch_NonExistentBranch(t *testing.T) {
+	fetcher := NewFetcher()
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	clonePath := t.TempDir() + "/clone-repo"
 
-	err := syncer.Sync(remoteRepoPath, "non-existent-branch", clonePath)
+	err := fetcher.Fetch(remoteRepoPath, "non-existent-branch", clonePath)
 	if err == nil {
 		t.Fatalf("Expected error for non-existent branch, got nil")
 	}

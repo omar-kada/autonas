@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 )
 
 // VarKey defines a key for variables used in cli input
@@ -60,23 +59,4 @@ func (varInfoMap VariableInfoMap) EnvOrDefaultInt(value int, key VarKey) int {
 		return 0
 	}
 	return varInfo.DefaultValue.(int)
-}
-
-// EnvOrDefaultSlice handles priority for cli variables of type slice while ignoring empty values,
-// priority is : cli argument > env variable > default value
-func (varInfoMap VariableInfoMap) EnvOrDefaultSlice(value []string, key VarKey) []string {
-	if len(value) > 0 {
-		return value
-	}
-	varInfo := varInfoMap[key]
-	if envStr := os.Getenv(varInfo.EnvKey); envStr != "" {
-		envValue := strings.Split(envStr, ",")
-		if len(envValue) > 0 {
-			return envValue
-		}
-	}
-	if varInfo.DefaultValue == nil {
-		return []string{}
-	}
-	return varInfo.DefaultValue.([]string)
 }
