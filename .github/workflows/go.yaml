@@ -38,6 +38,7 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: latest
+          working-directory: ./backend
 
       - name: Run tests
         run: go test -race -vet=off -coverprofile=coverage.out ./internal/...
