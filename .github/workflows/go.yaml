@@ -12,6 +12,9 @@ permissions:
 jobs:
   go:
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v5
         with:
@@ -35,6 +38,7 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: latest
+          working-directory: ./backend
 
       - name: Run tests
         run: go test -race -vet=off -coverprofile=coverage.out ./internal/...

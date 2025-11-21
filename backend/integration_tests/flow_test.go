@@ -60,7 +60,7 @@ func TestFileGeneration(t *testing.T) {
 
 	// When
 	// Start docker-compose environment
-	composeEnv, err := compose.NewDockerCompose("../compose.yaml")
+	composeEnv, err := compose.NewDockerCompose("../../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
 		"CONFIG_FILE":    filepath.Join(configFiles),
 		"SERVICES_DIR":   servicesDir,
