@@ -2,10 +2,6 @@
 _ignore_*
 /autonas 
 
-# React build & coverage
-**/node_modules/
-/frontend/coverage
-
 # Go build artifacts
 */bin/
 */build/
