@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -360,10 +361,10 @@ func TestGetManagedContainers(t *testing.T) {
 				"service1": {
 					{
 						ID:     "container1",
-						Names:  []string{"/container1"},
+						Name:   "container1",
 						Image:  "image1",
-						State:  "running",
-						Status: "Up 1 hour",
+						State:  container.StateRunning,
+						Health: container.Healthy,
 					},
 				},
 			},

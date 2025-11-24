@@ -15,7 +15,10 @@ test:
 	cd backend && go test ./internal/...
 
 test-int:
-	(docker rmi autonas:local --force || true) && cd backend && go test ./integration_tests/... -v -count=1
+	(docker stop autonas || true) && \
+	(docker rm autonas || true) && \
+	(docker rmi autonas:local --force || true) && \
+	cd backend && go test ./integration_tests/... -v -count=1
 
 test-cover:
 	cd backend && go test -coverprofile=coverage.out ./internal/... && \

@@ -11,6 +11,17 @@ RUN go mod download
 COPY backend .
 RUN go build -o autonas /autonas/cmd/autonas/main.go
 
+# ----------- Frontend Builder Stage -----------
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+
+COPY frontend .
+RUN npm run build
+
 # ----------- Production Stage -----------
 FROM debian:bookworm-slim AS production
 
@@ -44,7 +55,7 @@ RUN mkdir /app/config
 WORKDIR /app
 
 COPY --from=builder /autonas/autonas /app/
-COPY frontend /app/frontend
+COPY --from=frontend-builder /app/dist /app/frontend/dist
 
 RUN chmod -R 744 /app
 

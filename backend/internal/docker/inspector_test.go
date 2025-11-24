@@ -56,6 +56,11 @@ func TestGetManagedContainers(t *testing.T) {
 					"com.docker.compose.project.working_dir": "/services/service1",
 				},
 			},
+			State: &container.State{
+				Health: &container.Health{
+					Status: container.Healthy,
+				},
+			},
 		},
 	}, nil)
 
@@ -64,6 +69,11 @@ func TestGetManagedContainers(t *testing.T) {
 			Config: &container.Config{
 				Labels: map[string]string{
 					"com.docker.compose.project.working_dir": "/services/service2",
+				},
+			},
+			State: &container.State{
+				Health: &container.Health{
+					Status: container.Healthy,
 				},
 			},
 		},
@@ -89,64 +99,37 @@ func TestGetManagedContainers(t *testing.T) {
 func TestGetServiceNameFromLabel(t *testing.T) {
 	testCases := []struct {
 		name           string
-		containerID    string
 		labels         map[string]string
-		inspectError   error
 		expectedResult string
-		expectedError  error
 	}{
 		{
-			name:        "Successful case",
-			containerID: "container1",
+			name: "Successful case",
 			labels: map[string]string{
 				"com.docker.compose.project.working_dir": "/services/service1",
 			},
-			inspectError:   nil,
 			expectedResult: "service1",
-			expectedError:  nil,
 		},
 
 		{
 			name:           "Label not found",
-			containerID:    "container2",
 			labels:         map[string]string{},
-			inspectError:   nil,
 			expectedResult: "",
-			expectedError:  nil,
-		},
-
-		{
-			name:           "Error case",
-			containerID:    "container3",
-			labels:         map[string]string{},
-			inspectError:   errors.New("failed to inspect container"),
-			expectedResult: "",
-			expectedError:  errors.New("failed to inspect container"),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mockClient := new(MockClient)
-
-			mockClient.On("ContainerInspect", mock.Anything, tc.containerID, mock.Anything).Return(client.ContainerInspectResult{
+			inspectResponse := client.ContainerInspectResult{
 				Container: container.InspectResponse{
 					Config: &container.Config{
 						Labels: tc.labels,
 					},
 				},
-			}, tc.inspectError)
-
+			}
 			servicesDir := "/services"
-			serviceName, err := getServiceNameFromLabel(context.Background(), mockClient, container.Summary{ID: tc.containerID}, servicesDir)
+			serviceName := getServiceNameFromLabel(inspectResponse, servicesDir)
 
 			assert.Equal(t, tc.expectedResult, serviceName)
-			if tc.expectedError != nil {
-				assert.Error(t, err)
-				assert.Equal(t, tc.expectedError.Error(), err.Error())
-			} else {
-				assert.NoError(t, err)
-			}
 		})
 	}
 }

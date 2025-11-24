@@ -1,6 +1,6 @@
-// vitest.config.ts
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -10,7 +10,12 @@ export default defineConfig({
     setupFiles: './src/tests/setup.ts',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'lcov'],
+    },
+  },
+  resolve: {
+    alias: {
+      '@app': path.resolve(__dirname, './src'),
     },
   },
 });

@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 import { useTranslation } from 'react-i18next';
+import StatusDisplay from './components/StatusDisplay';
 
 function App() {
   const { t } = useTranslation();
@@ -21,13 +22,9 @@ function App() {
         </a>
       </div>
       <h1>{t('TITLE')}</h1>
-      <div className="card">
-        <button onClick={increment}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
+      <button onClick={increment}>count is {count}</button>
+
+      <StatusDisplay></StatusDisplay>
     </>
   );
 }
