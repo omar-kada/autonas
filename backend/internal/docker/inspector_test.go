@@ -119,7 +119,6 @@ func TestGetServiceNameFromLabel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			inspectResponse := client.ContainerInspectResult{
 				Container: container.InspectResponse{
 					Config: &container.Config{

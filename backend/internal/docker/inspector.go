@@ -65,7 +65,6 @@ func getManagedContainersWithClient(dockerClient Client, servicesDir string) (ma
 }
 
 func getServiceNameFromLabel(inspect client.ContainerInspectResult, servicesDir string) string {
-
 	for key, value := range inspect.Container.Config.Labels {
 		if strings.EqualFold(key, "com.docker.compose.project.working_dir") {
 			if after, found := strings.CutPrefix(value, servicesDir); found {
