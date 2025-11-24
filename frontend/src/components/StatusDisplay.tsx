@@ -1,12 +1,18 @@
-import React from 'react';
+import { useCallback } from 'react';
 import { useStatus } from './useStatus';
 import dockerLogo from '@app/assets/docker.svg';
 import { useTranslation } from 'react-i18next';
 
-const StatusDisplay: React.FC = () => {
+function StatusDisplay() {
   const { t } = useTranslation();
   const { data, isLoading, error } = useStatus();
 
+  const defatulIconOnErrorCallback = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      e.currentTarget.src = dockerLogo;
+    },
+    [],
+  );
   if (isLoading) {
     return <div>Loading status...</div>;
   }
@@ -28,14 +34,13 @@ const StatusDisplay: React.FC = () => {
           <h3>{serviceName}</h3>
           <img
             src={`https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/${serviceName}.png`}
-            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-              e.currentTarget.src = dockerLogo;
-            }}
+            onError={defatulIconOnErrorCallback}
+            alt={'service logo'}
             className="logo"
           ></img>
           <ul>
-            {serviceState.map((item, index) => (
-              <li key={`${serviceName}-${index}`}>
+            {serviceState.map((item) => (
+              <li key={`${serviceName}-${item.Name}`}>
                 <strong>{item.Name}:</strong> {item.State || 'No state available'} &nbsp;
                 {item.Health || 'No health available'}
               </li>
@@ -45,6 +50,6 @@ const StatusDisplay: React.FC = () => {
       ))}
     </>
   );
-};
+}
 
 export default StatusDisplay;
