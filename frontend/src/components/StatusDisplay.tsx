@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStatus } from '@app/hooks';
+import { useStatus } from './useStatus';
 import dockerLogo from '@app/assets/docker.svg';
 import { useTranslation } from 'react-i18next';
 
@@ -31,13 +31,12 @@ const StatusDisplay: React.FC = () => {
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
               e.currentTarget.src = dockerLogo;
             }}
-            className='logo'
+            className="logo"
           ></img>
           <ul>
             {serviceState.map((item, index) => (
               <li key={`${serviceName}-${index}`}>
-                <strong>{item.Name}:</strong>{' '}
-                {item.State || 'No state available'} &nbsp;
+                <strong>{item.Name}:</strong> {item.State || 'No state available'} &nbsp;
                 {item.Health || 'No health available'}
               </li>
             ))}
