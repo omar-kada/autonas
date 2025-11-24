@@ -38,9 +38,9 @@ func NewServer(store storage.Storage, manager process.Manager) Server {
 
 // ListenAndServe initializes handler routes and serves on the given port
 func (s *HTTPServer) ListenAndServe(port int) error {
-	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend")}))
-	http.HandleFunc("/login", s.loginHandler.handle)
-	http.HandleFunc("/status", s.statusHandler.handle)
+	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend/dist")}))
+	http.HandleFunc("/api/login", s.loginHandler.handle)
+	http.HandleFunc("/api/status", s.statusHandler.handle)
 	http.HandleFunc("/ws", s.websocketHandler.handle)
 	slog.Info("Server starting on ", "port", port)
 

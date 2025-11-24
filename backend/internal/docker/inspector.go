@@ -7,7 +7,6 @@ import (
 	"omar-kada/autonas/models"
 	"strings"
 
-	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 )
 
@@ -44,38 +43,36 @@ func getManagedContainersWithClient(dockerClient Client, servicesDir string) (ma
 
 	matches := make(map[string][]models.ContainerSummary)
 	for _, c := range summaries.Items {
-		serviceName, err := getServiceNameFromLabel(ctx, dockerClient, c, servicesDir)
+
+		inspect, err := dockerClient.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			slog.Error("Failed to inspect container",
 				"containerId", c.ID, "names", c.Names, "error", err)
-			// don't fail entirely on single-container inspect error; just log and continue
 			continue
 		}
+		serviceName := getServiceNameFromLabel(inspect, servicesDir)
 		if serviceName != "" {
 			matches[serviceName] = append(matches[serviceName], models.ContainerSummary{
 				ID:     c.ID,
-				Names:  c.Names,
+				Name:   c.Labels["com.docker.compose.service"],
 				Image:  c.Image,
-				State:  string(c.State),
-				Status: c.Status,
+				State:  c.State,
+				Health: inspect.Container.State.Health.Status,
 			})
 		}
 	}
 	return matches, nil
 }
 
-func getServiceNameFromLabel(ctx context.Context, dockerClient Client, c container.Summary, servicesDir string) (string, error) {
-	inspect, err := dockerClient.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
-	if err != nil {
-		return "", err
-	}
+func getServiceNameFromLabel(inspect client.ContainerInspectResult, servicesDir string) string {
+
 	for key, value := range inspect.Container.Config.Labels {
 		if strings.EqualFold(key, "com.docker.compose.project.working_dir") {
 			if after, found := strings.CutPrefix(value, servicesDir); found {
-				return strings.TrimPrefix(after, "/"), nil
+				return strings.TrimPrefix(after, "/")
 			}
-			return "", nil
+			return ""
 		}
 	}
-	return "", nil
+	return ""
 }
