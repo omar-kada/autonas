@@ -28,7 +28,7 @@ function StatusDisplay() {
 
   return (
     <>
-      <h2>{t('STATUS')}</h2>
+      <h2 className="text-2xl font-bold">{t('STATUS')}</h2>
       {Object.entries(data).map(([serviceName, serviceState]) => (
         <div key={serviceName}>
           <h3>{serviceName}</h3>
