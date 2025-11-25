@@ -21,7 +21,7 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>{t('TITLE')}</h1>
+      <h1 className="text-3xl font-bold underline">{t('TITLE')}</h1>
       <button onClick={increment}>count is {count}</button>
 
       <StatusDisplay></StatusDisplay>
