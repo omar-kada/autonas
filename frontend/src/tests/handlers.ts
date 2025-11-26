@@ -1,5 +1,5 @@
-import type {StackState} from '@/models/stack-status';
-import {http} from 'msw';
+import type { StackState } from '@/models/stack-status';
+import { http } from 'msw';
 
 const mockState: StackState = {
   homepage: [

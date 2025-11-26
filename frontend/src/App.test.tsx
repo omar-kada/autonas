@@ -1,8 +1,8 @@
-import {screen} from '@testing-library/react';
-import {http} from 'msw';
+import { screen } from '@testing-library/react';
+import { http } from 'msw';
 import App from './App';
-import {server} from './tests/server';
-import {renderWithClient} from './tests/utils';
+import { server } from './tests/server';
+import { renderWithClient } from './tests/utils';
 
 beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
@@ -15,15 +15,13 @@ describe('App', () => {
         return new Response('', {
           status: 500,
         });
-      })
+      }),
     );
 
     renderWithClient(<App />);
 
     expect(
-      await screen.findByText(
-        'Error fetching status: Unexpected end of JSON input'
-      )
+      await screen.findByText('Error fetching status: Unexpected end of JSON input'),
     ).toBeInTheDocument();
   });
 
