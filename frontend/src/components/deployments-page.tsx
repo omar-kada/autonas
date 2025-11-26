@@ -10,7 +10,7 @@ import { DeploymentList } from './view';
 export function DeploymentsPage() {
   const { t } = useTranslation();
   const { data, isLoading, error } = useDeployments();
-  const [selectedItem, setSelectedItem] = useState<Deployment>(null as any as Deployment);
+  const [selectedItem, setSelectedItem] = useState<Deployment>(null as unknown as Deployment);
   const [showItem, setShowItem] = useState(false);
   const handleSelect = (item: Deployment) => {
     setSelectedItem(item);

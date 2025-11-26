@@ -10,11 +10,10 @@ const navigationElements = [
   { label: 'CONFIG', path: '/config' },
 ];
 
-export function Navbar() {
+function NavBarElementList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const { t } = useTranslation();
 
   const isMatched = useCallback(
     (path: string) => {
@@ -22,31 +21,30 @@ export function Navbar() {
     },
     [location.pathname],
   );
+  return (
+    <>
+      {navigationElements.map((element) => (
+        <NavbarElement
+          key={element.path}
+          label={t(element.label)}
+          navigate={() => navigate(element.path)}
+          className={isMatched(element.path) ? '' : 'opacity-75'}
+        />
+      ))}
+    </>
+  );
+}
 
-  function Buttons() {
-    return (
-      <>
-        {navigationElements.map((element) => (
-          <NavbarElement
-            key={element.path}
-            label={t(element.label)}
-            navigate={() => navigate(element.path)}
-            className={isMatched(element.path) ? '' : 'opacity-75'}
-          />
-        ))}
-      </>
-    );
-  }
-
+export function Navbar() {
   return (
     <>
       {/* Top navigation bar, on big screens */}
       <nav className="hidden sm:flex items-center gap-6">
-        <Buttons />
+        <NavBarElementList />
       </nav>
       {/* Bottom navigation bar, on small screens */}
       <nav className="sm:hidden h-14 border-t w-full bg-background fixed flex items-center justify-around bottom-0 left-0 right-0 z-50">
-        <Buttons />
+        <NavBarElementList />
       </nav>
     </>
   );
