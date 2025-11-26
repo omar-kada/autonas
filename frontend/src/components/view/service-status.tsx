@@ -13,7 +13,7 @@ export function ServiceStatus(props: {
     <Item variant="outline">
       <ItemMedia>
         <Avatar className="size-10 rounded-none">
-          <AvatarImage src={logoPrefix + props.serviceName + '.png'} />
+          <AvatarImage src={`${logoPrefix}${props.serviceName}.png`} />
           <AvatarFallback>
             <img src={dockerLogo} alt={`${props.serviceName} logo`} />
           </AvatarFallback>

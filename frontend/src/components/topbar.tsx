@@ -4,22 +4,20 @@ import { Button } from './ui/button';
 
 export function Topbar() {
   return (
-    <>
-      <header className="h-14 min-h-14 border-b w-full flex items-center justify-between px-4 bg-background sticky top-0 z-50">
-        {/* Logo */}
-        <div className="text-xl font-semibold">MyLogo</div>
+    <header className="h-14 min-h-14 border-b w-full flex items-center justify-between px-4 bg-background sticky top-0 z-50">
+      {/* Logo */}
+      <div className="text-xl font-semibold">MyLogo</div>
 
-        <Navbar />
-        {/* Settings + Notifications */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
-    </>
+      <Navbar />
+      {/* Settings + Notifications */}
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon">
+          <Settings className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <Bell className="h-5 w-5" />
+        </Button>
+      </div>
+    </header>
   );
 }

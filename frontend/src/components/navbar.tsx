@@ -13,6 +13,8 @@ const navigationElements = [
 function NavBarElementList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const onNavigate = useCallback((path: string) => () => navigate(path), [navigate]);
+
   const location = useLocation();
 
   const isMatched = useCallback(
@@ -27,7 +29,7 @@ function NavBarElementList() {
         <NavbarElement
           key={element.path}
           label={t(element.label)}
-          navigate={() => navigate(element.path)}
+          navigate={onNavigate(element.path)}
           className={isMatched(element.path) ? '' : 'opacity-75'}
         />
       ))}

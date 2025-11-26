@@ -6,7 +6,7 @@ export function NavbarElement(props: { label: string; navigate: () => void; clas
     <Button
       variant="ghost"
       className={cn('text-sm font-medium', props.className)}
-      onClick={() => props.navigate()}
+      onClick={props.navigate}
     >
       {props.label}
     </Button>
