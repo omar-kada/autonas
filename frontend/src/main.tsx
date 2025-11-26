@@ -4,8 +4,8 @@ import './index.css';
 import App from './App.tsx';
 import './i18n';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './queryClient/queryClient';
-import { Devtools } from './queryClient/queryClientDevTools';
+import { queryClient } from './query-client/query-client.ts';
+import { Devtools } from './query-client/query-client-dev-tools.tsx';
 
 const root = document.getElementById('root');
 if (root != null) {
