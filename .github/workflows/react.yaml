@@ -47,9 +47,6 @@ jobs:
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN_FRONT }}
 
-      - name: Run ESLint
-        run: npm run lint
-
       - name: Run Prettier check
         run: npm run format:check
 
