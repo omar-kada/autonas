@@ -10,7 +10,8 @@ import { DeploymentList } from './view';
 export function DeploymentsPage() {
   const { t } = useTranslation();
   const { data, isLoading, error } = useDeployments();
-  const [selectedItem, setSelectedItem] = useState<Deployment>(null as unknown as Deployment);
+
+  const [selectedItem, setSelectedItem] = useState<Deployment>(data?.[0] as Deployment);
   const [showItem, setShowItem] = useState(false);
   const handleSelect = useCallback((item: Deployment) => {
     setSelectedItem(item);
@@ -26,9 +27,8 @@ export function DeploymentsPage() {
   }
 
   if (error) {
-    return <div>Error fetching deployments: {error.message}</div>;
+    return <div>Error fetching deployments: {error?.message}</div>;
   }
-
   // Check if data exists and is an object
   if (!data || typeof data !== 'object') {
     return <div>No deployments data available</div>;

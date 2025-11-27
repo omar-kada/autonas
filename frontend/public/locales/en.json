@@ -1,5 +1,10 @@
 {
   "TITLE": "AutoNAS",
   "STATUS": "Status",
-  "description": "This is a sample description."
+  "DEPLOYMENTS": "Deployments",
+  "SETTINGS": "Settings",
+  "CONFIG": "Configuration",
+  "LOGS": "Logs",
+  "BACK": "Back",
+  "TOGGLE_THEME": "Toggle Theme"
 }
