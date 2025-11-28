@@ -14,7 +14,7 @@ export type NavbarElementProps = {
 export function NavbarElement({ label, path, icon, className }: NavbarElementProps) {
   const { t } = useTranslation();
   const matched = useMatch({
-    path: path,
+    path,
     end: path === '/',
   });
   const navigate = useNavigate();
