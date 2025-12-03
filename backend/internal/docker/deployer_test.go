@@ -174,7 +174,7 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	mock.InOrder(
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
 		mocker.On(
-			"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/services", "svc1"), "up", "-d"},
+			"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
 		).Return(nil),
 	)
 	mocker.On(
@@ -226,7 +226,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
-					"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/services", "svc1"), "up", "-d"},
+					"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
 				).Return(tc.errors.runErr),
 			)
 

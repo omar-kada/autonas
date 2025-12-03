@@ -26,7 +26,7 @@ func (h *Handler) DeployementAPIList(_ context.Context, _ api.DeployementAPIList
 }
 
 // DeployementAPIRead implements the StrictServerInterface interface
-func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
+func (*Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
 	return api.DeployementAPIRead200JSONResponse{
@@ -40,7 +40,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 }
 
 // StatusAPIGet implements the StrictServerInterface interface
-func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
+func (*Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
 	return api.StatusAPIGet200JSONResponse{

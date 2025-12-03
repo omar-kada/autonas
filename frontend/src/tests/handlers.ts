@@ -10,7 +10,7 @@ const mockState: StackStatus = {
       state: 'running',
       name: 'web-container',
       health: 'healthy',
-      createdAt: new Date() + '',
+      createdAt: `${new Date()}`,
     },
   ],
 };

@@ -58,8 +58,8 @@ export function DeploymentsPage() {
             <>
               <h3 className="text-2xl font-semibold mb-4">{selectedItem.title}</h3>
               <pre>{selectedItem.diff}</pre>
-              {selectedItem.logs.map((log, index) => (
-                <pre key={index} className="whitespace-pre-wrap">
+              {selectedItem.logs.map((log) => (
+                <pre key={log} className="whitespace-pre-wrap">
                   {log}
                 </pre>
               ))}

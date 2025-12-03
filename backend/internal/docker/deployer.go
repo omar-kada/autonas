@@ -33,8 +33,9 @@ type Deployer struct {
 
 // WithLogger sets the logger for the Deployer
 func (d Deployer) WithLogger(log *slog.Logger) process.Deployer {
-	d.log = log
-	return d
+	newDeployer := d
+	newDeployer.log = log
+	return newDeployer
 }
 
 // RemoveServices stops and removes Docker Compose services.
