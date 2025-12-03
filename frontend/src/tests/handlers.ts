@@ -1,13 +1,16 @@
-import type { StackState } from '@/models/stack-status';
+import type { StackStatus } from '@/api/api';
 import { http } from 'msw';
 
-const mockState: StackState = {
-  homepage: [
+const mockState: StackStatus = {
+  name: 'homepage',
+  stackId: 'stack-1',
+  services: [
     {
-      ID: '1',
-      State: 'running',
-      Name: 'web-container',
-      Health: 'healthy',
+      containerId: '1',
+      state: 'running',
+      name: 'web-container',
+      health: 'healthy',
+      createdAt: `${new Date()}`,
     },
   ],
 };

@@ -3,8 +3,10 @@ package docker
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,10 +30,24 @@ func (m *Mocker) Run(cmd string, cmdArgs ...string) error {
 	return args.Error(0)
 }
 
+func (m *Mocker) Copy(src, dest string) error {
+	args := m.Called(src, dest)
+	return args.Error(0)
+}
+
+func (m *Mocker) CopyWithAddPerm(src, dst string, permission os.FileMode) error {
+	args := m.Called(src, dst, permission)
+	return args.Error(0)
+}
+
 func newManagerWithMocks(mocker *Mocker) *Deployer {
 	return &Deployer{
-		writer:    mocker,
+		log:       slog.New(slog.DiscardHandler),
 		cmdRunner: mocker,
+		copier:    mocker,
+		envGenerator: &EnvGenerator{
+			writer: mocker,
+		},
 	}
 }
 
@@ -114,6 +130,9 @@ type ExpectedErrors struct {
 var (
 	ErrWriteFile = errors.New("writeFile error")
 	ErrRunCmd    = errors.New("runCmd error")
+	ErrCopy      = errors.New("copyServices error")
+	ErrGenerate  = errors.New("generate file error")
+	ErrFetch     = errors.New("sync config error")
 )
 
 func TestDeployServices_Errors(t *testing.T) {
@@ -144,6 +163,87 @@ func TestDeployServices_Errors(t *testing.T) {
 			// TODO : add tests for aggregared errors
 			assert.Len(t, errs, 1)
 			assert.ErrorIs(t, errs["svc1"], tc.expectedError)
+		})
+	}
+}
+
+func TestRemoveAndDeployStacks_Success(t *testing.T) {
+	mocker := &Mocker{}
+	manager := newManagerWithMocks(mocker)
+
+	mock.InOrder(
+		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
+		mocker.On(
+			"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
+		).Return(nil),
+	)
+	mocker.On(
+		"CopyWithAddPerm", "configDir/services/svc1", "/services/svc1", os.FileMode(0000),
+	).Return(nil)
+
+	err := manager.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
+		ServicesDir: "/services",
+		WorkingDir:  "configDir",
+		ConfigFile:  "config.yaml",
+	})
+	assert.NoError(t, err)
+}
+
+func TestRemoveAndDeployStacks_Errors(t *testing.T) {
+	type ExpectedErrors struct {
+		copyErr  error
+		writeErr error
+		runErr   error
+	}
+	testCases := []struct {
+		name          string
+		errors        ExpectedErrors
+		expectedError error
+	}{
+		{
+			name:          "run error",
+			errors:        ExpectedErrors{runErr: ErrRunCmd},
+			expectedError: ErrRunCmd,
+		},
+
+		{
+			name:          "copyServices error",
+			errors:        ExpectedErrors{copyErr: ErrCopy},
+			expectedError: ErrCopy,
+		},
+
+		{
+			name:          "write to file error",
+			errors:        ExpectedErrors{writeErr: ErrWriteFile},
+			expectedError: ErrWriteFile,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mocker := &Mocker{}
+			manager := newManagerWithMocks(mocker)
+			mock.InOrder(
+				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
+				mocker.On(
+					"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
+				).Return(tc.errors.runErr),
+			)
+
+			mocker.On(
+				"CopyWithAddPerm", "configDir/services/svc1", "/services/svc1", os.FileMode(0000),
+			).Return(tc.errors.copyErr)
+
+			mocker.On(
+				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
+			).Return(tc.errors.copyErr)
+			err := manager.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
+				ServicesDir: "/services",
+				WorkingDir:  "configDir",
+				ConfigFile:  "config.yaml",
+			})
+
+			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
 		})
 	}
 }

@@ -2,13 +2,13 @@ package cli
 
 import (
 	"log/slog"
-	"omar-kada/autonas/internal/api"
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/process"
+	"omar-kada/autonas/internal/server"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 
@@ -77,19 +77,19 @@ func newRunCommand() *cobra.Command {
 
 func doRun(params RunParams) error {
 	store := storage.NewMemoryStorage()
-
 	manager := process.NewManager(
 		params.DeploymentParams,
 		docker.NewDeployer(),
 		docker.NewInspector(),
 		files.NewCopier(),
 		git.NewFetcher(),
+		store,
 		config.NewGenerator())
-
-	if err := manager.SyncDeployment(); err != nil {
-		slog.Error("error while deploying services", "error", err)
-		return err
-	}
-	server := api.NewServer(store, manager)
-	return server.ListenAndServe(params.Port)
+	go func() {
+		if err := manager.SyncDeployment(); err != nil {
+			slog.Error("error while deploying services", "error", err)
+		}
+	}()
+	server := server.NewServer(store, manager)
+	return server.Serve(params.Port)
 }

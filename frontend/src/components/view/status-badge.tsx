@@ -16,5 +16,9 @@ function colorForStatus(status: HealthStatus): string {
 }
 
 export function StatusBadge(props: { status: HealthStatus; label: string; className?: string }) {
-  return <Badge className={cn(colorForStatus(props.status), props.className)}>{props.label}</Badge>;
+  return (
+    <Badge className={cn(colorForStatus(props.status), props.className)}>
+      {props.label ?? 'unknown'}
+    </Badge>
+  );
 }

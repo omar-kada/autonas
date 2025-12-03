@@ -1,5 +1,5 @@
+import { type Deployment } from '@/api/api';
 import { useDeployments } from '@/hooks';
-import type { Deployment } from '@/models/deployment';
 import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -56,8 +56,13 @@ export function DeploymentsPage() {
         <ScrollArea className=" p-6 overflow-auto w-full h-full">
           {selectedItem != null ? (
             <>
-              <h3 className="text-2xl font-semibold mb-4">{selectedItem.name}</h3>
+              <h3 className="text-2xl font-semibold mb-4">{selectedItem.title}</h3>
               <pre>{selectedItem.diff}</pre>
+              {selectedItem.logs.map((log) => (
+                <pre key={log} className="whitespace-pre-wrap">
+                  {log}
+                </pre>
+              ))}
             </>
           ) : (
             <div>{t('SELECT_DEPLOYMENT_FOR_DETAILS')}</div>

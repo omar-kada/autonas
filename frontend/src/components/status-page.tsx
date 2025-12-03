@@ -1,4 +1,4 @@
-import { useStatus } from '@/hooks/use-status';
+import { useStatus } from '@/hooks';
 import { useTranslation } from 'react-i18next';
 import { ServiceStatus } from './view';
 
@@ -23,9 +23,12 @@ export function StatusPage() {
     <div className="p-4 space-y-4">
       <h2 className="text-2xl font-bold">{t('STATUS')}</h2>
       <div className="space-y-2">
-        {Object.entries(data).map(([serviceName, serviceState]) => (
-          <div key={serviceName}>
-            <ServiceStatus serviceName={serviceName} serviceContainers={serviceState} />
+        {data.map((stackStatus) => (
+          <div key={stackStatus.stackId}>
+            <ServiceStatus
+              serviceName={stackStatus.name}
+              serviceContainers={stackStatus.services}
+            />
           </div>
         ))}
       </div>
