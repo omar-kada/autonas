@@ -1,31 +1,20 @@
-import { useCallback, useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-import './App.css';
-import { useTranslation } from 'react-i18next';
-import StatusDisplay from './components/StatusDisplay';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { DeploymentsPage, StatusPage } from './components';
+import { Topbar } from './components/topbar';
 
 function App() {
-  const { t } = useTranslation();
-  const [count, setCount] = useState(0);
-
-  const increment = useCallback(() => setCount(count + 1), [count]);
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noopener noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <BrowserRouter>
+      <div className="flex flex-col h-screen">
+        <Topbar />
+        <Routes>
+          <Route path="/" element={<StatusPage></StatusPage>} />
+          <Route path="/deployments" element={<DeploymentsPage></DeploymentsPage>} />
+          <Route path="/logs" element={<div> logs </div>} />
+          <Route path="/config" element={<div> config </div>} />
+        </Routes>
       </div>
-      <h1 className="text-3xl font-bold underline">{t('TITLE')}</h1>
-      <button onClick={increment}>count is {count}</button>
-
-      <StatusDisplay></StatusDisplay>
-    </>
+    </BrowserRouter>
   );
 }
 

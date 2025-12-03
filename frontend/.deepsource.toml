@@ -2,6 +2,8 @@ version = 1
 
 test_patterns = ["**/*_test.*"]
 
+exclude_patterns = ["src/components/ui/*"]
+
 [[analyzers]]
 name = "test-coverage"
 
