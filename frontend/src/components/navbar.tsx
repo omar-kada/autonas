@@ -2,13 +2,6 @@ import { Separator } from '@radix-ui/react-separator';
 import { Layers, ScrollText, ServerCog, SlidersHorizontal } from 'lucide-react';
 import { NavbarElement } from './view';
 
-const navigationElements = [
-  { label: 'STATUS', path: '/', icon: <Layers></Layers> },
-  { label: 'DEPLOYMENTS', path: '/deployments', icon: <ServerCog></ServerCog> },
-  { label: 'LOGS', path: '/logs', icon: <ScrollText></ScrollText> },
-  { label: 'CONFIG', path: '/config', icon: <SlidersHorizontal></SlidersHorizontal> },
-];
-
 export function Navbar() {
   return (
     <>
@@ -27,17 +20,23 @@ export function Navbar() {
 function NavBarElementList() {
   return (
     <>
-      {navigationElements.map((element, index) => (
-        <>
-          {index > 0 && <Separator orientation="vertical" className="bg-accent w-px h-8" />}
-          <NavbarElement
-            label={element.label}
-            icon={element.icon}
-            path={element.path}
-            className={'flex-1'}
-          />
-        </>
-      ))}
+      <NavbarElement label="STATUS" icon={<Layers />} path={'/'} className={'flex-1'} />
+      <Separator orientation="vertical" className="bg-accent w-px h-8" />
+      <NavbarElement
+        label="DEPLOYMENTS"
+        icon={<ServerCog />}
+        path={'/deployments'}
+        className={'flex-1'}
+      />
+      <Separator orientation="vertical" className="bg-accent w-px h-8" />
+      <NavbarElement label="LOGS" icon={<ScrollText />} path={'/logs'} className={'flex-1'} />
+      <Separator orientation="vertical" className="bg-accent w-px h-8" />
+      <NavbarElement
+        label="CONFIG"
+        icon={<SlidersHorizontal />}
+        path={'/config'}
+        className={'flex-1'}
+      />
     </>
   );
 }
