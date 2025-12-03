@@ -10,10 +10,11 @@ export type ContainerState =
 export type HealthStatus = 'healthy' | 'unhealthy' | 'starting' | 'none';
 
 export type ContainerStatus = {
-  ID: string;
-  State: ContainerState;
-  Name: string;
-  Health: HealthStatus;
+  containerId: string;
+  state: ContainerState;
+  name: string;
+  health: HealthStatus;
+  createdAt: Date;
 };
 
 export interface StackState {

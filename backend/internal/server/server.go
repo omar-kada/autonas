@@ -1,10 +1,11 @@
-// Package api provides implementations of http and ws handlers
-package api
+// Package server provides implementations of http and ws handlers
+package server
 
 import (
 	"context"
 	"log/slog"
 	"net/http"
+	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 // Server will listen to requests on a port
 type Server interface {
 	ListenAndServe(port int) error
+	Serve(port int) error
 	Shutdown(ctx context.Context)
 }
 
@@ -49,6 +51,32 @@ func (s *HTTPServer) ListenAndServe(port int) error {
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 
+	return s.server.ListenAndServe()
+}
+
+// Serve initializes routes from generated api and serves on the given port
+func (s *HTTPServer) Serve(port int) error {
+	// Create a new serve mux
+	mux := http.NewServeMux()
+
+	// Add frontend file server
+	mux.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend/dist")}))
+
+	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
+	myHandler := NewHandler(s.store)
+	strict := api.NewStrictHandler(myHandler, []api.StrictMiddlewareFunc{})
+
+	// get an `http.Handler` that we can use
+	h := api.HandlerFromMux(strict, mux)
+
+	s.server = &http.Server{
+		Handler:           h,
+		Addr:              ":" + strconv.Itoa(port),
+		ReadHeaderTimeout: 3 * time.Second,
+	}
+	slog.Info("Server starting on ", "port", port)
+
+	// And we serve HTTP until the world ends.
 	return s.server.ListenAndServe()
 }
 

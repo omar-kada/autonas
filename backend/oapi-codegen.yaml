@@ -1,0 +1,12 @@
+package: api
+generate:
+  models: true
+  client: true
+  std-http-server: true
+  strict-server: true
+output: ./api/api.gen.go
+output-options:
+  # to make sure that all types are generated
+  skip-prune: true
+compatibility:
+  always-prefix-enum-values: true

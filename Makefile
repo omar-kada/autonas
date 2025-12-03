@@ -23,3 +23,20 @@ test-int:
 test-cover:
 	cd backend && go test -coverprofile=coverage.out ./internal/... && \
 	go tool cover -html=coverage.out
+
+gen-api : 
+	make tsp-gen && cd ..
+	make oapi-gen && cd ..
+	make orval-gen
+
+tsp-gen:
+	cd api && tsp compile .
+
+oapi-gen:
+	cd backend && go tool oapi-codegen -config oapi-codegen.yaml ../api/tsp-output/schema/openapi.1.0.yaml
+
+orval-gen:
+	cd frontend && npm run orval
+
+# docker-run:
+# 	docker compose --env-file ./_ignore_.env up --build

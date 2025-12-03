@@ -1,5 +1,5 @@
+import type { ContainerStatus } from '@/api/api';
 import dockerLogo from '@/assets/docker.svg';
-import type { ContainerStatus } from '@/models/stack-status';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '../ui/item';
 import { StatusBadge } from './status-badge';
@@ -24,10 +24,10 @@ export function ServiceStatus(props: {
         <ItemDescription>
           {props.serviceContainers.map((item) => (
             <StatusBadge
-              label={item.Name}
-              status={item.Health}
+              label={item.name}
+              status={item.health}
               className="mx-1"
-              key={`${props.serviceName}-${item.Name}`}
+              key={`${props.serviceName}-${item.name}`}
             />
           ))}
         </ItemDescription>

@@ -2,7 +2,7 @@ package process
 
 import (
 	"errors"
-	"fmt"
+	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/models"
 	"os"
@@ -18,6 +18,11 @@ type Mocker struct {
 	mock.Mock
 }
 
+func (m *Mocker) WithLogger(log *slog.Logger) Deployer {
+	args := m.Called(log)
+	return args.Get(0).(Deployer)
+}
+
 func (m *Mocker) RemoveServices(services []string, servicesDir string) map[string]error {
 	args := m.Called(services, servicesDir)
 	return args.Get(0).(map[string]error)
@@ -26,6 +31,11 @@ func (m *Mocker) RemoveServices(services []string, servicesDir string) map[strin
 func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) map[string]error {
 	args := m.Called(cfg, servicesDir)
 	return args.Get(0).(map[string]error)
+}
+
+func (m *Mocker) RemoveAndDeployStacks(oldCfg, cfg config.Config, params models.DeploymentParams) error {
+	args := m.Called(oldCfg, cfg, params)
+	return args.Error(0)
 }
 
 func (m *Mocker) Copy(srcDir, servicesDir string) error {
@@ -101,34 +111,6 @@ func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *manage
 	return newManagerWithCurrentConfig(mocker, params, config.Config{})
 }
 
-func TestRemoveAndDeployStacks_Success(t *testing.T) {
-	mocker := &Mocker{}
-	manager := newManagerWithMocks(mocker, models.DeploymentParams{
-		ServicesDir: "/services",
-		WorkingDir:  "configDir",
-		ConfigFile:  "config.yaml",
-	})
-	manager.currentCfg = mockConfigOld
-	mock.InOrder(
-		mocker.On(
-			"RemoveServices", []string{"svc1"}, "/services",
-		).Return(make(map[string]error)),
-
-		mocker.On(
-			"DeployServices", mockConfigNew, "/services",
-		).Return(make(map[string]error)),
-	)
-	mocker.On(
-		"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
-	).Return(nil)
-
-	mocker.On(
-		"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
-	).Return(nil)
-	err := manager.removeAndDeployStacks(mockConfigOld, mockConfigNew)
-	assert.NoError(t, err)
-}
-
 var (
 	ErrRemove   = errors.New("removeServices error")
 	ErrDeploy   = errors.New("deployServices error")
@@ -136,69 +118,6 @@ var (
 	ErrGenerate = errors.New("generate file error")
 	ErrFetch    = errors.New("sync config error")
 )
-
-func TestRemoveAndDeployStacks_Errors(t *testing.T) {
-	type ExpectedErrors struct {
-		removeErr map[string]error
-		deployErr map[string]error
-		copyErr   error
-	}
-	testCases := []struct {
-		name          string
-		errors        ExpectedErrors
-		expectedError error
-	}{
-		{
-			name:          "removeServices error",
-			errors:        ExpectedErrors{removeErr: map[string]error{"svc1": ErrRemove}},
-			expectedError: ErrRemove,
-		},
-		{
-			name:          "deployServices error",
-			errors:        ExpectedErrors{deployErr: map[string]error{"svc1": ErrDeploy}},
-			expectedError: ErrDeploy,
-		},
-
-		{
-			name:          "copyServices error",
-			errors:        ExpectedErrors{copyErr: ErrCopy},
-			expectedError: ErrCopy,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			mocker := &Mocker{}
-			manager := newManagerWithMocks(mocker, models.DeploymentParams{
-				ServicesDir: "/services",
-				WorkingDir:  "configDir",
-				ConfigFile:  "config.yaml",
-			})
-			manager.currentCfg = mockConfigOld
-
-			mock.InOrder(
-				mocker.On(
-					"RemoveServices", []string{"svc1"}, "/services",
-				).Return(tc.errors.removeErr),
-
-				mocker.On(
-					"DeployServices", mockConfigNew, "/services",
-				).Return(tc.errors.deployErr),
-			)
-
-			mocker.On(
-				"CopyWithAddPerm", "configDir/services/svc2", "/services/svc2", os.FileMode(0000),
-			).Return(tc.errors.copyErr)
-
-			mocker.On(
-				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
-			).Return(tc.errors.copyErr)
-			err := manager.removeAndDeployStacks(mockConfigOld, mockConfigNew)
-
-			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))
-		})
-	}
-}
 
 func TestSync_Success(t *testing.T) {
 	mocker := &Mocker{}
