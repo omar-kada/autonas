@@ -3,6 +3,7 @@ package docker
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/models"
@@ -41,6 +42,7 @@ func (m *Mocker) CopyWithAddPerm(src, dst string, permission os.FileMode) error 
 
 func newManagerWithMocks(mocker *Mocker) *Deployer {
 	return &Deployer{
+		log:       slog.New(slog.DiscardHandler),
 		cmdRunner: mocker,
 		copier:    mocker,
 		envGenerator: &EnvGenerator{
@@ -128,6 +130,9 @@ type ExpectedErrors struct {
 var (
 	ErrWriteFile = errors.New("writeFile error")
 	ErrRunCmd    = errors.New("runCmd error")
+	ErrCopy      = errors.New("copyServices error")
+	ErrGenerate  = errors.New("generate file error")
+	ErrFetch     = errors.New("sync config error")
 )
 
 func TestDeployServices_Errors(t *testing.T) {
@@ -184,20 +189,11 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-var (
-	ErrRemove   = errors.New("removeServices error")
-	ErrDeploy   = errors.New("deployServices error")
-	ErrCopy     = errors.New("copyServices error")
-	ErrGenerate = errors.New("generate file error")
-	ErrFetch    = errors.New("sync config error")
-)
-
 func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 	type ExpectedErrors struct {
-		removeErr map[string]error
-		deployErr map[string]error
-		copyErr   error
-		writeErr  error
+		copyErr  error
+		writeErr error
+		runErr   error
 	}
 	testCases := []struct {
 		name          string
@@ -205,14 +201,9 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name:          "removeServices error",
-			errors:        ExpectedErrors{removeErr: map[string]error{"svc1": ErrRemove}},
-			expectedError: ErrRemove,
-		},
-		{
-			name:          "deployServices error",
-			errors:        ExpectedErrors{deployErr: map[string]error{"svc1": ErrDeploy}},
-			expectedError: ErrDeploy,
+			name:          "run error",
+			errors:        ExpectedErrors{runErr: ErrRunCmd},
+			expectedError: ErrRunCmd,
 		},
 
 		{
@@ -223,8 +214,8 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 
 		{
 			name:          "write to file error",
-			errors:        ExpectedErrors{copyErr: ErrWriteFile},
-			expectedError: ErrCopy,
+			errors:        ExpectedErrors{writeErr: ErrWriteFile},
+			expectedError: ErrWriteFile,
 		},
 	}
 
@@ -233,10 +224,10 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			mocker := &Mocker{}
 			manager := newManagerWithMocks(mocker)
 			mock.InOrder(
-				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
+				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
 					"Run", "docker", []string{"compose", "--project-directory", filepath.Join("/services", "svc1"), "up", "-d"},
-				).Return(tc.errors.deployErr),
+				).Return(tc.errors.runErr),
 			)
 
 			mocker.On(

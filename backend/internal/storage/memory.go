@@ -46,8 +46,8 @@ func (s *MemoryStorage) SaveDeployment(deployment api.Deployment) (api.Deploymen
 }
 
 // UpdateStatus updates only the status of the deployment
-func (s *MemoryStorage) UpdateStatus(deploymentId string, status api.DeploymentStatus) (api.Deployment, error) {
-	deployment, exists := s.deployments[deploymentId]
+func (s *MemoryStorage) UpdateStatus(deploymentID string, status api.DeploymentStatus) (api.Deployment, error) {
+	deployment, exists := s.deployments[deploymentID]
 	if !exists {
 		return api.Deployment{}, nil
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+// DeploymentID is the key used to store deployment ID in context
 const DeploymentID = "deployment_id"
 
 // Deployer defines methods for managing containerized services.

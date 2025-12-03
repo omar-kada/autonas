@@ -20,13 +20,13 @@ func NewHandler(store storage.Storage) *Handler {
 }
 
 // DeployementAPIList implements the StrictServerInterface interface
-func (h *Handler) DeployementAPIList(ctx context.Context, request api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
+func (h *Handler) DeployementAPIList(_ context.Context, _ api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
 	deps, err := h.store.GetDeployments()
 	return api.DeployementAPIList200JSONResponse(deps), err
 }
 
 // DeployementAPIRead implements the StrictServerInterface interface
-func (h *Handler) DeployementAPIRead(ctx context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
+func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
 	return api.DeployementAPIRead200JSONResponse{
@@ -40,7 +40,7 @@ func (h *Handler) DeployementAPIRead(ctx context.Context, request api.Deployemen
 }
 
 // StatusAPIGet implements the StrictServerInterface interface
-func (h *Handler) StatusAPIGet(ctx context.Context, request api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
+func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
 	return api.StatusAPIGet200JSONResponse{

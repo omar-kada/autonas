@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"omar-kada/autonas/internal/config"
+	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 	"os"
 	"testing"
@@ -102,6 +103,7 @@ func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams,
 		copier:              mocker,
 		fetcher:             mocker,
 		configGenerator:     mocker,
+		store:               storage.NewMemoryStorage(),
 		params:              params,
 		currentCfg:          currentCfg,
 	}
@@ -131,9 +133,8 @@ func TestSync_Success(t *testing.T) {
 
 	mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, nil)
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
-	mocker.On("CopyWithAddPerm", "services/svc1", "/services/svc1", os.FileMode(0000)).Once().Return(nil)
-	mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0000)).Once().Return(nil)
-	mocker.On("DeployServices", wantCfg, "/services").Once().Return(map[string]error{})
+	mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
+	mocker.On("RemoveAndDeployStacks", config.Config{}, wantCfg, manager.params).Once().Return(nil)
 	err := manager.SyncDeployment()
 	assert.NoError(t, err)
 	mocker.AssertExpectations(t)
@@ -151,10 +152,8 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	manager.params.AddWritePerm = true
 	mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, nil)
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
-	mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0666)).Once().Return(nil)
-	mocker.On("CopyWithAddPerm", "services/svc3", "/services/svc3", os.FileMode(0666)).Once().Return(nil)
-	mocker.On("RemoveServices", []string{"svc1"}, "/services").Once().Return(map[string]error{})
-	mocker.On("DeployServices", wantCfg, "/services").Once().Return(map[string]error{})
+	mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
+	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, manager.params).Once().Return(nil)
 
 	err := manager.SyncDeployment()
 	assert.NoError(t, err)
@@ -165,9 +164,7 @@ func TestRunCmd_Errors(t *testing.T) {
 	type ExpectedErrors struct {
 		fetchErr    error
 		generateErr error
-		deployErr   map[string]error
-		removeErr   map[string]error
-		copyErr     error
+		deployErr   error
 	}
 	testCases := []struct {
 		name          string
@@ -186,18 +183,8 @@ func TestRunCmd_Errors(t *testing.T) {
 		},
 		{
 			name:          "deployServices error",
-			mockValues:    ExpectedErrors{deployErr: map[string]error{"svc1": ErrDeploy}},
+			mockValues:    ExpectedErrors{deployErr: ErrDeploy},
 			expectedError: ErrDeploy,
-		},
-		{
-			name:          "removeServices error",
-			mockValues:    ExpectedErrors{removeErr: map[string]error{"svc1": ErrRemove}},
-			expectedError: ErrRemove,
-		},
-		{
-			name:          "copy files error",
-			mockValues:    ExpectedErrors{copyErr: ErrCopy},
-			expectedError: ErrCopy,
 		},
 	}
 
@@ -212,10 +199,8 @@ func TestRunCmd_Errors(t *testing.T) {
 			wantCfg := mockConfigNew
 			mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, tc.mockValues.generateErr)
 			mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(tc.mockValues.fetchErr)
-			mocker.On("CopyWithAddPerm", "services/svc2", "/services/svc2", os.FileMode(0000)).Once().Return(tc.mockValues.copyErr)
-			mocker.On("CopyWithAddPerm", "services/svc3", "/services/svc3", os.FileMode(0000)).Once().Return(tc.mockValues.copyErr)
-			mocker.On("RemoveServices", []string{"svc1"}, "/services").Once().Return(tc.mockValues.removeErr)
-			mocker.On("DeployServices", wantCfg, "/services").Once().Return(tc.mockValues.deployErr)
+			mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
+			mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, manager.params).Once().Return(tc.mockValues.deployErr)
 
 			err := manager.SyncDeployment()
 			assert.ErrorContains(t, err, tc.expectedError.Error())

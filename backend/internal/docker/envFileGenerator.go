@@ -11,14 +11,14 @@ import (
 	"github.com/elliotchance/orderedmap/v3"
 )
 
-// NewDeployer creates an instance of Manager for docker containers
+// NewEnvGenerator creates an instance of EnvGenerator
 func NewEnvGenerator() *EnvGenerator {
 	return &EnvGenerator{
 		writer: files.NewWriter(),
 	}
 }
 
-// Deployer manages Docker Compose services.
+// EnvGenerator handles generation of .env files for docker compose services
 type EnvGenerator struct {
 	writer files.Writer
 }
