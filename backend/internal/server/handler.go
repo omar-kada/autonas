@@ -46,12 +46,11 @@ func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObjec
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
 	stacks, err := h.manager.GetManagerStacks()
-
 	if err != nil {
 		return nil, err
 	}
 
-	var result = make(map[string][]api.ContainerStatus)
+	result := make(map[string][]api.ContainerStatus)
 	for stackName, containers := range stacks {
 		for _, container := range containers {
 			result[stackName] = append(result[stackName], api.ContainerStatus{

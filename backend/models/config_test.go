@@ -15,7 +15,7 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 		},
 		Services: map[string]ServiceConfig{
 			"svc": {
-				//Extra: map[string]any{
+				// Extra: map[string]any{
 				"SVC_EXTRA": "s",
 				//},
 			},
@@ -39,13 +39,13 @@ func TestGetEnabledServices_FiltersCorrectly(t *testing.T) {
 		},
 		Services: map[string]ServiceConfig{
 			"svc": {
-				//Extra: map[string]any{
+				// Extra: map[string]any{
 				"SVC_EXTRA": "s",
 				//},
 			},
 			"svc2": {
-				//Disabled: true,
-				//Extra: map[string]any{
+				// Disabled: true,
+				// Extra: map[string]any{
 				"SVC_EXTRA": "s",
 				//},
 			},

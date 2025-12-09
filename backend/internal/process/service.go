@@ -67,7 +67,6 @@ type service struct {
 }
 
 func (m *service) SyncDeployment(cfg models.Config) (err error) {
-
 	syncErr := m.fetcher.Fetch(cfg.Repo, cfg.Branch, m.params.WorkingDir)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {

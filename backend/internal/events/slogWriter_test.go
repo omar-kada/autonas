@@ -80,7 +80,6 @@ func TestWrite(t *testing.T) {
 
 	// Check if the mock handler's methods were called as expected
 	mockHandler.AssertExpectations(t)
-
 }
 
 func TestWriteWithDifferentLevels(t *testing.T) {

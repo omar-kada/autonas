@@ -60,7 +60,6 @@ func (s *configStore) Update(cfg models.Config) error {
 
 // reads the configuration from the config file
 func (s *configStore) Get() (models.Config, error) {
-
 	bs, err := os.ReadFile(s.configFilePath)
 	if err != nil {
 		return models.Config{}, fmt.Errorf("error reading config file %s: %w", s.configFilePath, err)

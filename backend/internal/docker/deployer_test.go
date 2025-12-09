@@ -62,7 +62,7 @@ var mockConfig = models.Config{
 	},
 	Services: map[string]models.ServiceConfig{
 		"svc1": {
-			//Extra: map[string]any{
+			// Extra: map[string]any{
 			"Port": "8080",
 			//},
 		},

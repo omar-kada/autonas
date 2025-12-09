@@ -113,7 +113,6 @@ func TestUpdateConfig(t *testing.T) {
 }
 
 func TestLoadConfig_FileError(t *testing.T) {
-
 	t.Run("missing file", func(t *testing.T) {
 		configStore := NewConfigStore("/does/not/exist.yaml")
 		_, err := configStore.Get()

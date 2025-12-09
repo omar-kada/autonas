@@ -52,7 +52,7 @@ var (
 		Branch: "main",
 		Services: map[string]models.ServiceConfig{
 			"svc1": {
-				//Extra: map[string]any{
+				// Extra: map[string]any{
 				"Port":    8080,
 				"Version": "v1",
 				//},
@@ -64,7 +64,6 @@ var (
 		Repo:   "https://example.com/repo.git",
 		Branch: "main",
 		Services: map[string]models.ServiceConfig{
-
 			"svc2": {},
 			"svc3": {},
 		},
