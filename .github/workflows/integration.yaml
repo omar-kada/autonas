@@ -1,22 +1,30 @@
 name: Integration Tests
 
 on:
-  workflow_run:
-    workflows: ['API Generation']
-    types:
-      - completed
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  generate-api:
+    uses: ./.github/workflows/api-reusable.yaml
+    with:
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
   test:
+    needs: generate-api
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./backend
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Download backend API
         uses: actions/download-artifact@v4

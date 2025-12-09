@@ -1,26 +1,22 @@
-name: API Generation
+name: API Generation (reusable)
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-permissions:
-  contents: read
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit ref to checkout in generator (optional)'
+        required: false
+        type: string
 
 jobs:
   generate-api:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: 1.24
+          # prefer the input ref if provided, otherwise use the caller's SHA
+          ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
 
       - name: Use Node.js 22
         uses: actions/setup-node@v4
