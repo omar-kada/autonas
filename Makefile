@@ -36,7 +36,7 @@ oapi-gen:
 	cd backend && go tool oapi-codegen -config oapi-codegen.yaml ../api/tsp-output/schema/openapi.1.0.yaml
 
 orval-gen:
-	cd frontend && npm run orval
+	cd frontend && npx orval --config orval.config.js
 
 # docker-run:
 # 	docker compose --env-file ./_ignore_.env up --build
