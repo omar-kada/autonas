@@ -10,7 +10,13 @@ permissions:
   contents: read
 
 jobs:
+  generate-api:
+    uses: ./.github/workflows/api-reusable.yaml
+    with:
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
   go:
+    needs: generate-api
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -18,7 +24,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download backend API
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-api
+          path: ./backend/api
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -30,7 +42,6 @@ jobs:
 
       - name: Build
         run: go build -v ./...
-
       - name: Run go vet
         run: go vet ./...
 
@@ -42,7 +53,7 @@ jobs:
 
       - name: Run tests
         run: go test -race -vet=off -coverprofile=coverage.out ./internal/...
-      
+
       - name: Report results to DeepSource
         run: |
           curl https://deepsource.io/cli | sh

@@ -1,0 +1,47 @@
+name: API Generation (reusable)
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit ref to checkout in generator (optional)'
+        required: false
+        type: string
+
+jobs:
+  generate-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # prefer the input ref if provided, otherwise use the caller's SHA
+          ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: ./api/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./api
+
+      - name: Generate API
+        run: make gen-api
+
+      - name: Upload backend API
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-api
+          path: ./backend/api
+
+      - name: Upload frontend API
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-api
+          path: ./frontend/src/api

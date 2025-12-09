@@ -1,18 +1,43 @@
 name: Integration Tests
-on: [push]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  generate-api:
+    uses: ./.github/workflows/api-reusable.yaml
+    with:
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
   test:
+    needs: generate-api
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./backend
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download backend API
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-api
+          path: ./backend/api
+
+      - name: Download frontend API
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-api
+          path: ./frontend/src/api
+
       - name: Set up Docker
         run: |
           sudo systemctl start docker
@@ -30,13 +55,13 @@ jobs:
           echo "CURRENT_UID=$(id -u)" >> $GITHUB_ENV
           echo "CURRENT_GID=$(id -g)" >> $GITHUB_ENV
           echo "User: $(id -u), Group: $(id -g)"
-          
+
       - name: Run integration tests
         run: |
           go test ./integration_tests/... -v
         env:
           DOCKER_HOST: unix:///var/run/docker.sock
-          
+
       - name: Cleanup
         if: always()
         run: docker system prune -f
