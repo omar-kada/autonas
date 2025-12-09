@@ -1,18 +1,16 @@
 name: Frontend CI
 
 on:
-  push:
-    branches: ['main']
-    tags: ['*'] # Trigger on any tag push
-  pull_request:
-    branches: ['main']
+  workflow_run:
+    workflows: ['API Generation']
+    types:
+      - completed
 
 permissions:
   contents: read
 
 jobs:
   build:
-    needs: api.yaml/generate-api
     runs-on: ubuntu-latest
     defaults:
       run:

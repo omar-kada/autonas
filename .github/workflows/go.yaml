@@ -1,17 +1,16 @@
 name: Go
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_run:
+    workflows: ['API Generation']
+    types:
+      - completed
 
 permissions:
   contents: read
 
 jobs:
   go:
-    needs: api.yaml/generate-api
     runs-on: ubuntu-24.04
     defaults:
       run:
