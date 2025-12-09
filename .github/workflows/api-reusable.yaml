@@ -1,4 +1,6 @@
 name: API Generation (reusable)
+permissions:
+  contents: read
 
 on:
   workflow_call:
