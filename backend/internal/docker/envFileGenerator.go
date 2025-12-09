@@ -2,8 +2,8 @@ package docker
 
 import (
 	"fmt"
-	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +23,7 @@ type EnvGenerator struct {
 	writer files.Writer
 }
 
-func (g EnvGenerator) generateEnvFile(cfg config.Config, servicesDir, service string) error {
+func (g EnvGenerator) generateEnvFile(cfg models.Config, servicesDir, service string) error {
 	serviceCfg := cfg.PerService(service)
 	envFilePath := filepath.Join(servicesDir, service, ".env")
 

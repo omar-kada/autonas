@@ -3,9 +3,8 @@ package cli
 import (
 	"log/slog"
 	"omar-kada/autonas/internal/cli/defaults"
-	"omar-kada/autonas/internal/config"
 	"omar-kada/autonas/internal/docker"
-	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/server"
@@ -35,12 +34,13 @@ var varInfoMap = defaults.VariableInfoMap{
 type RunParams struct {
 	models.DeploymentParams
 	models.ServerParams
+	ConfigFile string
 }
 
 func getParamsWithDefaults(p RunParams) RunParams {
 	return RunParams{
+		ConfigFile: varInfoMap.EnvOrDefault(p.ConfigFile, _file),
 		DeploymentParams: models.DeploymentParams{
-			ConfigFile:   varInfoMap.EnvOrDefault(p.ConfigFile, _file),
 			WorkingDir:   varInfoMap.EnvOrDefault(p.WorkingDir, _workingDir),
 			ServicesDir:  varInfoMap.EnvOrDefault(p.ServicesDir, _servicesDir),
 			AddWritePerm: p.AddWritePerm,
@@ -77,18 +77,23 @@ func newRunCommand() *cobra.Command {
 
 func doRun(params RunParams) error {
 	store := storage.NewMemoryStorage()
-	manager := process.NewManager(
+	dispatcher := events.NewDefaultDispatcher(store)
+	configStore := storage.NewConfigStore(params.ConfigFile)
+	scheduler := process.NewConfigScheduler(configStore)
+	manager := process.NewService(
 		params.DeploymentParams,
-		docker.NewDeployer(),
+		docker.NewDeployer(dispatcher),
 		docker.NewInspector(),
-		files.NewCopier(),
 		git.NewFetcher(),
 		store,
-		config.NewGenerator())
+		dispatcher)
 	go func() {
-		if err := manager.SyncDeployment(); err != nil {
-			slog.Error("error while deploying services", "error", err)
-		}
+		scheduler.Schedule(func(cfg models.Config) {
+			err := manager.SyncDeployment(cfg)
+			if err != nil {
+				slog.Error(err.Error())
+			}
+		})
 	}()
 	server := server.NewServer(store, manager)
 	return server.Serve(params.Port)

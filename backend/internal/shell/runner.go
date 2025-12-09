@@ -3,7 +3,8 @@ package shell
 
 import (
 	"fmt"
-	"os"
+	"log/slog"
+	"omar-kada/autonas/internal/events"
 	"os/exec"
 )
 
@@ -26,8 +27,8 @@ func (cmdRunner) Run(cmd string, args ...string) error {
 		return fmt.Errorf("executable not found: %w", err)
 	}
 	c := execCommand(path, args...)
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
+	c.Stdout = events.NewSlogWriter(slog.LevelInfo)
+	c.Stderr = events.NewSlogWriter(slog.LevelError)
 	return c.Run()
 }
 

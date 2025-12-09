@@ -1,11 +1,12 @@
 package docker
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log/slog"
-	"omar-kada/autonas/internal/config"
+	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
@@ -41,31 +42,29 @@ func (m *Mocker) CopyWithAddPerm(src, dst string, permission os.FileMode) error 
 }
 
 func newManagerWithMocks(mocker *Mocker) *Deployer {
+	store := storage.NewMemoryStorage()
+	dep, _ := store.InitDeployment("test", "")
+	ctx := context.WithValue(context.Background(), events.ObjectID, dep.Id)
 	return &Deployer{
-		log:       slog.New(slog.DiscardHandler),
-		cmdRunner: mocker,
-		copier:    mocker,
+		dispatcher: events.NewDefaultDispatcher(store),
+		cmdRunner:  mocker,
+		copier:     mocker,
 		envGenerator: &EnvGenerator{
 			writer: mocker,
 		},
+		ctx: ctx,
 	}
 }
 
-var mockConfig = config.Config{
+var mockConfig = models.Config{
 	Extra: map[string]any{
 		"AUTONAS_HOST": "localhost",
 	},
-	Services: map[string]config.ServiceConfig{
+	Services: map[string]models.ServiceConfig{
 		"svc1": {
-			Extra: map[string]any{
-				"Port": "8080",
-			},
-		},
-		"svc2": {
-			Disabled: true,
-			Extra: map[string]any{
-				"Version": "v2",
-			},
+			//Extra: map[string]any{
+			"Port": "8080",
+			//},
 		},
 	},
 }
@@ -184,7 +183,6 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	err := manager.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  "configDir",
-		ConfigFile:  "config.yaml",
 	})
 	assert.NoError(t, err)
 }
@@ -240,7 +238,6 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			err := manager.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
 				ServicesDir: "/services",
 				WorkingDir:  "configDir",
-				ConfigFile:  "config.yaml",
 			})
 
 			assert.ErrorContains(t, err, fmt.Sprint(tc.expectedError))

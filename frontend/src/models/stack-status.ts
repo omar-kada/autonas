@@ -14,7 +14,7 @@ export type ContainerStatus = {
   state: ContainerState;
   name: string;
   health: HealthStatus;
-  createdAt: Date;
+  startedAt: Date;
 };
 
 export interface StackState {

@@ -2,7 +2,8 @@
 package git
 
 import (
-	"os"
+	"log/slog"
+	"omar-kada/autonas/internal/events"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -35,7 +36,7 @@ func (fetcher) Fetch(repoURL, branch, path string) error {
 		URL:           repoURL,
 		ReferenceName: plumbing.NewBranchReferenceName(branch),
 		SingleBranch:  true,
-		Progress:      os.Stdout,
+		Progress:      events.NewSlogWriter(slog.LevelInfo),
 	})
 	if err == git.ErrRepositoryAlreadyExists {
 		return fetchAndPull(path, branch)
@@ -51,7 +52,7 @@ func fetchAndPull(path string, branch string) error {
 
 	err = repo.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
-		Progress:   os.Stdout,
+		Progress:   events.NewSlogWriter(slog.LevelInfo),
 		Force:      true,
 	})
 	if err != nil && err != git.NoErrAlreadyUpToDate {

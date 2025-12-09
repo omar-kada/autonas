@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"omar-kada/autonas/models"
 	"strings"
+	"time"
 
 	"github.com/moby/moby/client"
 )
@@ -17,26 +18,29 @@ type Client interface {
 }
 
 // Inspector implements information retrieval about docker stacks
-type Inspector struct{}
+type Inspector struct {
+	log          *slog.Logger
+	dockerClient Client
+}
 
 // NewInspector creates new inspector given a docker client
 func NewInspector() *Inspector {
-	return &Inspector{}
-}
-
-// GetManagedContainers returns the list of containers (as returned by ContainerList)
-// that are managed by AutoNAS
-func (Inspector) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	dockerClient, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create docker client: %w", err)
+		slog.Error("Failed to create docker client", "error", err)
+		return nil
 	}
-	return getManagedContainersWithClient(dockerClient, servicesDir)
+	return &Inspector{
+		log:          slog.Default(),
+		dockerClient: dockerClient,
+	}
 }
 
-func getManagedContainersWithClient(dockerClient Client, servicesDir string) (map[string][]models.ContainerSummary, error) {
+// GetManagerStacks returns the list of containers (as returned by ContainerList)
+// that are managed by AutoNAS
+func (i *Inspector) GetManagerStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
-	summaries, err := dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})
+	summaries, err := i.dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
@@ -44,7 +48,7 @@ func getManagedContainersWithClient(dockerClient Client, servicesDir string) (ma
 	matches := make(map[string][]models.ContainerSummary)
 	for _, c := range summaries.Items {
 
-		inspect, err := dockerClient.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
+		inspect, err := i.dockerClient.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			slog.Error("Failed to inspect container",
 				"containerId", c.ID, "names", c.Names, "error", err)
@@ -52,12 +56,17 @@ func getManagedContainersWithClient(dockerClient Client, servicesDir string) (ma
 		}
 		serviceName := getServiceNameFromLabel(inspect, servicesDir)
 		if serviceName != "" {
+			startedAt, err := time.Parse(time.RFC3339Nano, inspect.Container.State.StartedAt)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse : %w", err)
+			}
 			matches[serviceName] = append(matches[serviceName], models.ContainerSummary{
-				ID:     c.ID,
-				Name:   c.Labels["com.docker.compose.service"],
-				Image:  c.Image,
-				State:  c.State,
-				Health: inspect.Container.State.Health.Status,
+				ID:        c.ID,
+				Name:      c.Labels["com.docker.compose.service"],
+				Image:     c.Image,
+				State:     c.State,
+				Health:    inspect.Container.State.Health.Status,
+				StartedAt: startedAt,
 			})
 		}
 	}

@@ -1,14 +1,12 @@
 package process
 
 import (
+	"context"
 	"errors"
-	"log/slog"
-	"omar-kada/autonas/internal/config"
+	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/assert"
@@ -19,9 +17,8 @@ type Mocker struct {
 	mock.Mock
 }
 
-func (m *Mocker) WithLogger(log *slog.Logger) Deployer {
-	args := m.Called(log)
-	return args.Get(0).(Deployer)
+func (m *Mocker) WithCtx(_ context.Context) Deployer {
+	return m
 }
 
 func (m *Mocker) RemoveServices(services []string, servicesDir string) map[string]error {
@@ -29,27 +26,17 @@ func (m *Mocker) RemoveServices(services []string, servicesDir string) map[strin
 	return args.Get(0).(map[string]error)
 }
 
-func (m *Mocker) DeployServices(cfg config.Config, servicesDir string) map[string]error {
+func (m *Mocker) DeployServices(cfg models.Config, servicesDir string) map[string]error {
 	args := m.Called(cfg, servicesDir)
 	return args.Get(0).(map[string]error)
 }
 
-func (m *Mocker) RemoveAndDeployStacks(oldCfg, cfg config.Config, params models.DeploymentParams) error {
+func (m *Mocker) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.DeploymentParams) error {
 	args := m.Called(oldCfg, cfg, params)
 	return args.Error(0)
 }
 
-func (m *Mocker) Copy(srcDir, servicesDir string) error {
-	args := m.Called(srcDir, servicesDir)
-	return args.Error(0)
-}
-
-func (m *Mocker) CopyWithAddPerm(srcDir, servicesDir string, permission os.FileMode) error {
-	args := m.Called(srcDir, servicesDir, permission)
-	return args.Error(0)
-}
-
-func (m *Mocker) GetManagedContainers(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (m *Mocker) GetManagerStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	args := m.Called(servicesDir)
 	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
 }
@@ -59,64 +46,50 @@ func (m *Mocker) Fetch(repo string, branch string, dir string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) FromFiles(files []string) (config.Config, error) {
-	args := m.Called(files)
-	return args.Get(0).(config.Config), args.Error(1)
-}
-
 var (
-	mockConfigOld = config.Config{
+	mockConfigOld = models.Config{
 		Repo:   "https://example.com/repo.git",
 		Branch: "main",
-		Services: map[string]config.ServiceConfig{
+		Services: map[string]models.ServiceConfig{
 			"svc1": {
-				Extra: map[string]any{
-					"Port":    8080,
-					"Version": "v1",
-				},
+				//Extra: map[string]any{
+				"Port":    8080,
+				"Version": "v1",
+				//},
 			},
 			"svc2": {},
-			"svc3": {Disabled: true},
 		},
 	}
-	mockConfigNew = config.Config{
+	mockConfigNew = models.Config{
 		Repo:   "https://example.com/repo.git",
 		Branch: "main",
-		Services: map[string]config.ServiceConfig{
-			"svc1": {
-				Disabled: true,
-				Extra: map[string]any{
-					"Port":    8080,
-					"Version": "v1",
-				},
-			},
+		Services: map[string]models.ServiceConfig{
+
 			"svc2": {},
 			"svc3": {},
 		},
 	}
 )
 
-func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams, currentCfg config.Config) *manager {
-	return &manager{
+func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
+	return &service{
 		containersDeployer:  mocker,
 		containersInspector: mocker,
-		copier:              mocker,
 		fetcher:             mocker,
-		configGenerator:     mocker,
+		dispatcher:          events.NewVoidDispatcher(),
 		store:               storage.NewMemoryStorage(),
 		params:              params,
 		currentCfg:          currentCfg,
 	}
 }
 
-func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *manager {
-	return newManagerWithCurrentConfig(mocker, params, config.Config{})
+func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *service {
+	return newManagerWithCurrentConfig(mocker, params, models.Config{})
 }
 
 var (
 	ErrRemove   = errors.New("removeServices error")
 	ErrDeploy   = errors.New("deployServices error")
-	ErrCopy     = errors.New("copyServices error")
 	ErrGenerate = errors.New("generate file error")
 	ErrFetch    = errors.New("sync config error")
 )
@@ -126,16 +99,13 @@ func TestSync_Success(t *testing.T) {
 	manager := newManagerWithMocks(mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
-		ConfigFile:  "config.yaml",
 	})
 
 	wantCfg := mockConfigOld
 
-	mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, nil)
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
-	mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
-	mocker.On("RemoveAndDeployStacks", config.Config{}, wantCfg, manager.params).Once().Return(nil)
-	err := manager.SyncDeployment()
+	mocker.On("RemoveAndDeployStacks", models.Config{}, wantCfg, manager.params).Once().Return(nil)
+	err := manager.SyncDeployment(wantCfg)
 	assert.NoError(t, err)
 	mocker.AssertExpectations(t)
 }
@@ -145,17 +115,14 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
-		ConfigFile:  "config.yaml",
 	}, mockConfigOld)
 
 	wantCfg := mockConfigNew
 	manager.params.AddWritePerm = true
-	mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, nil)
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
-	mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, manager.params).Once().Return(nil)
 
-	err := manager.SyncDeployment()
+	err := manager.SyncDeployment(wantCfg)
 	assert.NoError(t, err)
 	mocker.AssertExpectations(t)
 }
@@ -177,11 +144,6 @@ func TestRunCmd_Errors(t *testing.T) {
 			expectedError: ErrFetch,
 		},
 		{
-			name:          "generateConfigFromFiles error",
-			mockValues:    ExpectedErrors{generateErr: ErrGenerate},
-			expectedError: ErrGenerate,
-		},
-		{
 			name:          "deployServices error",
 			mockValues:    ExpectedErrors{deployErr: ErrDeploy},
 			expectedError: ErrDeploy,
@@ -194,7 +156,6 @@ func TestRunCmd_Errors(t *testing.T) {
 			manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{
 				ServicesDir: "/services",
 				WorkingDir:  ".",
-				ConfigFile:  "config.yaml",
 			}, mockConfigOld)
 			wantCfg := mockConfigNew
 			mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, tc.mockValues.generateErr)
@@ -202,56 +163,13 @@ func TestRunCmd_Errors(t *testing.T) {
 			mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
 			mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, manager.params).Once().Return(tc.mockValues.deployErr)
 
-			err := manager.SyncDeployment()
+			err := manager.SyncDeployment(wantCfg)
 			assert.ErrorContains(t, err, tc.expectedError.Error())
 		})
 	}
 }
 
-func TestSyncPeriodically(t *testing.T) {
-	testCases := []struct {
-		name          string
-		currentCfg    config.Config
-		expectedCron  bool
-		expectedError error
-	}{
-		{
-			name: "CronPeriod is set",
-			currentCfg: config.Config{
-				CronPeriod: "*/5 * * * *",
-			},
-			expectedCron:  true,
-			expectedError: nil,
-		},
-		{
-			name: "CronPeriod is not set",
-			currentCfg: config.Config{
-				CronPeriod: "",
-			},
-			expectedCron:  false,
-			expectedError: nil,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			mocker := &Mocker{}
-			manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{}, tc.currentCfg)
-
-			cron := manager.SyncPeriodically()
-
-			if tc.expectedCron {
-				assert.NotNil(t, cron)
-				assert.Equal(t, 1, len(cron.Entries()))
-				assert.Less(t, time.Now(), cron.Entries()[0].Next)
-			} else {
-				assert.Nil(t, cron)
-			}
-		})
-	}
-}
-
-func TestGetManagedContainers(t *testing.T) {
+func TestGetManagerStacks(t *testing.T) {
 	testCases := []struct {
 		name           string
 		servicesDir    string
@@ -289,9 +207,9 @@ func TestGetManagedContainers(t *testing.T) {
 				ServicesDir: tc.servicesDir,
 			})
 
-			mocker.On("GetManagedContainers", tc.servicesDir).Return(tc.expectedResult, tc.expectedError)
+			mocker.On("GetManagerStacks", tc.servicesDir).Return(tc.expectedResult, tc.expectedError)
 
-			result, err := manager.GetManagedContainers()
+			result, err := manager.GetManagerStacks()
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)
