@@ -15,13 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend # <- set to your frontend folder
+        working-directory: ./frontend
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Download frontend API
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-api
+          path: ./frontend/src/api
 
       - name: Use Node.js 22
         uses: actions/setup-node@v4

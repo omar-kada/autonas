@@ -25,12 +25,12 @@ test-cover:
 	go tool cover -html=coverage.out
 
 gen-api : 
-	make tsp-gen && cd ..
-	make oapi-gen && cd ..
+	make tsp-gen 
+	make oapi-gen
 	make orval-gen
 
 tsp-gen:
-	cd api && tsp compile .
+	cd api && npx tsp compile .
 
 oapi-gen:
 	cd backend && go tool oapi-codegen -config oapi-codegen.yaml ../api/tsp-output/schema/openapi.1.0.yaml
