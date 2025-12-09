@@ -30,16 +30,17 @@ export function DeploymentsPage() {
     }
   }, [data]);
 
-  const logColor = useCallback((level: EventLevel) => {
+  const logColor = useCallback((level: EventLevel): string => {
     switch (level) {
       case 'ERROR':
         return 'text-red-700 dark:text-red-300 ';
       case 'WARN':
         return 'text-yellow-700 dark:text-yellow-300';
-      case 'INFO':
-        return '';
       case 'DEBUG':
         return 'text-gray-700 dark:text-gray-300';
+      case 'INFO':
+      default:
+        return '';
     }
   }, []);
 

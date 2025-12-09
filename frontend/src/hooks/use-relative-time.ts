@@ -25,8 +25,8 @@ const divisions: Array<Division> = [
 
 export function humanize(
   date: Date | number,
-  t: TFunction<any, any>,
-  locale: string = 'en',
+  t: TFunction<'translation', undefined>,
+  locale = 'en',
 ): string {
   const target = typeof date === 'number' ? date : date.getTime();
   const diffMs = target - Date.now();
@@ -50,7 +50,7 @@ export function humanize(
 
 // ---- REACT HOOK -----------------------------------------------
 
-export function useRelativeTime(target: Date | number, locale: string = 'en'): string {
+export function useRelativeTime(target: Date | number, locale = 'en'): string {
   const { t } = useTranslation();
   const [formatted, setFormatted] = useState(() => humanize(target, t, locale));
   useEffect(() => {

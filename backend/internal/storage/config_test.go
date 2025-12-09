@@ -95,7 +95,7 @@ func TestUpdateConfig(t *testing.T) {
 		// Create a directory that we can't write to
 		tmpDir := t.TempDir()
 		readOnlyDir := filepath.Join(tmpDir, "readonly")
-		err := os.Mkdir(readOnlyDir, 0555)
+		err := os.Mkdir(readOnlyDir, 0540)
 		assert.NoError(t, err)
 
 		filePath := filepath.Join(readOnlyDir, "config.yaml")
