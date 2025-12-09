@@ -10,10 +10,10 @@ import (
 
 // WebsocketHandler processes websocker requests
 type WebsocketHandler struct {
-	store storage.Storage
+	store storage.DeploymentStorage
 }
 
-func newWebsocketHandler(store storage.Storage) *WebsocketHandler {
+func newWebsocketHandler(store storage.DeploymentStorage) *WebsocketHandler {
 	return &WebsocketHandler{
 		store: store,
 	}

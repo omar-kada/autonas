@@ -14,44 +14,25 @@ import (
 
 // Server will listen to requests on a port
 type Server interface {
-	ListenAndServe(port int) error
 	Serve(port int) error
 	Shutdown(ctx context.Context)
 }
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	store            storage.Storage
-	loginHandler     *LoginHandler
+	store            storage.DeploymentStorage
+	manager          process.Service
 	websocketHandler *WebsocketHandler
-	statusHandler    *StatusHandler
 	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.Storage, manager process.Manager) Server {
+func NewServer(store storage.DeploymentStorage, manager process.Service) Server {
 	return &HTTPServer{
 		store:            store,
-		loginHandler:     newLoginHandler(store),
+		manager:          manager,
 		websocketHandler: newWebsocketHandler(store),
-		statusHandler:    newStatusHandler(manager),
 	}
-}
-
-// ListenAndServe initializes handler routes and serves on the given port
-func (s *HTTPServer) ListenAndServe(port int) error {
-	http.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend/dist")}))
-	http.HandleFunc("/api/login", s.loginHandler.handle)
-	http.HandleFunc("/api/status", s.statusHandler.handle)
-	http.HandleFunc("/ws", s.websocketHandler.handle)
-	slog.Info("Server starting on ", "port", port)
-
-	s.server = &http.Server{
-		Addr:              ":" + strconv.Itoa(port),
-		ReadHeaderTimeout: 3 * time.Second,
-	}
-
-	return s.server.ListenAndServe()
 }
 
 // Serve initializes routes from generated api and serves on the given port
@@ -61,9 +42,10 @@ func (s *HTTPServer) Serve(port int) error {
 
 	// Add frontend file server
 	mux.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend/dist")}))
+	mux.HandleFunc("/ws", s.websocketHandler.handle)
 
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	myHandler := NewHandler(s.store)
+	myHandler := NewHandler(s.store, s.manager)
 	strict := api.NewStrictHandler(myHandler, []api.StrictMiddlewareFunc{})
 
 	// get an `http.Handler` that we can use

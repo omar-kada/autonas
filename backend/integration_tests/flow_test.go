@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"omar-kada/autonas/internal/docker"
+	"omar-kada/autonas/internal/events"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,7 +100,7 @@ func TestFileGeneration(t *testing.T) {
 
 	t.Cleanup(func() {
 		/// cleanup homepage container after test finishes
-		dockerDeployer := docker.NewDeployer()
+		dockerDeployer := docker.NewDeployer(events.NewVoidDispatcher())
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
 	})
 }

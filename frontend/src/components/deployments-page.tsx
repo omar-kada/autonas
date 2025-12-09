@@ -1,17 +1,18 @@
-import { type Deployment } from '@/api/api';
+import { EventLevel, type Deployment } from '@/api/api';
 import { useDeployments } from '@/hooks';
+import { formatTime } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { DeploymentList } from './view';
 
 export function DeploymentsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data, isLoading, error } = useDeployments();
 
-  const [selectedItem, setSelectedItem] = useState<Deployment>(data?.[0] as Deployment);
+  const [selectedItem, setSelectedItem] = useState<Deployment>(data[0]);
   const [showItem, setShowItem] = useState(false);
   const handleSelect = useCallback((item: Deployment) => {
     setSelectedItem(item);
@@ -20,6 +21,27 @@ export function DeploymentsPage() {
 
   const handleBack = useCallback(() => {
     setShowItem(false);
+  }, []);
+
+  // select first element when none selected
+  useEffect(() => {
+    if (selectedItem == null) {
+      setSelectedItem(data[0]);
+    }
+  }, [data]);
+
+  const logColor = useCallback((level: EventLevel): string => {
+    switch (level) {
+      case 'ERROR':
+        return 'text-red-700 dark:text-red-300 ';
+      case 'WARN':
+        return 'text-yellow-700 dark:text-yellow-300';
+      case 'DEBUG':
+        return 'text-gray-700 dark:text-gray-300';
+      case 'INFO':
+      default:
+        return '';
+    }
   }, []);
 
   if (isLoading) {
@@ -58,9 +80,9 @@ export function DeploymentsPage() {
             <>
               <h3 className="text-2xl font-semibold mb-4">{selectedItem.title}</h3>
               <pre>{selectedItem.diff}</pre>
-              {selectedItem.logs.map((log) => (
-                <pre key={log} className="whitespace-pre-wrap">
-                  {log}
+              {selectedItem.events.map((event) => (
+                <pre key={event.msg} className={`whitespace-pre-wrap ${logColor(event.level)}`}>
+                  {formatTime(event.time, i18n.language)} : [{event.level}] {event.msg}
                 </pre>
               ))}
             </>

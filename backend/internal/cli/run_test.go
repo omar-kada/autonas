@@ -10,8 +10,8 @@ import (
 func TestGetParamsWithDefaults_AllCliValuesProvided(t *testing.T) {
 	// When all CLI values are provided, they should be returned as-is
 	params := RunParams{
+		ConfigFile: "custom.yaml",
 		DeploymentParams: models.DeploymentParams{
-			ConfigFile:   "custom.yaml",
 			WorkingDir:   "/custom/work",
 			ServicesDir:  "/custom/services",
 			AddWritePerm: true,
@@ -96,10 +96,10 @@ func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
 	t.Setenv("AUTONAS_PORT", "8080")
 
 	params := RunParams{
+		ConfigFile: "cli.yaml", // From CLI
 		DeploymentParams: models.DeploymentParams{
-			ConfigFile:   "cli.yaml", // From CLI
-			ServicesDir:  "/s",       // From CLI (overrides env)
-			AddWritePerm: true,       // From CLI
+			ServicesDir:  "/s", // From CLI (overrides env)
+			AddWritePerm: true, // From CLI
 			// WorkingDir not provided, should use env or default
 		},
 		ServerParams: models.ServerParams{

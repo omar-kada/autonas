@@ -61,7 +61,7 @@ export interface ContainerStatus {
   state: ContainerStatusState;
   name: string;
   health: ContainerStatusHealth;
-  createdAt: string;
+  startedAt: string;
 }
 
 export type DeploymentStatus = typeof DeploymentStatus[keyof typeof DeploymentStatus];
@@ -81,12 +81,29 @@ export interface Deployment {
   time: string;
   diff: string;
   status: DeploymentStatus;
-  logs: string[];
+  events: Event[];
 }
 
 export interface Error {
   code: number;
   message: string;
+}
+
+export type EventLevel = typeof EventLevel[keyof typeof EventLevel];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const EventLevel = {
+  ERROR: 'ERROR',
+  INFO: 'INFO',
+  DEBUG: 'DEBUG',
+  WARN: 'WARN',
+} as const;
+
+export interface Event {
+  time: string;
+  msg: string;
+  level: EventLevel;
 }
 
 export interface StackStatus {

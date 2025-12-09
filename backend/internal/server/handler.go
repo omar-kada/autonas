@@ -3,19 +3,22 @@ package server
 import (
 	"context"
 	"omar-kada/autonas/api"
+	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
 	"time"
 )
 
 // Handler implements the generated strict server interface
 type Handler struct {
-	store storage.Storage
+	store   storage.DeploymentStorage
+	manager process.Service
 }
 
 // NewHandler creates a new Handler
-func NewHandler(store storage.Storage) *Handler {
+func NewHandler(store storage.DeploymentStorage, manager process.Service) *Handler {
 	return &Handler{
-		store: store,
+		store:   store,
+		manager: manager,
 	}
 }
 
@@ -35,36 +38,39 @@ func (*Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPI
 		Time:   time.Now(),
 		Diff:   "Sample diff",
 		Status: "success",
-		Logs:   []string{"Deployment started", "Deployment completed"},
 	}, nil
 }
 
 // StatusAPIGet implements the StrictServerInterface interface
-func (*Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
+func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
-	return api.StatusAPIGet200JSONResponse{
-		{
-			StackId: "stack1",
-			Name:    "MyStack",
-			Services: []api.ContainerStatus{
-				{
-					ContainerId: "container1",
-					State:       "running",
-					Name:        "service1",
-					Health:      "healthy",
-					CreatedAt:   time.Now(),
-				},
-				{
-					ContainerId: "container2",
-					State:       "stopped",
-					Name:        "service2",
-					Health:      "unhealthy",
-					CreatedAt:   time.Now(),
-				},
-			},
-		},
-	}, nil
+	stacks, err := h.manager.GetManagerStacks()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string][]api.ContainerStatus)
+	for stackName, containers := range stacks {
+		for _, container := range containers {
+			result[stackName] = append(result[stackName], api.ContainerStatus{
+				ContainerId: container.ID,
+				State:       api.ContainerStatusState(container.State),
+				Name:        container.Name,
+				Health:      api.ContainerStatusHealth(container.Health),
+				StartedAt:   container.StartedAt,
+			})
+		}
+	}
+	var response []api.StackStatus
+	for stackName, containers := range result {
+		response = append(response, api.StackStatus{
+			StackId:  stackName,
+			Name:     stackName,
+			Services: containers,
+		})
+	}
+	return api.StatusAPIGet200JSONResponse(response), nil
 }
 
 /*

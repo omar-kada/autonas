@@ -1,18 +1,21 @@
-// Package config provides functionality to load and manage application configuration.
-package config
+package models
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
 )
 
 // ServiceConfig represents configuration for an individual service.
-type ServiceConfig struct {
+type ServiceConfig map[string]any
+
+/*struct {
 	Disabled bool           `mapstructure:"disabled"`
 	Extra    map[string]any `mapstructure:",remain"`
-}
+}*/
 
 // Config represents the overall configuration structure.
 type Config struct {
@@ -31,7 +34,7 @@ func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, stri
 		serviceConfig.Set(strings.ToUpper(key), fmt.Sprint(value))
 	}
 	if svcVars, ok := cfg.Services[service]; ok {
-		for key, value := range svcVars.Extra {
+		for key, value := range svcVars {
 			serviceConfig.Set(strings.ToUpper(key), fmt.Sprint(value))
 		}
 	}
@@ -40,11 +43,5 @@ func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, stri
 
 // GetEnabledServices returns the list of enabled services on the configuration
 func (cfg Config) GetEnabledServices() []string {
-	var enabled []string
-	for serviceName, value := range cfg.Services {
-		if !value.Disabled {
-			enabled = append(enabled, serviceName)
-		}
-	}
-	return enabled
+	return slices.Collect(maps.Keys(cfg.Services))
 }

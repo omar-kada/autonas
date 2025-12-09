@@ -4,7 +4,6 @@ import "os"
 
 // DeploymentParams groups parameters related to the deployment process
 type DeploymentParams struct {
-	ConfigFile   string
 	WorkingDir   string
 	ServicesDir  string
 	AddWritePerm bool

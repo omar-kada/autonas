@@ -11,13 +11,20 @@ namespace DeploymentService;
 enum Versions {
   v1: "1.0",
 }
+
+model Event {
+  time: utcDateTime;
+  msg: string;
+  level: "ERROR" | "INFO" | "DEBUG" | "WARN";
+}
+
 model Deployment {
   id: string;
   title: string; // Commit message
   time: utcDateTime;
   diff: string;
   status: "planned" | "running" | "success" | "error";
-  logs: string[];
+  events: Event[];
 }
 
 model StackStatus {
@@ -38,7 +45,7 @@ model ContainerStatus {
     | "dead";
   name: string;
   health: "healthy" | "unhealthy" | "starting" | "none";
-  createdAt: utcDateTime;
+  startedAt: utcDateTime;
 }
 
 @error

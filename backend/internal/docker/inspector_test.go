@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/moby/moby/api/types/container"
@@ -26,7 +27,14 @@ func (m *MockClient) ContainerInspect(ctx context.Context, containerID string, o
 	return args.Get(0).(client.ContainerInspectResult), args.Error(1)
 }
 
-func TestGetManagedContainers(t *testing.T) {
+func newInspectorWithMock(client Client) *Inspector {
+	return &Inspector{
+		log:          slog.Default(),
+		dockerClient: client,
+	}
+}
+
+func TestGetManagerStacks(t *testing.T) {
 	mockClient := new(MockClient)
 
 	// Test successful case
@@ -60,6 +68,7 @@ func TestGetManagedContainers(t *testing.T) {
 				Health: &container.Health{
 					Status: container.Healthy,
 				},
+				StartedAt: "2006-01-02T15:04:05.999999999Z",
 			},
 		},
 	}, nil)
@@ -80,7 +89,8 @@ func TestGetManagedContainers(t *testing.T) {
 	}, errors.New("failed to inspect container"))
 
 	servicesDir := "/services"
-	result, err := getManagedContainersWithClient(mockClient, servicesDir)
+	inspector := newInspectorWithMock(mockClient)
+	result, err := inspector.GetManagerStacks(servicesDir)
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -90,7 +100,7 @@ func TestGetManagedContainers(t *testing.T) {
 	// Test error case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{}, errors.New("failed to list containers"))
 
-	_, err = getManagedContainersWithClient(mockClient, servicesDir)
+	_, err = inspector.GetManagerStacks(servicesDir)
 
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "failed to list containers")

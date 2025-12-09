@@ -3,6 +3,7 @@ import { Check, ChevronRight, CircleQuestionMark, Clock, LoaderCircle, X } from 
 import { useCallback } from 'react';
 import { Badge } from '../ui/badge';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '../ui/item';
+import { HumanTime } from './human-time';
 function colorForStatus(status: DeploymentStatus): string {
   switch (status) {
     case 'success':
@@ -44,29 +45,35 @@ export function DeploymentList(props: {
 
   return (
     <div className="space-y-2">
-      {props.deployments.map((deployment) => (
-        <Item
-          key={deployment.id}
-          className="cursor-pointer"
-          onClick={onDeploymentClick(deployment)}
-          variant="outline"
-        >
-          <ItemContent>
-            <ItemTitle>
-              <Badge className={colorForStatus(deployment.status)}>
-                {iconForStatus(deployment.status)}
-              </Badge>
-              {deployment.title}
-            </ItemTitle>
-            <ItemDescription className="text-xs">
-              {new Date(deployment.time).toLocaleString()}
-            </ItemDescription>
-          </ItemContent>
-          <ItemActions className="flex-col justify-between h-full">
-            <ChevronRight />
-          </ItemActions>
-        </Item>
-      ))}
+      {props.deployments.map((deployment) => DeploymentItem(deployment, onDeploymentClick))}
     </div>
+  );
+}
+function DeploymentItem(
+  deployment: Deployment,
+  onDeploymentClick: (deployment: Deployment) => () => void,
+) {
+  return (
+    <Item
+      key={deployment.id}
+      className="cursor-pointer"
+      onClick={onDeploymentClick(deployment)}
+      variant="outline"
+    >
+      <ItemContent>
+        <ItemTitle>
+          <Badge className={colorForStatus(deployment.status)}>
+            {iconForStatus(deployment.status)}
+          </Badge>
+          {deployment.title}
+        </ItemTitle>
+        <ItemDescription className="text-xs">
+          <HumanTime time={deployment.time} />
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions className="flex-col justify-between h-full">
+        <ChevronRight />
+      </ItemActions>
+    </Item>
   );
 }

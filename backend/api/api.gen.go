@@ -46,6 +46,14 @@ const (
 	DeploymentStatusSuccess DeploymentStatus = "success"
 )
 
+// Defines values for EventLevel.
+const (
+	EventLevelDEBUG EventLevel = "DEBUG"
+	EventLevelERROR EventLevel = "ERROR"
+	EventLevelINFO  EventLevel = "INFO"
+	EventLevelWARN  EventLevel = "WARN"
+)
+
 // Defines values for Versions.
 const (
 	VersionsN10 Versions = "1.0"
@@ -60,9 +68,9 @@ type AnalyzeResult struct {
 // ContainerStatus defines model for ContainerStatus.
 type ContainerStatus struct {
 	ContainerId string                `json:"containerId"`
-	CreatedAt   time.Time             `json:"createdAt"`
 	Health      ContainerStatusHealth `json:"health"`
 	Name        string                `json:"name"`
+	StartedAt   time.Time             `json:"startedAt"`
 	State       ContainerStatusState  `json:"state"`
 }
 
@@ -75,8 +83,8 @@ type ContainerStatusState string
 // Deployment defines model for Deployment.
 type Deployment struct {
 	Diff   string           `json:"diff"`
+	Events []Event          `json:"events"`
 	Id     string           `json:"id"`
-	Logs   []string         `json:"logs"`
 	Status DeploymentStatus `json:"status"`
 	Time   time.Time        `json:"time"`
 	Title  string           `json:"title"`
@@ -90,6 +98,16 @@ type Error struct {
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
 }
+
+// Event defines model for Event.
+type Event struct {
+	Level EventLevel `json:"level"`
+	Msg   string     `json:"msg"`
+	Time  time.Time  `json:"time"`
+}
+
+// EventLevel defines model for Event.Level.
+type EventLevel string
 
 // StackStatus defines model for StackStatus.
 type StackStatus struct {
