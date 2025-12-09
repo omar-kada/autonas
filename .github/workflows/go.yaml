@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   go:
-    needs: generate-api
+    needs: api.yaml/generate-api
     runs-on: ubuntu-24.04
     defaults:
       run:
