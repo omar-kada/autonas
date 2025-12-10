@@ -34,7 +34,7 @@ func newInspectorWithMock(client Client) *Inspector {
 	}
 }
 
-func TestGetManagerStacks(t *testing.T) {
+func TestGetManagedStacks(t *testing.T) {
 	mockClient := new(MockClient)
 
 	// Test successful case
@@ -90,7 +90,7 @@ func TestGetManagerStacks(t *testing.T) {
 
 	servicesDir := "/services"
 	inspector := newInspectorWithMock(mockClient)
-	result, err := inspector.GetManagerStacks(servicesDir)
+	result, err := inspector.GetManagedStacks(servicesDir)
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -100,7 +100,7 @@ func TestGetManagerStacks(t *testing.T) {
 	// Test error case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{}, errors.New("failed to list containers"))
 
-	_, err = inspector.GetManagerStacks(servicesDir)
+	_, err = inspector.GetManagedStacks(servicesDir)
 
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "failed to list containers")

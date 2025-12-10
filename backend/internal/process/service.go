@@ -10,6 +10,7 @@ import (
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 	"reflect"
+	"sync"
 )
 
 // DeploymentID is the key used to store deployment ID in context
@@ -25,19 +26,19 @@ type Deployer interface {
 
 // Inspector defined operations for info retreival on containers
 type Inspector interface {
-	GetManagerStacks(servicesDir string) (map[string][]models.ContainerSummary, error)
+	GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error)
 }
 
 // Service abstracts service deployment operations
 type Service interface {
 	SyncDeployment(cfg models.Config) error
 
-	GetManagerStacks() (map[string][]models.ContainerSummary, error)
+	GetManagedStacks() (map[string][]models.ContainerSummary, error)
 }
 
 // NewService creates a new process Service instance
 func NewService(
-	managerParams models.DeploymentParams,
+	deployParams models.DeploymentParams,
 	containersDeployer Deployer,
 	containersInspector Inspector,
 	fetcher git.Fetcher,
@@ -50,7 +51,7 @@ func NewService(
 		fetcher:             fetcher,
 		store:               store,
 		dispatcher:          dispatcher,
-		params:              managerParams,
+		params:              deployParams,
 	}
 }
 
@@ -64,9 +65,13 @@ type service struct {
 	params              models.DeploymentParams
 
 	currentCfg models.Config
+	mu         sync.Mutex
 }
 
 func (m *service) SyncDeployment(cfg models.Config) (err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	syncErr := m.fetcher.Fetch(cfg.Repo, cfg.Branch, m.params.WorkingDir)
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
@@ -95,7 +100,6 @@ func (m *service) SyncDeployment(cfg models.Config) (err error) {
 		}
 	}()
 
-	// Copy all files from ./services to SERVICES_PATH
 	err = m.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(m.currentCfg, cfg, m.params)
 	if err != nil {
 		return fmt.Errorf("error deploying services: %w", err)
@@ -105,7 +109,7 @@ func (m *service) SyncDeployment(cfg models.Config) (err error) {
 	return nil
 }
 
-// GetManagerStacks returns a map of all containers managed by the tool
-func (m *service) GetManagerStacks() (map[string][]models.ContainerSummary, error) {
-	return m.containersInspector.GetManagerStacks(m.params.ServicesDir)
+// GetManagedStacks returns a map of all containers managed by the tool
+func (m *service) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
+	return m.containersInspector.GetManagedStacks(m.params.ServicesDir)
 }

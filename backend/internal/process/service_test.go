@@ -36,7 +36,7 @@ func (m *Mocker) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.
 	return args.Error(0)
 }
 
-func (m *Mocker) GetManagerStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (m *Mocker) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	args := m.Called(servicesDir)
 	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
 }
@@ -70,7 +70,7 @@ var (
 	}
 )
 
-func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
+func newServiceWithCurrentConfig(mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
 	return &service{
 		containersDeployer:  mocker,
 		containersInspector: mocker,
@@ -82,8 +82,8 @@ func newManagerWithCurrentConfig(mocker *Mocker, params models.DeploymentParams,
 	}
 }
 
-func newManagerWithMocks(mocker *Mocker, params models.DeploymentParams) *service {
-	return newManagerWithCurrentConfig(mocker, params, models.Config{})
+func newServiceWithMocks(mocker *Mocker, params models.DeploymentParams) *service {
+	return newServiceWithCurrentConfig(mocker, params, models.Config{})
 }
 
 var (
@@ -95,7 +95,7 @@ var (
 
 func TestSync_Success(t *testing.T) {
 	mocker := &Mocker{}
-	manager := newManagerWithMocks(mocker, models.DeploymentParams{
+	service := newServiceWithMocks(mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	})
@@ -103,25 +103,25 @@ func TestSync_Success(t *testing.T) {
 	wantCfg := mockConfigOld
 
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
-	mocker.On("RemoveAndDeployStacks", models.Config{}, wantCfg, manager.params).Once().Return(nil)
-	err := manager.SyncDeployment(wantCfg)
+	mocker.On("RemoveAndDeployStacks", models.Config{}, wantCfg, service.params).Once().Return(nil)
+	err := service.SyncDeployment(wantCfg)
 	assert.NoError(t, err)
 	mocker.AssertExpectations(t)
 }
 
 func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	mocker := &Mocker{}
-	manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{
+	service := newServiceWithCurrentConfig(mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
 	wantCfg := mockConfigNew
-	manager.params.AddWritePerm = true
+	service.params.AddWritePerm = true
 	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
-	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, manager.params).Once().Return(nil)
+	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).Once().Return(nil)
 
-	err := manager.SyncDeployment(wantCfg)
+	err := service.SyncDeployment(wantCfg)
 	assert.NoError(t, err)
 	mocker.AssertExpectations(t)
 }
@@ -152,7 +152,7 @@ func TestRunCmd_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			manager := newManagerWithCurrentConfig(mocker, models.DeploymentParams{
+			service := newServiceWithCurrentConfig(mocker, models.DeploymentParams{
 				ServicesDir: "/services",
 				WorkingDir:  ".",
 			}, mockConfigOld)
@@ -160,15 +160,15 @@ func TestRunCmd_Errors(t *testing.T) {
 			mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, tc.mockValues.generateErr)
 			mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(tc.mockValues.fetchErr)
 			mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
-			mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, manager.params).Once().Return(tc.mockValues.deployErr)
+			mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).Once().Return(tc.mockValues.deployErr)
 
-			err := manager.SyncDeployment(wantCfg)
+			err := service.SyncDeployment(wantCfg)
 			assert.ErrorContains(t, err, tc.expectedError.Error())
 		})
 	}
 }
 
-func TestGetManagerStacks(t *testing.T) {
+func TestGetManagedStacks(t *testing.T) {
 	testCases := []struct {
 		name           string
 		servicesDir    string
@@ -202,13 +202,13 @@ func TestGetManagerStacks(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			manager := newManagerWithMocks(mocker, models.DeploymentParams{
+			service := newServiceWithMocks(mocker, models.DeploymentParams{
 				ServicesDir: tc.servicesDir,
 			})
 
-			mocker.On("GetManagerStacks", tc.servicesDir).Return(tc.expectedResult, tc.expectedError)
+			mocker.On("GetManagedStacks", tc.servicesDir).Return(tc.expectedResult, tc.expectedError)
 
-			result, err := manager.GetManagerStacks()
+			result, err := service.GetManagedStacks()
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)

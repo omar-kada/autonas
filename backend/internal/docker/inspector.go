@@ -36,9 +36,9 @@ func NewInspector() *Inspector {
 	}
 }
 
-// GetManagerStacks returns the list of containers (as returned by ContainerList)
+// GetManagedStacks returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (i *Inspector) GetManagerStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (i *Inspector) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
 	summaries, err := i.dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
