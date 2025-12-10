@@ -1,4 +1,4 @@
-// Package docker implements a manager for docker containers
+// Package docker implements operations for docker containers
 package docker
 
 import (

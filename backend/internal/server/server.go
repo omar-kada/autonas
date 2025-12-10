@@ -21,16 +21,16 @@ type Server interface {
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
 	store            storage.DeploymentStorage
-	manager          process.Service
+	processSvc       process.Service
 	websocketHandler *WebsocketHandler
 	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.DeploymentStorage, manager process.Service) Server {
+func NewServer(store storage.DeploymentStorage, service process.Service) Server {
 	return &HTTPServer{
 		store:            store,
-		manager:          manager,
+		processSvc:       service,
 		websocketHandler: newWebsocketHandler(store),
 	}
 }
@@ -45,7 +45,7 @@ func (s *HTTPServer) Serve(port int) error {
 	mux.HandleFunc("/ws", s.websocketHandler.handle)
 
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	myHandler := NewHandler(s.store, s.manager)
+	myHandler := NewHandler(s.store, s.processSvc)
 	strict := api.NewStrictHandler(myHandler, []api.StrictMiddlewareFunc{})
 
 	// get an `http.Handler` that we can use

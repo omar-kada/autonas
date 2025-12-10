@@ -41,7 +41,7 @@ func (m *Mocker) CopyWithAddPerm(src, dst string, permission os.FileMode) error 
 	return args.Error(0)
 }
 
-func newManagerWithMocks(mocker *Mocker) *Deployer {
+func newDeployerWithMocks(mocker *Mocker) *Deployer {
 	store := storage.NewMemoryStorage()
 	dep, _ := store.InitDeployment("test", "")
 	ctx := context.WithValue(context.Background(), events.ObjectID, dep.Id)
@@ -71,7 +71,7 @@ var mockConfig = models.Config{
 
 func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	mocker := &Mocker{}
-	manager := newManagerWithMocks(mocker)
+	deployer := newDeployerWithMocks(mocker)
 
 	baseDir := t.TempDir()
 	envFilePath := filepath.Join(baseDir, "svc1", ".env")
@@ -100,7 +100,7 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 			"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
 		).Return(nil),
 	)
-	errs := manager.DeployServices(mockConfig, baseDir)
+	errs := deployer.DeployServices(mockConfig, baseDir)
 	assert.Len(t, errs, 0)
 }
 
@@ -108,14 +108,14 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker := &Mocker{}
 	baseDir := t.TempDir()
 
-	manager := newManagerWithMocks(mocker)
+	deployer := newDeployerWithMocks(mocker)
 	mocker.On(
 		"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
 	).Return(nil)
 	mocker.On(
 		"Run", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
 	).Return(fmt.Errorf("mock error"))
-	errs := manager.RemoveServices([]string{"svc1", "svc2"}, baseDir)
+	errs := deployer.RemoveServices([]string{"svc1", "svc2"}, baseDir)
 
 	assert.Len(t, errs, 1)
 	assert.ErrorContains(t, errs["svc2"], "mock error")
@@ -155,10 +155,10 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			manager := newManagerWithMocks(mocker)
+			deployer := newDeployerWithMocks(mocker)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("Run", "docker", mock.Anything).Return(tc.errors.runCmdErr)
-			errs := manager.DeployServices(mockConfig, "/services")
+			errs := deployer.DeployServices(mockConfig, "/services")
 			// TODO : add tests for aggregared errors
 			assert.Len(t, errs, 1)
 			assert.ErrorIs(t, errs["svc1"], tc.expectedError)
@@ -168,7 +168,7 @@ func TestDeployServices_Errors(t *testing.T) {
 
 func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	mocker := &Mocker{}
-	manager := newManagerWithMocks(mocker)
+	deployer := newDeployerWithMocks(mocker)
 
 	mock.InOrder(
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
@@ -180,7 +180,7 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 		"CopyWithAddPerm", "configDir/services/svc1", "/services/svc1", os.FileMode(0000),
 	).Return(nil)
 
-	err := manager.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
+	err := deployer.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  "configDir",
 	})
@@ -220,7 +220,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			manager := newManagerWithMocks(mocker)
+			deployer := newDeployerWithMocks(mocker)
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
@@ -235,7 +235,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			mocker.On(
 				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
 			).Return(tc.errors.copyErr)
-			err := manager.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
+			err := deployer.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
 				ServicesDir: "/services",
 				WorkingDir:  "configDir",
 			})

@@ -80,7 +80,7 @@ func doRun(params RunParams) error {
 	dispatcher := events.NewDefaultDispatcher(store)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)
-	manager := process.NewService(
+	service := process.NewService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher),
 		docker.NewInspector(),
@@ -89,12 +89,12 @@ func doRun(params RunParams) error {
 		dispatcher)
 	go func() {
 		scheduler.Schedule(func(cfg models.Config) {
-			err := manager.SyncDeployment(cfg)
+			err := service.SyncDeployment(cfg)
 			if err != nil {
 				slog.Error(err.Error())
 			}
 		})
 	}()
-	server := server.NewServer(store, manager)
+	server := server.NewServer(store, service)
 	return server.Serve(params.Port)
 }

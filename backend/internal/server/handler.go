@@ -10,15 +10,15 @@ import (
 
 // Handler implements the generated strict server interface
 type Handler struct {
-	store   storage.DeploymentStorage
-	manager process.Service
+	store      storage.DeploymentStorage
+	processSvc process.Service
 }
 
 // NewHandler creates a new Handler
-func NewHandler(store storage.DeploymentStorage, manager process.Service) *Handler {
+func NewHandler(store storage.DeploymentStorage, service process.Service) *Handler {
 	return &Handler{
-		store:   store,
-		manager: manager,
+		store:      store,
+		processSvc: service,
 	}
 }
 
@@ -45,7 +45,7 @@ func (*Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPI
 func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
 	// TODO: Implement your logic here
 	// For now, we'll return a simple response
-	stacks, err := h.manager.GetManagerStacks()
+	stacks, err := h.processSvc.GetManagedStacks()
 	if err != nil {
 		return nil, err
 	}
