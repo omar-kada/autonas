@@ -2,7 +2,6 @@
 package git
 
 import (
-	"log"
 	"log/slog"
 	"omar-kada/autonas/internal/events"
 	"os"
@@ -170,7 +169,7 @@ func getPatch(repo *git.Repository, branch string) (Patch, error) {
 	// Compute patch (the diff)
 	patch, err := localTree.Patch(remoteTree)
 	if err != nil {
-		log.Fatal("Failed to compute diff:", err)
+		return Patch{}, err
 	}
 	slog.Info("displaying patch between current branch and repo", "patch", patch.String())
 	return Patch{
