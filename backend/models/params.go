@@ -20,6 +20,7 @@ func (p DeploymentParams) GetAddWritePerm() os.FileMode {
 	return os.FileMode(0000)
 }
 
+// GetRepoDir returns the path of the repo directory
 func (p DeploymentParams) GetRepoDir() string {
 	return filepath.Join(p.WorkingDir, "repo")
 }

@@ -15,6 +15,7 @@ import (
 // NoErrAlreadyUpToDate is returned when the repository is already up to date.
 var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 
+// Patch represent the difference between two commits
 type Patch struct {
 	Diff   string
 	Title  string
