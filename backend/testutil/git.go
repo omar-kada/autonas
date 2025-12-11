@@ -3,9 +3,9 @@ package testutil
 import (
 	"testing"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/object"
 )
 
 // SetupRemoteRepo creates new git Repo
@@ -13,11 +13,9 @@ func SetupRemoteRepo(t *testing.T) string {
 	t.Helper()
 
 	dir := t.TempDir() + "/remote-repo"
-	_, err := git.PlainInitWithOptions(dir, &git.PlainInitOptions{
-		InitOptions: git.InitOptions{
-			DefaultBranch: plumbing.NewBranchReferenceName("main"),
-		},
-	})
+	_, err := git.PlainInit(dir, false,
+		git.WithDefaultBranch(plumbing.NewBranchReferenceName("main")),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

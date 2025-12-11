@@ -27,8 +27,8 @@ func (m *MockClient) ContainerInspect(ctx context.Context, containerID string, o
 	return args.Get(0).(client.ContainerInspectResult), args.Error(1)
 }
 
-func newInspectorWithMock(client Client) *Inspector {
-	return &Inspector{
+func newInspectorWithMock(client Client) *inspector {
+	return &inspector{
 		log:          slog.Default(),
 		dockerClient: client,
 	}

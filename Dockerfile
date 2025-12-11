@@ -50,7 +50,7 @@ ARG UID=1000
 ARG GID=1000
 
 RUN mkdir /app
-RUN mkdir /app/config
+RUN mkdir /data
 
 WORKDIR /app
 
@@ -59,7 +59,7 @@ COPY --from=frontend-builder /app/dist /app/frontend/dist
 
 RUN chmod -R 744 /app
 
-ENV AUTONAS_WORKING_DIR="/app/config"
+ENV AUTONAS_WORKING_DIR="/data"
 EXPOSE 8080
 
 # Start the application

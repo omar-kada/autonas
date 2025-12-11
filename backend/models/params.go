@@ -1,6 +1,9 @@
 package models
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 // DeploymentParams groups parameters related to the deployment process
 type DeploymentParams struct {
@@ -15,6 +18,10 @@ func (p DeploymentParams) GetAddWritePerm() os.FileMode {
 		return os.FileMode(0666)
 	}
 	return os.FileMode(0000)
+}
+
+func (p DeploymentParams) GetRepoDir() string {
+	return filepath.Join(p.WorkingDir, "repo")
 }
 
 // ServerParams groups parameters related to the API server

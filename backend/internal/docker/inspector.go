@@ -11,26 +11,31 @@ import (
 	"github.com/moby/moby/client"
 )
 
+// Inspector defined operations for info retreival on containers
+type Inspector interface {
+	GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error)
+}
+
 // Client defines the methods from the Docker client that are used by the Inspector
 type Client interface {
 	ContainerList(ctx context.Context, options client.ContainerListOptions) (client.ContainerListResult, error)
 	ContainerInspect(ctx context.Context, containerID string, options client.ContainerInspectOptions) (client.ContainerInspectResult, error)
 }
 
-// Inspector implements information retrieval about docker stacks
-type Inspector struct {
+// inspector implements information retrieval about docker stacks
+type inspector struct {
 	log          *slog.Logger
 	dockerClient Client
 }
 
 // NewInspector creates new inspector given a docker client
-func NewInspector() *Inspector {
+func NewInspector() Inspector {
 	dockerClient, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)
 		return nil
 	}
-	return &Inspector{
+	return &inspector{
 		log:          slog.Default(),
 		dockerClient: dockerClient,
 	}
@@ -38,7 +43,7 @@ func NewInspector() *Inspector {
 
 // GetManagedStacks returns the list of containers (as returned by ContainerList)
 // that are managed by AutoNAS
-func (i *Inspector) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (i *inspector) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
 	summaries, err := i.dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {

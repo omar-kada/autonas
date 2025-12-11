@@ -6,16 +6,23 @@ import (
 	"fmt"
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/models"
 	"path/filepath"
 	"slices"
 )
 
+// Deployer defines methods for managing containerized services.
+type Deployer interface {
+	WithCtx(ctx context.Context) Deployer
+	RemoveServices(services []string, servicesDir string) map[string]error
+	DeployServices(cfg models.Config, servicesDir string) map[string]error
+	RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.DeploymentParams) error
+}
+
 // NewDeployer creates an instance of Manager for docker containers
-func NewDeployer(dispatcher events.Dispatcher) process.Deployer {
-	return &Deployer{
+func NewDeployer(dispatcher events.Dispatcher) Deployer {
+	return &deployer{
 		cmdRunner:    shell.NewRunner(),
 		envGenerator: NewEnvGenerator(),
 		copier:       files.NewCopier(),
@@ -24,8 +31,8 @@ func NewDeployer(dispatcher events.Dispatcher) process.Deployer {
 	}
 }
 
-// Deployer manages Docker Compose services.
-type Deployer struct {
+// deployer manages Docker Compose services.
+type deployer struct {
 	cmdRunner    shell.Runner
 	envGenerator *EnvGenerator
 	copier       files.Copier
@@ -34,14 +41,14 @@ type Deployer struct {
 }
 
 // WithCtx sets the logger for the Deployer
-func (d Deployer) WithCtx(ctx context.Context) process.Deployer {
+func (d deployer) WithCtx(ctx context.Context) Deployer {
 	newDeployer := d
 	newDeployer.ctx = ctx
 	return newDeployer
 }
 
 // RemoveServices stops and removes Docker Compose services.
-func (d Deployer) RemoveServices(services []string, servicesDir string) map[string]error {
+func (d deployer) RemoveServices(services []string, servicesDir string) map[string]error {
 	d.dispatcher.Debug(d.ctx, "these services will be removed if running.", "services", services)
 	errors := make(map[string]error)
 	for _, service := range services {
@@ -56,7 +63,7 @@ func (d Deployer) RemoveServices(services []string, servicesDir string) map[stri
 }
 
 // DeployServices generates .env files and runs Docker Compose for enabled services.
-func (d Deployer) DeployServices(cfg models.Config, servicesDir string) map[string]error {
+func (d deployer) DeployServices(cfg models.Config, servicesDir string) map[string]error {
 	enabledServices := cfg.GetEnabledServices()
 	if len(enabledServices) == 0 {
 		d.dispatcher.Warn(d.ctx, "No enabled services specified in config. Skipping .env generation and compose up.")
@@ -78,7 +85,7 @@ func (d Deployer) DeployServices(cfg models.Config, servicesDir string) map[stri
 	return errors
 }
 
-func (d Deployer) composeUp(composePath string) error {
+func (d deployer) composeUp(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
 	if err := d.cmdRunner.Run("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
@@ -86,7 +93,7 @@ func (d Deployer) composeUp(composePath string) error {
 	return nil
 }
 
-func (d Deployer) composeDown(composePath string) error {
+func (d deployer) composeDown(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "down"}
 	if err := d.cmdRunner.Run("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
@@ -95,7 +102,7 @@ func (d Deployer) composeDown(composePath string) error {
 }
 
 // RemoveAndDeployStacks handles the deployment/removal of services based on the current and new configuration.
-func (d Deployer) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.DeploymentParams) error {
+func (d deployer) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.DeploymentParams) error {
 	toBeRemoved := getUnusedServices(oldCfg, cfg)
 	if len(toBeRemoved) > 0 {
 		// TODO : check if the stack is up before calling RemoveServices
@@ -114,17 +121,17 @@ func (d Deployer) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models
 
 	d.dispatcher.Debug(d.ctx, "deploying enabled services", "services", enabledServiecs)
 	if errs := d.DeployServices(cfg, params.ServicesDir); len(errs) > 0 {
-		return fmt.Errorf("error while removing services : %v", errs)
+		return fmt.Errorf("error while deploying services : %v", errs)
 	}
 	return nil
 }
 
-func (d Deployer) copyServicesFiles(enabledServiecs []string, params models.DeploymentParams) map[string]error {
+func (d deployer) copyServicesFiles(enabledServiecs []string, params models.DeploymentParams) map[string]error {
 	errors := make(map[string]error)
 	for _, service := range enabledServiecs {
-		src := filepath.Join(params.WorkingDir, "services", service)
+		src := filepath.Join(params.GetRepoDir(), "services", service)
 		dst := filepath.Join(params.ServicesDir, service)
-		if err := d.copier.CopyWithAddPerm(src, dst, params.GetAddWritePerm()); err != nil {
+		if err := d.copier.Copy(src, dst); err != nil {
 			errors[service] = err
 		}
 	}

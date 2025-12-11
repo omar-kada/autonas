@@ -23,7 +23,7 @@ const (
 )
 
 var varInfoMap = defaults.VariableInfoMap{
-	_file:         {EnvKey: "AUTONAS_CONFIG_FILE", DefaultValue: "/config/config.yaml"},
+	_file:         {EnvKey: "AUTONAS_CONFIG_FILE", DefaultValue: "/data/config.yaml"},
 	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
 	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
 	_addWritePerm: {DefaultValue: false},
@@ -84,7 +84,7 @@ func doRun(params RunParams) error {
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher),
 		docker.NewInspector(),
-		git.NewFetcher(),
+		git.NewFetcher(params.GetAddWritePerm()),
 		store,
 		dispatcher)
 	go func() {

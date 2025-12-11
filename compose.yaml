@@ -6,12 +6,13 @@ services:
     ports:
       - 8080:5005
     environment:
-      AUTONAS_CONFIG_FILE: "${CONFIG_FILE}" # the configuration file that will define what should be deployed
+      AUTONAS_CONFIG_FILE: "/config.yaml" # the configuration file that will define what should be deployed
       AUTONAS_SERVICES_DIR: "${SERVICES_DIR}" # directory where compose stacks will be stored
       AUTONAS_ADD_WRITE_PERM: "${ADD_WRITE_PERM}" # adding write permissions to pulled config files
       ENV: "${ENV}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SERVICES_DIR}:${SERVICES_DIR} # path where compose stacks will be stored
-      - ${CONFIG_PATH}:/config:ro # users could add more local config files (for machine specific fields)
+      - ${AUTONAS_DATA_PATH}:/data # data for AUTONAS, like repository and DB
+      - ${CONFIG_PATH}:/config.yaml:ro # users could add more local config files (for machine specific fields)
     restart: "no"
