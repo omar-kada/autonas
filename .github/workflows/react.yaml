@@ -54,12 +54,19 @@ jobs:
       - name: Run Prettier check
         run: npm run format:check
 
-      - name: Report results to DeepSource
-        run: |
-          curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./coverage/lcov.info --use-oidc
-        env:
-          TAG: latest
+      # - name: Report results to DeepSource
+      #   run: |
+      #     curl https://deepsource.io/cli | sh
+      #     ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./coverage/lcov.info --use-oidc
+      #   env:
+      #     TAG: latest
+
+      - name: Report test coverage to DeepSource
+        uses: deepsourcelabs/test-coverage-action@master
+        with:
+          key: javascript
+          coverage-file: ./coverage/lcov.info
+          dsn: ${{ secrets.DEEPSOURCE_DSN_FRONT }}
 
       # Optional: Upload build artifacts
       - name: Upload production build
