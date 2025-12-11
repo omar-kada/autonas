@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write # Required to get the OIDC token
 
 jobs:
   generate-api:
@@ -57,7 +58,7 @@ jobs:
       - name: Report results to DeepSource
         run: |
           curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer test-coverage --key go --value-file ./coverage.out
+          ./bin/deepsource report --analyzer test-coverage --key go --value-file ./coverage.out --use-oidc
 
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
