@@ -67,7 +67,6 @@ func TestFetch_HappyPath(t *testing.T) {
 	assertFileContent(t, clonePath+"/NEWFILE.txt", "new file content")
 	assert.Equal(t, "add NEWFILE.txt", patch.Title)
 	assert.Equal(t, "Test", patch.Author)
-
 }
 
 func TestFetch_NoChanges(t *testing.T) {

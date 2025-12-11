@@ -577,7 +577,6 @@ func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-
 	// (GET /api/deployment)
 	DeployementAPIList(w http.ResponseWriter, r *http.Request)
 
@@ -599,7 +598,6 @@ type MiddlewareFunc func(http.Handler) http.Handler
 
 // DeployementAPIList operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *http.Request) {
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployementAPIList(w, r)
 	}))
@@ -613,7 +611,6 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 
 // DeployementAPIRead operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *http.Request) {
-
 	var err error
 
 	// ------------- Path parameter "id" -------------
@@ -638,7 +635,6 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 
 // StatusAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) StatusAPIGet(w http.ResponseWriter, r *http.Request) {
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.StatusAPIGet(w, r)
 	}))
@@ -777,8 +773,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	return m
 }
 
-type DeployementAPIListRequestObject struct {
-}
+type DeployementAPIListRequestObject struct{}
 
 type DeployementAPIListResponseObject interface {
 	VisitDeployementAPIListResponse(w http.ResponseWriter) error
@@ -834,8 +829,7 @@ func (response DeployementAPIReaddefaultJSONResponse) VisitDeployementAPIReadRes
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type StatusAPIGetRequestObject struct {
-}
+type StatusAPIGetRequestObject struct{}
 
 type StatusAPIGetResponseObject interface {
 	VisitStatusAPIGetResponse(w http.ResponseWriter) error
@@ -864,7 +858,6 @@ func (response StatusAPIGetdefaultJSONResponse) VisitStatusAPIGetResponse(w http
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-
 	// (GET /api/deployment)
 	DeployementAPIList(ctx context.Context, request DeployementAPIListRequestObject) (DeployementAPIListResponseObject, error)
 
@@ -875,8 +868,10 @@ type StrictServerInterface interface {
 	StatusAPIGet(ctx context.Context, request StatusAPIGetRequestObject) (StatusAPIGetResponseObject, error)
 }
 
-type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
-type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+type (
+	StrictHandlerFunc    = strictnethttp.StrictHTTPHandlerFunc
+	StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+)
 
 type StrictHTTPServerOptions struct {
 	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
