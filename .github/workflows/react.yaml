@@ -57,6 +57,7 @@ jobs:
 
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN_FRONT }}
+        continue-on-error: true
 
       - name: Run Prettier check
         run: npm run format:check
