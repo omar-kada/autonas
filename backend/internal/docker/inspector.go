@@ -29,16 +29,16 @@ type inspector struct {
 }
 
 // NewInspector creates new inspector given a docker client
-func NewInspector() Inspector {
+func NewInspector() (Inspector, error) {
 	dockerClient, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)
-		return nil
+		return nil, err
 	}
 	return &inspector{
 		log:          slog.Default(),
 		dockerClient: dockerClient,
-	}
+	}, nil
 }
 
 // GetManagedStacks returns the list of containers (as returned by ContainerList)

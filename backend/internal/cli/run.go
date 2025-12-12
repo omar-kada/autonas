@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"log/slog"
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/docker"
@@ -58,7 +59,9 @@ func newRunCommand() *cobra.Command {
 		Use:   "run",
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
-			doRun(getParamsWithDefaults(params))
+			if err := doRun(getParamsWithDefaults(params)); err != nil {
+				slog.Error(err.Error())
+			}
 		},
 	}
 
@@ -80,10 +83,14 @@ func doRun(params RunParams) error {
 	dispatcher := events.NewDefaultDispatcher(store)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)
+	inspector, err := docker.NewInspector()
+	if err != nil {
+		return fmt.Errorf("couldn't init docker client %w", err)
+	}
 	service := process.NewService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher),
-		docker.NewInspector(),
+		inspector,
 		git.NewFetcher(params.GetAddWritePerm()),
 		store,
 		dispatcher)
