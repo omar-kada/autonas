@@ -82,6 +82,7 @@ type ContainerStatusState string
 
 // Deployment defines model for Deployment.
 type Deployment struct {
+	Author string           `json:"author"`
 	Diff   string           `json:"diff"`
 	Events []Event          `json:"events"`
 	Id     string           `json:"id"`

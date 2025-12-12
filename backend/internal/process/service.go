@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/storage"
@@ -16,19 +17,6 @@ import (
 // DeploymentID is the key used to store deployment ID in context
 const DeploymentID = "deployment_id"
 
-// Deployer defines methods for managing containerized services.
-type Deployer interface {
-	WithCtx(ctx context.Context) Deployer
-	RemoveServices(services []string, servicesDir string) map[string]error
-	DeployServices(cfg models.Config, servicesDir string) map[string]error
-	RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.DeploymentParams) error
-}
-
-// Inspector defined operations for info retreival on containers
-type Inspector interface {
-	GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error)
-}
-
 // Service abstracts service deployment operations
 type Service interface {
 	SyncDeployment(cfg models.Config) error
@@ -39,8 +27,8 @@ type Service interface {
 // NewService creates a new process Service instance
 func NewService(
 	deployParams models.DeploymentParams,
-	containersDeployer Deployer,
-	containersInspector Inspector,
+	containersDeployer docker.Deployer,
+	containersInspector docker.Inspector,
 	fetcher git.Fetcher,
 	store storage.DeploymentStorage,
 	dispatcher events.Dispatcher,
@@ -57,8 +45,8 @@ func NewService(
 
 // service is responsible for deploying the services
 type service struct {
-	containersDeployer  Deployer
-	containersInspector Inspector
+	containersDeployer  docker.Deployer
+	containersInspector docker.Inspector
 	fetcher             git.Fetcher
 	store               storage.DeploymentStorage
 	dispatcher          events.Dispatcher
@@ -72,19 +60,27 @@ func (m *service) SyncDeployment(cfg models.Config) (err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	syncErr := m.fetcher.Fetch(cfg.Repo, cfg.Branch, m.params.WorkingDir)
+	slog.Info("deploying from " + cfg.Repo + "/" + cfg.Branch)
+
+	var syncErr error
+	var patch git.Patch
+	if m.currentCfg.Repo == "" || cfg.Repo == m.currentCfg.Repo {
+		patch, syncErr = m.fetcher.Fetch(cfg.Repo, cfg.Branch, m.params.GetRepoDir())
+	} else {
+		patch, syncErr = m.fetcher.ReFetch(cfg.Repo, cfg.Branch, m.params.GetRepoDir())
+	}
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		return fmt.Errorf("error getting config repo:  %w", syncErr)
 	}
 
 	// check if the config changed from last run
-	if syncErr == git.NoErrAlreadyUpToDate && reflect.DeepEqual(m.currentCfg, cfg) {
+	if patch.Diff == "" && reflect.DeepEqual(m.currentCfg, cfg) {
 		slog.Info("Configuration and repository are up to date. No changes detected.")
 		return nil
 	}
 
-	deployment, err := m.store.InitDeployment("Auto deployment", "")
+	deployment, err := m.store.InitDeployment(patch.Title, patch.Author, patch.Diff)
 	if err != nil {
 		return err
 	}
@@ -93,7 +89,7 @@ func (m *service) SyncDeployment(cfg models.Config) (err error) {
 	defer func() {
 		if err != nil {
 			m.dispatcher.Error(ctx, fmt.Sprintf("Deployment failed %v", err))
-			m.store.UpdateStatus(deployment.Id, "failed")
+			m.store.UpdateStatus(deployment.Id, "error")
 		} else {
 			m.dispatcher.Info(ctx, "Deployment done successfully")
 			m.store.UpdateStatus(deployment.Id, "success")

@@ -36,16 +36,11 @@ func (m *Mocker) Copy(src, dest string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) CopyWithAddPerm(src, dst string, permission os.FileMode) error {
-	args := m.Called(src, dst, permission)
-	return args.Error(0)
-}
-
-func newDeployerWithMocks(mocker *Mocker) *Deployer {
+func newDeployerWithMocks(mocker *Mocker) *deployer {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test", "")
+	dep, _ := store.InitDeployment("test commit", "Test", "")
 	ctx := context.WithValue(context.Background(), events.ObjectID, dep.Id)
-	return &Deployer{
+	return &deployer{
 		dispatcher: events.NewDefaultDispatcher(store),
 		cmdRunner:  mocker,
 		copier:     mocker,
@@ -177,7 +172,7 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 		).Return(nil),
 	)
 	mocker.On(
-		"CopyWithAddPerm", "configDir/services/svc1", "/services/svc1", os.FileMode(0000),
+		"Copy", "configDir/repo/services/svc1", "/services/svc1",
 	).Return(nil)
 
 	err := deployer.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
@@ -229,11 +224,11 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			)
 
 			mocker.On(
-				"CopyWithAddPerm", "configDir/services/svc1", "/services/svc1", os.FileMode(0000),
+				"Copy", "configDir/repo/services/svc1", "/services/svc1",
 			).Return(tc.errors.copyErr)
 
 			mocker.On(
-				"CopyWithAddPerm", "configDir/services/svc3", "/services/svc3", os.FileMode(0000),
+				"Copy", "configDir/repo/services/svc3", "/services/svc3",
 			).Return(tc.errors.copyErr)
 			err := deployer.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
 				ServicesDir: "/services",

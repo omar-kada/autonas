@@ -21,6 +21,7 @@ model Event {
 model Deployment {
   id: string;
   title: string; // Commit message
+  author: string; // Commit message
   time: utcDateTime;
   diff: string;
   status: "planned" | "running" | "success" | "error";

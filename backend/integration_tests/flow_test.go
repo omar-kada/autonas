@@ -57,19 +57,17 @@ func TestFileGeneration(t *testing.T) {
 		}, "\n")), 0750)
 	assert.NoError(t, err, "error while creating config file")
 
-	const configFiles = "/config/config.yaml" // relative to docker container
-
 	// When
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
-		"CONFIG_FILE":    filepath.Join(configFiles),
-		"SERVICES_DIR":   servicesDir,
-		"CONFIG_PATH":    configDir,
-		"ADD_WRITE_PERM": "true",
-		"ENV":            "DEV",
-		"UID":            fmt.Sprint(os.Getuid()),
-		"GID":            fmt.Sprint(os.Getgid()),
+		"CONFIG_PATH":       filepath.Join(configDir, "config.yaml"),
+		"SERVICES_DIR":      servicesDir,
+		"AUTONAS_DATA_PATH": dataDir,
+		"ADD_WRITE_PERM":    "true",
+		"ENV":               "DEV",
+		"UID":               fmt.Sprint(os.Getuid()),
+		"GID":               fmt.Sprint(os.Getgid()),
 	})
 
 	assert.NoError(t, err, "failed to load compose")
@@ -91,7 +89,7 @@ func TestFileGeneration(t *testing.T) {
 
 	ok := waitForFile(targetFile, 1*time.Minute)
 	if !ok {
-		t.Errorf("expected file was not generated: %s", targetFile)
+		t.Fatalf("expected file was not generated: %s", targetFile)
 	}
 	targetWorkDir := filepath.Join(servicesDir, "homepage")
 

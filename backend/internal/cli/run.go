@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"log/slog"
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/docker"
@@ -23,7 +24,7 @@ const (
 )
 
 var varInfoMap = defaults.VariableInfoMap{
-	_file:         {EnvKey: "AUTONAS_CONFIG_FILE", DefaultValue: "/config/config.yaml"},
+	_file:         {EnvKey: "AUTONAS_CONFIG_FILE", DefaultValue: "/data/config.yaml"},
 	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
 	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
 	_addWritePerm: {DefaultValue: false},
@@ -58,7 +59,9 @@ func newRunCommand() *cobra.Command {
 		Use:   "run",
 		Short: "Run with optional config files",
 		Run: func(_ *cobra.Command, _ []string) {
-			doRun(getParamsWithDefaults(params))
+			if err := doRun(getParamsWithDefaults(params)); err != nil {
+				slog.Error(err.Error())
+			}
 		},
 	}
 
@@ -80,11 +83,15 @@ func doRun(params RunParams) error {
 	dispatcher := events.NewDefaultDispatcher(store)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)
+	inspector, err := docker.NewInspector()
+	if err != nil {
+		return fmt.Errorf("couldn't init docker client %w", err)
+	}
 	service := process.NewService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher),
-		docker.NewInspector(),
-		git.NewFetcher(),
+		inspector,
+		git.NewFetcher(params.GetAddWritePerm()),
 		store,
 		dispatcher)
 	go func() {

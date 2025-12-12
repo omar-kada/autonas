@@ -3,7 +3,9 @@ package process
 import (
 	"context"
 	"errors"
+	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
+	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 	"testing"
@@ -17,7 +19,7 @@ type Mocker struct {
 	mock.Mock
 }
 
-func (m *Mocker) WithCtx(_ context.Context) Deployer {
+func (m *Mocker) WithCtx(_ context.Context) docker.Deployer {
 	return m
 }
 
@@ -41,9 +43,14 @@ func (m *Mocker) GetManagedStacks(servicesDir string) (map[string][]models.Conta
 	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
 }
 
-func (m *Mocker) Fetch(repo string, branch string, dir string) error {
+func (m *Mocker) Fetch(repo string, branch string, dir string) (git.Patch, error) {
 	args := m.Called(repo, branch, dir)
-	return args.Error(0)
+	return args.Get(0).(git.Patch), args.Error(1)
+}
+
+func (m *Mocker) ReFetch(repo string, branch string, dir string) (git.Patch, error) {
+	args := m.Called(repo, branch, dir)
+	return args.Get(0).(git.Patch), args.Error(1)
 }
 
 var (
@@ -102,7 +109,7 @@ func TestSync_Success(t *testing.T) {
 
 	wantCfg := mockConfigOld
 
-	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
+	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, "repo").Once().Return(git.Patch{}, nil)
 	mocker.On("RemoveAndDeployStacks", models.Config{}, wantCfg, service.params).Once().Return(nil)
 	err := service.SyncDeployment(wantCfg)
 	assert.NoError(t, err)
@@ -117,8 +124,7 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	}, mockConfigOld)
 
 	wantCfg := mockConfigNew
-	service.params.AddWritePerm = true
-	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(nil)
+	mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, "repo").Once().Return(git.Patch{}, nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).Once().Return(nil)
 
 	err := service.SyncDeployment(wantCfg)
@@ -158,7 +164,7 @@ func TestRunCmd_Errors(t *testing.T) {
 			}, mockConfigOld)
 			wantCfg := mockConfigNew
 			mocker.On("FromFiles", []string{"config.yaml"}).Once().Return(wantCfg, tc.mockValues.generateErr)
-			mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, ".").Once().Return(tc.mockValues.fetchErr)
+			mocker.On("Fetch", wantCfg.Repo, wantCfg.Branch, "repo").Once().Return(git.Patch{}, tc.mockValues.fetchErr)
 			mocker.On("WithLogger", mock.Anything).Once().Return(mocker)
 			mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).Once().Return(tc.mockValues.deployErr)
 

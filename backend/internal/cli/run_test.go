@@ -59,7 +59,7 @@ func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
 	result := getParamsWithDefaults(params)
 
 	// Check defaults are applied
-	assert.Equal(t, "/config/config.yaml", result.ConfigFile)
+	assert.Equal(t, "/data/config.yaml", result.ConfigFile)
 	assert.Equal(t, "./config", result.WorkingDir)
 	assert.Equal(t, ".", result.ServicesDir)
 	assert.Equal(t, false, result.AddWritePerm) // Default value

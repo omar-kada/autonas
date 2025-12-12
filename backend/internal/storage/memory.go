@@ -42,10 +42,11 @@ func newID() string {
 }
 
 // InitDeployment creates a new deployment and returns it
-func (s *MemoryStorage) InitDeployment(title string, diff string) (api.Deployment, error) {
+func (s *MemoryStorage) InitDeployment(title string, author string, diff string) (api.Deployment, error) {
 	deployment := api.Deployment{
 		Id:     newID(),
 		Title:  title,
+		Author: author,
 		Time:   time.Now(),
 		Status: "running",
 		Diff:   diff,
