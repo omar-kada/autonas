@@ -81,6 +81,7 @@ export interface Deployment {
   author: string;
   time: string;
   diff: string;
+  files: FileDiff[];
   status: DeploymentStatus;
   events: Event[];
 }
@@ -105,6 +106,12 @@ export interface Event {
   time: string;
   msg: string;
   level: EventLevel;
+}
+
+export interface FileDiff {
+  oldFile: string;
+  newFile: string;
+  diff: string;
 }
 
 export interface StackStatus {

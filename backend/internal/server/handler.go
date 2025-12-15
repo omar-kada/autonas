@@ -5,7 +5,6 @@ import (
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
-	"time"
 )
 
 // Handler implements the generated strict server interface
@@ -29,16 +28,8 @@ func (h *Handler) DeployementAPIList(_ context.Context, _ api.DeployementAPIList
 }
 
 // DeployementAPIRead implements the StrictServerInterface interface
-func (*Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
-	// TODO: Implement your logic here
-	// For now, we'll return a simple response
-	return api.DeployementAPIRead200JSONResponse{
-		Id:     request.Id,
-		Title:  "Sample deployment",
-		Time:   time.Now(),
-		Diff:   "Sample diff",
-		Status: "success",
-	}, nil
+func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
+	return api.DeployementAPIRead200JSONResponse(h.store.GetDeployment(request.Id)), nil
 }
 
 // StatusAPIGet implements the StrictServerInterface interface

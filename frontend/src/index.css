@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@import "@git-diff-view/react/styles/diff-view-pure.css";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
@@ -119,8 +121,8 @@
   }
 }
 
-@layer utilities {
+/* @layer utilities {
   .bg-border {
     background-color: hsl(var(--border));
   }
-}
+} */

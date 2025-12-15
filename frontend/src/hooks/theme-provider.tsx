@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 export type Theme = 'light' | 'dark';
 
 const ThemeContext = createContext({
-  theme: 'dark',
+  theme: 'dark' as Theme,
   setTheme: (_: Theme) => {
     // empty because it's a placeholder for type inference
   },

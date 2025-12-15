@@ -8,7 +8,7 @@ export const useDeployments = () => {
   });
 
   return {
-    data: data?.data ?? [],
+    deployments: data?.data ?? [],
     isLoading,
     error,
   };

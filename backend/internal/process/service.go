@@ -80,7 +80,7 @@ func (m *service) SyncDeployment(cfg models.Config) (err error) {
 		return nil
 	}
 
-	deployment, err := m.store.InitDeployment(patch.Title, patch.Author, patch.Diff)
+	deployment, err := m.store.InitDeployment(patch.Title, patch.Author, patch.Diff, patch.Files)
 	if err != nil {
 		return err
 	}

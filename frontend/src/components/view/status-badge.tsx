@@ -1,8 +1,8 @@
+import type { ContainerStatusHealth } from '@/api/api';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { HealthStatus } from '@/models/stack-status';
 
-function colorForStatus(status: HealthStatus): string {
+function colorForStatus(status: ContainerStatusHealth): string {
   switch (status) {
     case 'healthy':
       return 'bg-green-400';
@@ -15,7 +15,11 @@ function colorForStatus(status: HealthStatus): string {
   }
 }
 
-export function StatusBadge(props: { status: HealthStatus; label: string; className?: string }) {
+export function StatusBadge(props: {
+  status: ContainerStatusHealth;
+  label: string;
+  className?: string;
+}) {
   return (
     <Badge className={cn(colorForStatus(props.status), props.className)}>
       {props.label ?? 'unknown'}

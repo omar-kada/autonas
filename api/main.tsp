@@ -18,12 +18,19 @@ model Event {
   level: "ERROR" | "INFO" | "DEBUG" | "WARN";
 }
 
+model FileDiff {
+  oldFile: string;
+  newFile: string;
+  diff: string;
+}
+
 model Deployment {
   id: string;
   title: string; // Commit message
   author: string; // Commit message
   time: utcDateTime;
   diff: string;
+  files: FileDiff[];
   status: "planned" | "running" | "success" | "error";
   events: Event[];
 }

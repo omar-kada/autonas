@@ -1,3 +1,4 @@
+export * from './deployment-detail';
 export * from './deployment-list';
 export * from './navbar-element';
 export * from './service-status';

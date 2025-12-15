@@ -2,10 +2,13 @@
 package git
 
 import (
+	"fmt"
 	"log/slog"
+	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/events"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
@@ -18,6 +21,7 @@ var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 type Patch struct {
 	Diff   string
 	Title  string
+	Files  []api.FileDiff
 	Author string
 }
 
@@ -105,7 +109,11 @@ func fetchAndPull(path string, branch string) (Patch, error) {
 
 	patch, err := getPatch(repo, branch)
 	if err != nil {
-		slog.Error("error while displaying patch : " + err.Error())
+		return patch, fmt.Errorf("error while calculating patch : %w", err)
+	}
+	if patch.Diff == "" {
+		// files didn't change, return empty
+		return patch, nil
 	}
 	// Checkout branch
 	wt, err := repo.Worktree()
@@ -121,12 +129,15 @@ func fetchAndPull(path string, branch string) (Patch, error) {
 		return Patch{}, err
 	}
 
-	// Pull (with force)
-	err = wt.Pull(&git.PullOptions{
-		RemoteName: "origin",
-		Force:      true,
+	// Reset to remote branch
+	remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", branch), true)
+	if err != nil {
+		return Patch{}, err
+	}
+	err = wt.Reset(&git.ResetOptions{
+		Mode:   git.HardReset,
+		Commit: remoteRef.Hash(),
 	})
-
 	return patch, err
 }
 
@@ -155,6 +166,11 @@ func getPatch(repo *git.Repository, branch string) (Patch, error) {
 		return Patch{}, err
 	}
 
+	if remoteCommit.Hash.Equal(localCommit.Hash) {
+		// return early when commits are the same
+		return Patch{}, nil
+	}
+
 	// Extract trees for diff
 	localTree, err := localCommit.Tree()
 	if err != nil {
@@ -171,10 +187,55 @@ func getPatch(repo *git.Repository, branch string) (Patch, error) {
 	if err != nil {
 		return Patch{}, err
 	}
-	slog.Info("displaying patch between current branch and repo", "patch", patch.String())
+
+	fileDiffs := splitByFile(patch.String())
+	var files []api.FileDiff
+	for _, fileDiff := range fileDiffs {
+		f, err := toFileDiff(fileDiff)
+		if err != nil {
+			return Patch{}, fmt.Errorf("error parsing file diff: %w", err)
+		}
+		files = append(files, f)
+	}
 	return Patch{
 		Title:  remoteCommit.Message,
 		Diff:   patch.String(),
+		Files:  files,
 		Author: remoteCommit.Author.Name,
+	}, nil
+}
+
+func splitByFile(diff string) []string {
+	// Split the diff string into separate file diffs based on "diff --git" markers
+	fileDiffs := strings.Split(diff, "diff --git")
+
+	// Remove the first empty element if it exists
+	if len(fileDiffs) > 0 && fileDiffs[0] == "" {
+		fileDiffs = fileDiffs[1:]
+	}
+	// Prepend "diff --git" to each element except the first one
+	for i := range fileDiffs {
+		fileDiffs[i] = "diff --git" + fileDiffs[i]
+	}
+	return fileDiffs
+}
+
+func toFileDiff(strDiff string) (api.FileDiff, error) {
+
+	parts := strings.SplitN(strDiff, "\n", 2)
+	if len(parts) < 2 {
+		return api.FileDiff{}, fmt.Errorf("diff contains less than 2 lines")
+	}
+	header := parts[0]
+	fileNames := strings.Fields(header)
+	if len(fileNames) <= 3 {
+		return api.FileDiff{}, fmt.Errorf("can't find file names")
+	}
+	oldFile := fileNames[2]
+	newFile := fileNames[3]
+	return api.FileDiff{
+		OldFile: oldFile,
+		NewFile: newFile,
+		Diff:    strDiff,
 	}, nil
 }
