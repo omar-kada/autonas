@@ -221,7 +221,6 @@ func splitByFile(diff string) []string {
 }
 
 func toFileDiff(strDiff string) (api.FileDiff, error) {
-
 	parts := strings.SplitN(strDiff, "\n", 2)
 	if len(parts) < 2 {
 		return api.FileDiff{}, fmt.Errorf("diff contains less than 2 lines")
