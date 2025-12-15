@@ -113,7 +113,7 @@ func fetchAndPull(path string, branch string) (Patch, error) {
 	}
 	if patch.Diff == "" {
 		// files didn't change, return empty
-		return patch, nil
+		return patch, git.NoErrAlreadyUpToDate
 	}
 	// Checkout branch
 	wt, err := repo.Worktree()
