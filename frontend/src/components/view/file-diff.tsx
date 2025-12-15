@@ -14,7 +14,7 @@ export function FileDiffView({ fileDiff, className }: { fileDiff: FileDiff; clas
       <CollapsibleTrigger
         className={`w-full justify-between flex bg-accent p-2 cursor-pointer ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
       >
-        {fileDiff.oldFile + (fileDiff.newFile !== fileDiff.newFile ? ' > ' + fileDiff.newFile : '')}
+        {fileDiff.oldFile + (fileDiff.oldFile !== fileDiff.newFile ? ` > ${fileDiff.newFile}` : '')}
         <ChevronsUpDown />
       </CollapsibleTrigger>
       <CollapsibleContent>
@@ -26,7 +26,7 @@ export function FileDiffView({ fileDiff, className }: { fileDiff: FileDiff; clas
             hunks: [fileDiff.diff],
           }}
           diffViewTheme={theme}
-          diffViewHighlight={true}
+          diffViewHighlight
           diffViewMode={DiffModeEnum.Split}
           diffViewWrap
         />

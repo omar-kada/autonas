@@ -6,7 +6,7 @@ export const useDeployment = (
 ): {
   deployment?: Deployment;
   isLoading?: boolean;
-  error?: AxiosError<Error, any> | null;
+  error?: AxiosError<Error, unknown> | null;
 } => {
   if (id == null) {
     return {};
