@@ -85,6 +85,7 @@ type Deployment struct {
 	Author string           `json:"author"`
 	Diff   string           `json:"diff"`
 	Events []Event          `json:"events"`
+	Files  []FileDiff       `json:"files"`
 	Id     string           `json:"id"`
 	Status DeploymentStatus `json:"status"`
 	Time   time.Time        `json:"time"`
@@ -109,6 +110,13 @@ type Event struct {
 
 // EventLevel defines model for Event.Level.
 type EventLevel string
+
+// FileDiff defines model for FileDiff.
+type FileDiff struct {
+	Diff    string `json:"diff"`
+	NewFile string `json:"newFile"`
+	OldFile string `json:"oldFile"`
+}
 
 // StackStatus defines model for StackStatus.
 type StackStatus struct {

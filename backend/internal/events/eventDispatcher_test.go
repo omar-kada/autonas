@@ -12,7 +12,7 @@ var deploymentID string
 
 func newStore() storage.EventStorage {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test", "author", "")
+	dep, _ := store.InitDeployment("test", "author", "", []api.FileDiff{})
 	deploymentID = dep.Id
 	return store
 }

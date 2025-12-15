@@ -6,7 +6,7 @@ export function Navbar() {
   return (
     <>
       {/* Top navigation bar, on big screens */}
-      <nav className="hidden sm:flex bg-sidebar h-14 items-center">
+      <nav className="hidden sm:flex bg-sidebar h-12 my-1 items-center">
         <NavBarElementList />
       </nav>
       {/* Bottom navigation bar, on small screens */}

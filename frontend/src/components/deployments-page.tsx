@@ -1,47 +1,32 @@
-import { EventLevel, type Deployment } from '@/api/api';
+import { type Deployment } from '@/api/api';
 import { useDeployments } from '@/hooks';
-import { formatTime } from '@/lib/utils';
+import { useDeploymentNavigate } from '@/lib';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { DeploymentList } from './view';
+import { DeploymentDetail, DeploymentList } from './view';
 
 export function DeploymentsPage() {
-  const { t, i18n } = useTranslation();
-  const { data, isLoading, error } = useDeployments();
+  const { t } = useTranslation();
+  const deploymentNavigate = useDeploymentNavigate();
+  const { deployments, isLoading, error } = useDeployments();
+  const { id } = useParams();
 
-  const [selectedItem, setSelectedItem] = useState<Deployment>(data[0]);
+  if (id == null && deployments != null) {
+    deploymentNavigate(deployments[0].id);
+  }
+
   const [showItem, setShowItem] = useState(false);
   const handleSelect = useCallback((item: Deployment) => {
-    setSelectedItem(item);
+    deploymentNavigate(item.id);
     setShowItem(true);
   }, []);
 
   const handleBack = useCallback(() => {
     setShowItem(false);
-  }, []);
-
-  // select first element when none selected
-  useEffect(() => {
-    if (selectedItem == null) {
-      setSelectedItem(data[0]);
-    }
-  }, [data]);
-
-  const logColor = useCallback((level: EventLevel): string => {
-    switch (level) {
-      case 'ERROR':
-        return 'text-red-700 dark:text-red-300 ';
-      case 'WARN':
-        return 'text-yellow-700 dark:text-yellow-300';
-      case 'DEBUG':
-        return 'text-gray-700 dark:text-gray-300';
-      case 'INFO':
-      default:
-        return '';
-    }
   }, []);
 
   if (isLoading) {
@@ -52,7 +37,7 @@ export function DeploymentsPage() {
     return <div>Error fetching deployments: {error?.message}</div>;
   }
   // Check if data exists and is an object
-  if (!data || typeof data !== 'object') {
+  if (!deployments || typeof deployments !== 'object') {
     return <div>No deployments data available</div>;
   }
 
@@ -64,7 +49,11 @@ export function DeploymentsPage() {
         className={`w-full sm:w-75 sm:shrink-0 border-r bg-muted/30 ${showItem ? 'hidden sm:block' : ''}`}
       >
         <ScrollArea className="h-full m-2">
-          <DeploymentList deployments={data} OnSelect={handleSelect} />
+          <DeploymentList
+            deployments={deployments}
+            selectedDeployment={id}
+            OnSelect={handleSelect}
+          />
         </ScrollArea>
       </aside>
 
@@ -76,19 +65,7 @@ export function DeploymentsPage() {
         </Button>
 
         <ScrollArea className=" p-6 overflow-auto w-full h-full">
-          {selectedItem != null ? (
-            <>
-              <h3 className="text-2xl font-semibold mb-4">{selectedItem.title}</h3>
-              <pre>{selectedItem.diff}</pre>
-              {selectedItem.events.map((event) => (
-                <pre key={event.msg} className={`whitespace-pre-wrap ${logColor(event.level)}`}>
-                  {formatTime(event.time, i18n.language)} : [{event.level}] {event.msg}
-                </pre>
-              ))}
-            </>
-          ) : (
-            <div>{t('SELECT_DEPLOYMENT_FOR_DETAILS')}</div>
-          )}
+          <DeploymentDetail id={id}></DeploymentDetail>
         </ScrollArea>
       </main>
     </div>

@@ -16,7 +16,8 @@ type Storage interface {
 type DeploymentStorage interface {
 	GetCurrentStacks() []string
 	GetDeployments() ([]api.Deployment, error)
-	InitDeployment(title string, author string, diff string) (api.Deployment, error)
+	GetDeployment(id string) api.Deployment
+	InitDeployment(title string, author string, diff string, files []api.FileDiff) (api.Deployment, error)
 	UpdateStatus(deploymentID string, status api.DeploymentStatus) error
 }
 
