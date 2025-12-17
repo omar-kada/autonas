@@ -12,11 +12,6 @@ import (
 // ServiceConfig represents configuration for an individual service.
 type ServiceConfig map[string]any
 
-/*struct {
-	Disabled bool           `mapstructure:"disabled"`
-	Extra    map[string]any `mapstructure:",remain"`
-}*/
-
 // Config represents the overall configuration structure.
 type Config struct {
 	Repo       string                   `mapstructure:"repo"`

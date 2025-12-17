@@ -2,19 +2,20 @@ import type { Deployment } from '@/api/api';
 import { colorForStatus, iconForStatus } from '@/lib';
 import { ChevronRight } from 'lucide-react';
 import { useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { Badge } from '../ui/badge';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '../ui/item';
-import { HumanTime } from './human-time';
+import { HumanTime } from '../view';
 
 export function DeploymentList({
   deployments,
-  selectedDeployment,
   OnSelect,
 }: {
   deployments: Deployment[];
-  selectedDeployment?: string;
   OnSelect: (item: Deployment) => void;
 }) {
+  const { id: selectedDeployment } = useParams();
+
   const onDeploymentClick = useCallback(
     (deployment: Deployment) => () => OnSelect(deployment),
     [OnSelect],

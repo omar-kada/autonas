@@ -7,7 +7,7 @@ export function HumanTime({ time }: { time: Date | string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="text-sm font-light">{time ? relativeTime : ''}</span>
+        <span className="text-sm font-light text-nowrap">{time ? relativeTime : ''}</span>
       </TooltipTrigger>
       <TooltipContent side="bottom">{new Date(time).toLocaleString()}</TooltipContent>
     </Tooltip>

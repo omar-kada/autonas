@@ -1,6 +1,6 @@
 import { useStatus } from '@/hooks';
 import { useTranslation } from 'react-i18next';
-import { ServiceStatus } from './view';
+import { ServiceStatus } from './status';
 
 export function StatusPage() {
   const { t } = useTranslation();

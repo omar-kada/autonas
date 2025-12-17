@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/storage"
@@ -39,8 +38,8 @@ func (m *Mocker) Copy(src, dest string) error {
 
 func newDeployerWithMocks(mocker *Mocker) *deployer {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test commit", "Test", "", []api.FileDiff{})
-	ctx := context.WithValue(context.Background(), events.ObjectID, dep.Id)
+	dep, _ := store.InitDeployment("test commit", "Test", "", []models.FileDiff{})
+	ctx := context.WithValue(context.Background(), events.ObjectID, dep.ID)
 	return &deployer{
 		dispatcher: events.NewDefaultDispatcher(store),
 		cmdRunner:  mocker,

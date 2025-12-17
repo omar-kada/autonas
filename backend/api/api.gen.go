@@ -82,14 +82,15 @@ type ContainerStatusState string
 
 // Deployment defines model for Deployment.
 type Deployment struct {
-	Author string           `json:"author"`
-	Diff   string           `json:"diff"`
-	Events []Event          `json:"events"`
-	Files  []FileDiff       `json:"files"`
-	Id     string           `json:"id"`
-	Status DeploymentStatus `json:"status"`
-	Time   time.Time        `json:"time"`
-	Title  string           `json:"title"`
+	Author  string           `json:"author"`
+	Diff    string           `json:"diff"`
+	EndTime time.Time        `json:"endTime"`
+	Events  []Event          `json:"events"`
+	Files   []FileDiff       `json:"files"`
+	Id      string           `json:"id"`
+	Status  DeploymentStatus `json:"status"`
+	Time    time.Time        `json:"time"`
+	Title   string           `json:"title"`
 }
 
 // DeploymentStatus defines model for Deployment.Status.

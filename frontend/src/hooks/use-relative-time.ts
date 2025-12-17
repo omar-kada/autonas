@@ -1,29 +1,9 @@
+import { humanizeDurationMs } from '@/lib';
 import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// ---- TYPES ----------------------------------------------------
-
-type RelativeTimeUnit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
-
-interface Division {
-  readonly amount: number;
-  readonly unit: RelativeTimeUnit;
-}
-
-// ---- HUMANIZER ------------------------------------------------
-
-const divisions: Array<Division> = [
-  { amount: 1, unit: 'second' },
-  { amount: 60, unit: 'minute' },
-  { amount: 60, unit: 'hour' },
-  { amount: 24, unit: 'day' },
-  { amount: 7, unit: 'week' },
-  { amount: 30, unit: 'month' }, // average month
-  { amount: 12, unit: 'year' }, // average year
-] as const;
-
-export function humanize(
+export function humanizeFromNow(
   date: Date | number,
   t: TFunction<'translation', undefined>,
   locale = 'en',
@@ -31,33 +11,23 @@ export function humanize(
   const target = typeof date === 'number' ? date : date.getTime();
   const diffMs = target - Date.now();
 
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-
-  let duration = diffMs / 1000; // seconds
-  let unit: RelativeTimeUnit = 'second';
-
-  for (const division of divisions) {
-    if (Math.abs(duration) < division.amount) break;
-    duration /= division.amount;
-    unit = division.unit;
-  }
-  if (unit === 'second') {
+  if (Math.abs(diffMs) < 60_000) {
     return t('JUST_NOW');
   }
 
-  return rtf.format(Math.round(duration), unit);
+  return humanizeDurationMs(diffMs, locale);
 }
 
 // ---- REACT HOOK -----------------------------------------------
 
 export function useRelativeTime(target: Date | number, locale = 'en'): string {
   const { t } = useTranslation();
-  const [formatted, setFormatted] = useState(() => humanize(target, t, locale));
+  const [formatted, setFormatted] = useState(() => humanizeFromNow(target, t, locale));
   useEffect(() => {
     const targetMs = typeof target === 'number' ? target : target.getTime();
 
     function update() {
-      setFormatted(humanize(targetMs, t, locale));
+      setFormatted(humanizeFromNow(targetMs, t, locale));
     }
 
     update(); // run immediately

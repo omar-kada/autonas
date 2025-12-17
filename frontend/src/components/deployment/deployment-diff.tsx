@@ -1,7 +1,7 @@
 import type { FileDiff } from '@/api/api';
 import { useTranslation } from 'react-i18next';
+import { FileDiffView } from '.';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { FileDiffView } from './file-diff';
 
 export function DeploymentDiff({ fileDiffs }: { fileDiffs: FileDiff[] }) {
   const { t } = useTranslation();

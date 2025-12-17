@@ -4,10 +4,10 @@ import { useDeploymentNavigate } from '@/lib';
 import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
+import { DeploymentDetail, DeploymentList } from './deployment';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { DeploymentDetail, DeploymentList } from './view';
 
 export function DeploymentsPage() {
   const { t } = useTranslation();
@@ -15,13 +15,11 @@ export function DeploymentsPage() {
   const { deployments, isLoading, error } = useDeployments();
   const { id } = useParams();
 
-  if (id == null && deployments != null) {
-    deploymentNavigate(deployments[0].id);
-  }
-
   const [showItem, setShowItem] = useState(false);
   const handleSelect = useCallback((item: Deployment) => {
-    deploymentNavigate(item.id);
+    if (item.id !== id) {
+      deploymentNavigate(item.id);
+    }
     setShowItem(true);
   }, []);
 
@@ -37,10 +35,13 @@ export function DeploymentsPage() {
     return <div>Error fetching deployments: {error?.message}</div>;
   }
   // Check if data exists and is an object
-  if (!deployments || typeof deployments !== 'object') {
+  if (!deployments || typeof deployments !== 'object' || !deployments.length) {
     return <div>No deployments data available</div>;
   }
 
+  if (id == null) {
+    return <Navigate to={deployments[0].id}></Navigate>;
+  }
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Sidebar (hidden on mobile if an item is selected) */}
@@ -49,11 +50,7 @@ export function DeploymentsPage() {
         className={`w-full sm:w-75 sm:shrink-0 border-r bg-muted/30 ${showItem ? 'hidden sm:block' : ''}`}
       >
         <ScrollArea className="h-full m-2">
-          <DeploymentList
-            deployments={deployments}
-            selectedDeployment={id}
-            OnSelect={handleSelect}
-          />
+          <DeploymentList deployments={deployments} OnSelect={handleSelect} />
         </ScrollArea>
       </aside>
 

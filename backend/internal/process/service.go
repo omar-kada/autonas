@@ -79,20 +79,24 @@ func (m *service) SyncDeployment(cfg models.Config) (err error) {
 		slog.Info("Configuration and repository are up to date. No changes detected.")
 		return nil
 	}
+	title := patch.Title
+	if title == "" {
+		title = "Automatic Deploy"
+	}
 
-	deployment, err := m.store.InitDeployment(patch.Title, patch.Author, patch.Diff, patch.Files)
+	deployment, err := m.store.InitDeployment(title, patch.Author, patch.Diff, patch.Files)
 	if err != nil {
 		return err
 	}
-	ctx := context.WithValue(context.Background(), events.ObjectID, deployment.Id)
+	ctx := context.WithValue(context.Background(), events.ObjectID, deployment.ID)
 
 	defer func() {
 		if err != nil {
 			m.dispatcher.Error(ctx, fmt.Sprintf("Deployment failed %v", err))
-			m.store.UpdateStatus(deployment.Id, "error")
+			m.store.EndDeployment(deployment.ID, "error")
 		} else {
 			m.dispatcher.Info(ctx, "Deployment done successfully")
-			m.store.UpdateStatus(deployment.Id, "success")
+			err = m.store.EndDeployment(deployment.ID, "success")
 		}
 	}()
 

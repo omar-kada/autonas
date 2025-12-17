@@ -2,7 +2,6 @@
 package storage
 
 import (
-	"omar-kada/autonas/api"
 	"omar-kada/autonas/models"
 )
 
@@ -14,15 +13,14 @@ type Storage interface {
 
 // DeploymentStorage is an abstraction of all deployment database operations
 type DeploymentStorage interface {
-	GetCurrentStacks() []string
-	GetDeployments() ([]api.Deployment, error)
-	GetDeployment(id string) api.Deployment
-	InitDeployment(title string, author string, diff string, files []api.FileDiff) (api.Deployment, error)
-	UpdateStatus(deploymentID string, status api.DeploymentStatus) error
+	GetDeployments() ([]models.Deployment, error)
+	GetDeployment(id uint64) (models.Deployment, error)
+	InitDeployment(title string, author string, diff string, files []models.FileDiff) (models.Deployment, error)
+	EndDeployment(deploymentID uint64, status models.DeploymentStatus) error
 }
 
 // EventStorage is an abstraction of all event database operations
 type EventStorage interface {
-	StoreEvent(event models.Event)
-	GetEvents(objectID string) []api.Event
+	StoreEvent(event models.Event) error
+	GetEvents(objectID uint64) ([]models.Event, error)
 }

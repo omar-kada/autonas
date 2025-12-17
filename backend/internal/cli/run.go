@@ -11,8 +11,12 @@ import (
 	"omar-kada/autonas/internal/server"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 const (
@@ -78,8 +82,38 @@ func newRunCommand() *cobra.Command {
 	return runCmd
 }
 
+func initGorm(dbFile string, addPerm os.FileMode) (*gorm.DB, error) {
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(dbFile), 0600|addPerm); err != nil {
+			return nil, err
+		}
+	}
+	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+	// pragmas and pooling
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA foreign_keys = ON;")
+	sqlDB, err := db.DB()
+	if err == nil {
+		sqlDB.SetMaxOpenConns(1)
+		sqlDB.SetMaxIdleConns(1)
+	}
+	return db, err
+}
+
 func doRun(params RunParams) error {
-	store := storage.NewMemoryStorage()
+	dbFile := filepath.Join(params.GetDBDir(), "autonas.db")
+	db, err := initGorm(dbFile, params.GetAddWritePerm())
+	if err != nil {
+		return fmt.Errorf("couldn't init sqlite db %w", err)
+	}
+	store, err := storage.NewGormStorage(db)
+	if err != nil {
+		return fmt.Errorf("couldn't init gorm storage %w", err)
+	}
+
 	dispatcher := events.NewDefaultDispatcher(store)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)

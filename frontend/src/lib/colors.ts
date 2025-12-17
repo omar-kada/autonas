@@ -1,15 +1,18 @@
-import type { DeploymentStatus, EventLevel } from '@/api/api';
+import type { ContainerStatusHealth, DeploymentStatus, EventLevel } from '@/api/api';
 
-export function colorForStatus(status: DeploymentStatus): string {
+export function colorForStatus(status: ContainerStatusHealth | DeploymentStatus): string {
   switch (status) {
+    case 'healthy':
     case 'success':
       return 'bg-green-400';
+    case 'unhealthy':
     case 'error':
       return 'bg-red-400';
-    case 'running':
-      return 'bg-blue-400';
+    case 'starting':
     case 'planned':
       return 'bg-slate-400';
+    case 'running':
+      return 'bg-blue-400';
     default:
       return '';
   }

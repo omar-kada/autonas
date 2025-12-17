@@ -46,7 +46,7 @@ func (d *dispatcher) dispatchLevel(ctx context.Context, level slog.Level, msg st
 		Level:    level,
 		Msg:      msg,
 		Time:     time.Now(),
-		ObjectID: ctx.Value(ObjectID).(string),
+		ObjectID: ctx.Value(ObjectID).(uint64),
 	})
 }
 
