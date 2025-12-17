@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/modelsdb"
+	"omar-kada/autonas/models"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ var deploymentID uint64
 
 func newStore() storage.EventStorage {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test", "author", "", []modelsdb.FileDiff{})
+	dep, _ := store.InitDeployment("test", "author", "", []models.FileDiff{})
 	deploymentID = dep.ID
 	return store
 }

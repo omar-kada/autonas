@@ -2,7 +2,7 @@ package storage
 
 import (
 	"errors"
-	"omar-kada/autonas/modelsdb"
+	"omar-kada/autonas/models"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,16 +15,16 @@ type gormStorage struct {
 
 // NewGormStorage creates a new instance of GormStorage and runs migrations
 func NewGormStorage(db *gorm.DB) (Storage, error) {
-	// Auto-migrate modelsdb types
-	if err := db.AutoMigrate(&modelsdb.Deployment{}, &modelsdb.FileDiff{}, &modelsdb.Event{}); err != nil {
+	// Auto-migrate models types
+	if err := db.AutoMigrate(&models.Deployment{}, &models.FileDiff{}, &models.Event{}); err != nil {
 		return nil, err
 	}
 	return &gormStorage{db: db}, nil
 }
 
 // GetDeployments retrieves all deployments with their associated files and events
-func (s *gormStorage) GetDeployments() ([]modelsdb.Deployment, error) {
-	var deps []modelsdb.Deployment
+func (s *gormStorage) GetDeployments() ([]models.Deployment, error) {
+	var deps []models.Deployment
 	if err := s.db.Preload("Files").Preload("Events").Find(&deps).Error; err != nil {
 		return nil, err
 	}
@@ -32,37 +32,37 @@ func (s *gormStorage) GetDeployments() ([]modelsdb.Deployment, error) {
 }
 
 // GetDeployment retrieves a specific deployment by ID with its associated files and events
-func (s *gormStorage) GetDeployment(id uint64) (modelsdb.Deployment, error) {
-	var dep modelsdb.Deployment
+func (s *gormStorage) GetDeployment(id uint64) (models.Deployment, error) {
+	var dep models.Deployment
 	if err := s.db.Preload("Files").Preload("Events").First(&dep, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return modelsdb.Deployment{}, err
+			return models.Deployment{}, err
 		}
-		return modelsdb.Deployment{}, err
+		return models.Deployment{}, err
 	}
 	return dep, nil
 }
 
 // InitDeployment creates a new deployment with the given parameters
-func (s *gormStorage) InitDeployment(title string, author string, diff string, files []modelsdb.FileDiff) (modelsdb.Deployment, error) {
-	dep := modelsdb.Deployment{
+func (s *gormStorage) InitDeployment(title string, author string, diff string, files []models.FileDiff) (models.Deployment, error) {
+	dep := models.Deployment{
 		Title:  title,
 		Author: author,
 		Diff:   diff,
-		Status: modelsdb.DeploymentStatusRunning,
+		Status: models.DeploymentStatusRunning,
 		Time:   time.Now(),
 		Files:  files,
-		Events: []modelsdb.Event{},
+		Events: []models.Event{},
 	}
 	if err := s.db.Create(&dep).Error; err != nil {
-		return modelsdb.Deployment{}, err
+		return models.Deployment{}, err
 	}
 	return dep, nil
 }
 
 // EndDeployment updates a deployment's status and sets its end time
-func (s *gormStorage) EndDeployment(deploymentID uint64, status modelsdb.DeploymentStatus) error {
-	var dep modelsdb.Deployment
+func (s *gormStorage) EndDeployment(deploymentID uint64, status models.DeploymentStatus) error {
+	var dep models.Deployment
 	if err := s.db.First(&dep, deploymentID).Error; err != nil {
 		return err
 	}
@@ -72,9 +72,9 @@ func (s *gormStorage) EndDeployment(deploymentID uint64, status modelsdb.Deploym
 }
 
 // StoreEvent creates a new event and associates it with an existing deployment
-func (s *gormStorage) StoreEvent(event modelsdb.Event) error {
+func (s *gormStorage) StoreEvent(event models.Event) error {
 	// verify deployment exists
-	var dep modelsdb.Deployment
+	var dep models.Deployment
 	if err := s.db.First(&dep, event.ObjectID).Error; err != nil {
 		return err
 	}
@@ -85,8 +85,8 @@ func (s *gormStorage) StoreEvent(event modelsdb.Event) error {
 }
 
 // GetEvents retrieves all events associated with a specific object ID
-func (s *gormStorage) GetEvents(objectID uint64) ([]modelsdb.Event, error) {
-	var event []modelsdb.Event
+func (s *gormStorage) GetEvents(objectID uint64) ([]models.Event, error) {
+	var event []models.Event
 	if err := s.db.Where("object_id = ?", objectID).Find(&event).Error; err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"omar-kada/autonas/modelsdb"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,7 +38,7 @@ func (m *Mocker) Copy(src, dest string) error {
 
 func newDeployerWithMocks(mocker *Mocker) *deployer {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test commit", "Test", "", []modelsdb.FileDiff{})
+	dep, _ := store.InitDeployment("test commit", "Test", "", []models.FileDiff{})
 	ctx := context.WithValue(context.Background(), events.ObjectID, dep.ID)
 	return &deployer{
 		dispatcher: events.NewDefaultDispatcher(store),

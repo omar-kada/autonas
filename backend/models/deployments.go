@@ -1,4 +1,4 @@
-package modelsdb
+package models
 
 import (
 	"log/slog"
