@@ -5,10 +5,11 @@ package modelsdb
 
 import (
 	"errors"
+	"log/slog"
+
 	"github.com/google/flatbuffers/go"
 	"github.com/objectbox/objectbox-go/objectbox"
 	"github.com/objectbox/objectbox-go/objectbox/fbutils"
-	"log/slog"
 )
 
 type deployment_EntityInfo struct {
@@ -155,10 +156,10 @@ func (deployment_EntityInfo) Flatten(object interface{}, fbb *flatbuffers.Builde
 		}
 	}
 
-	var offsetAuthor = fbutils.CreateStringOffset(fbb, obj.Author)
-	var offsetDiff = fbutils.CreateStringOffset(fbb, obj.Diff)
-	var offsetStatus = fbutils.CreateStringOffset(fbb, string(obj.Status))
-	var offsetTitle = fbutils.CreateStringOffset(fbb, obj.Title)
+	offsetAuthor := fbutils.CreateStringOffset(fbb, obj.Author)
+	offsetDiff := fbutils.CreateStringOffset(fbb, obj.Diff)
+	offsetStatus := fbutils.CreateStringOffset(fbb, string(obj.Status))
+	offsetTitle := fbutils.CreateStringOffset(fbb, obj.Title)
 
 	// build the FlatBuffers object
 	fbb.StartObject(7)
@@ -178,12 +179,12 @@ func (deployment_EntityInfo) Load(ob *objectbox.ObjectBox, bytes []byte) (interf
 		return nil, errors.New("can't deserialize an object of type 'Deployment' - no data received")
 	}
 
-	var table = &flatbuffers.Table{
+	table := &flatbuffers.Table{
 		Bytes: bytes,
 		Pos:   flatbuffers.GetUOffsetT(bytes),
 	}
 
-	var propID = table.GetUint64Slot(8, 0)
+	propID := table.GetUint64Slot(8, 0)
 
 	propTime, err := objectbox.TimeInt64ConvertToEntityProperty(fbutils.GetInt64Slot(table, 12))
 	if err != nil {
@@ -343,7 +344,7 @@ func (box *DeploymentBox) Remove(object *Deployment) error {
 // In case you need to strictly check whether all of the objects exist before removing them,
 // you can execute multiple box.Contains() and box.Remove() inside a single write transaction.
 func (box *DeploymentBox) RemoveMany(objects ...*Deployment) (uint64, error) {
-	var ids = make([]uint64, len(objects))
+	ids := make([]uint64, len(objects))
 	for k, object := range objects {
 		ids[k] = object.ID
 	}
@@ -399,7 +400,7 @@ type DeploymentAsyncBox struct {
 // The returned struct must be freed explicitly using the Close() method.
 // It's usually preferable to use DeploymentBox::Async() which takes care of resource management and doesn't require closing.
 func AsyncBoxForDeployment(ob *objectbox.ObjectBox, timeoutMs uint64) *DeploymentAsyncBox {
-	var async, err = objectbox.NewAsyncBox(ob, 1, timeoutMs)
+	async, err := objectbox.NewAsyncBox(ob, 1, timeoutMs)
 	if err != nil {
 		panic("Could not create async box for entity ID 1: %s" + err.Error())
 	}
@@ -542,9 +543,9 @@ func (fileDiff_EntityInfo) PutRelated(ob *objectbox.ObjectBox, object interface{
 // Flatten is called by ObjectBox to transform an object to a FlatBuffer
 func (fileDiff_EntityInfo) Flatten(object interface{}, fbb *flatbuffers.Builder, id uint64) error {
 	obj := object.(*FileDiff)
-	var offsetDiff = fbutils.CreateStringOffset(fbb, obj.Diff)
-	var offsetNewFile = fbutils.CreateStringOffset(fbb, obj.NewFile)
-	var offsetOldFile = fbutils.CreateStringOffset(fbb, obj.OldFile)
+	offsetDiff := fbutils.CreateStringOffset(fbb, obj.Diff)
+	offsetNewFile := fbutils.CreateStringOffset(fbb, obj.NewFile)
+	offsetOldFile := fbutils.CreateStringOffset(fbb, obj.OldFile)
 
 	// build the FlatBuffers object
 	fbb.StartObject(4)
@@ -561,12 +562,12 @@ func (fileDiff_EntityInfo) Load(ob *objectbox.ObjectBox, bytes []byte) (interfac
 		return nil, errors.New("can't deserialize an object of type 'FileDiff' - no data received")
 	}
 
-	var table = &flatbuffers.Table{
+	table := &flatbuffers.Table{
 		Bytes: bytes,
 		Pos:   flatbuffers.GetUOffsetT(bytes),
 	}
 
-	var propID = table.GetUint64Slot(4, 0)
+	propID := table.GetUint64Slot(4, 0)
 
 	return &FileDiff{
 		ID:      propID,
@@ -693,7 +694,7 @@ func (box *FileDiffBox) Remove(object *FileDiff) error {
 // In case you need to strictly check whether all of the objects exist before removing them,
 // you can execute multiple box.Contains() and box.Remove() inside a single write transaction.
 func (box *FileDiffBox) RemoveMany(objects ...*FileDiff) (uint64, error) {
-	var ids = make([]uint64, len(objects))
+	ids := make([]uint64, len(objects))
 	for k, object := range objects {
 		ids[k] = object.ID
 	}
@@ -749,7 +750,7 @@ type FileDiffAsyncBox struct {
 // The returned struct must be freed explicitly using the Close() method.
 // It's usually preferable to use FileDiffBox::Async() which takes care of resource management and doesn't require closing.
 func AsyncBoxForFileDiff(ob *objectbox.ObjectBox, timeoutMs uint64) *FileDiffAsyncBox {
-	var async, err = objectbox.NewAsyncBox(ob, 2, timeoutMs)
+	async, err := objectbox.NewAsyncBox(ob, 2, timeoutMs)
 	if err != nil {
 		panic("Could not create async box for entity ID 2: %s" + err.Error())
 	}
@@ -910,7 +911,7 @@ func (event_EntityInfo) Flatten(object interface{}, fbb *flatbuffers.Builder, id
 		}
 	}
 
-	var offsetMsg = fbutils.CreateStringOffset(fbb, obj.Msg)
+	offsetMsg := fbutils.CreateStringOffset(fbb, obj.Msg)
 
 	// build the FlatBuffers object
 	fbb.StartObject(5)
@@ -928,12 +929,12 @@ func (event_EntityInfo) Load(ob *objectbox.ObjectBox, bytes []byte) (interface{}
 		return nil, errors.New("can't deserialize an object of type 'Event' - no data received")
 	}
 
-	var table = &flatbuffers.Table{
+	table := &flatbuffers.Table{
 		Bytes: bytes,
 		Pos:   flatbuffers.GetUOffsetT(bytes),
 	}
 
-	var propID = table.GetUint64Slot(4, 0)
+	propID := table.GetUint64Slot(4, 0)
 
 	propTime, err := objectbox.TimeInt64ConvertToEntityProperty(fbutils.GetInt64Slot(table, 10))
 	if err != nil {
@@ -1066,7 +1067,7 @@ func (box *EventBox) Remove(object *Event) error {
 // In case you need to strictly check whether all of the objects exist before removing them,
 // you can execute multiple box.Contains() and box.Remove() inside a single write transaction.
 func (box *EventBox) RemoveMany(objects ...*Event) (uint64, error) {
-	var ids = make([]uint64, len(objects))
+	ids := make([]uint64, len(objects))
 	for k, object := range objects {
 		ids[k] = object.ID
 	}
@@ -1122,7 +1123,7 @@ type EventAsyncBox struct {
 // The returned struct must be freed explicitly using the Close() method.
 // It's usually preferable to use EventBox::Async() which takes care of resource management and doesn't require closing.
 func AsyncBoxForEvent(ob *objectbox.ObjectBox, timeoutMs uint64) *EventAsyncBox {
-	var async, err = objectbox.NewAsyncBox(ob, 3, timeoutMs)
+	async, err := objectbox.NewAsyncBox(ob, 3, timeoutMs)
 	if err != nil {
 		panic("Could not create async box for entity ID 3: %s" + err.Error())
 	}
