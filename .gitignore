@@ -16,6 +16,9 @@ _ignore_*
 *.test
 *.out
 
+# object box lib
+*/objectboxlib*
+
 # IDE/editor files
 .vscode/
 .idea/

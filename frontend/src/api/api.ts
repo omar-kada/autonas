@@ -80,6 +80,7 @@ export interface Deployment {
   title: string;
   author: string;
   time: string;
+  endTime: string;
   diff: string;
   files: FileDiff[];
   status: DeploymentStatus;

@@ -3,17 +3,19 @@ package events
 import (
 	"context"
 	"log/slog"
-	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/modelsdb"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-var deploymentID string
+var deploymentID uint64
 
 func newStore() storage.EventStorage {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test", "author", "", []api.FileDiff{})
-	deploymentID = dep.Id
+	dep, _ := store.InitDeployment("test", "author", "", []*modelsdb.FileDiff{})
+	deploymentID = dep.ID
 	return store
 }
 
@@ -36,13 +38,14 @@ func TestDispatchLevel(t *testing.T) {
 
 	dispatcher.dispatchLevel(ctx, slog.LevelInfo, msg, args...)
 
-	storedEvents := store.GetEvents(deploymentID)
+	storedEvents, err := store.GetEvents(deploymentID)
+	assert.NoError(t, err)
 	if len(storedEvents) != 1 {
 		t.Errorf("Expected 1 event, got %d", len(storedEvents))
 	}
 
 	storedEvent := storedEvents[0]
-	if storedEvent.Level != api.EventLevel(slog.LevelInfo.String()) {
+	if storedEvent.Level != slog.LevelInfo {
 		t.Errorf("Expected level Info, got %v", storedEvent.Level)
 	}
 	if storedEvent.Msg != msg {
@@ -59,14 +62,15 @@ func TestInfo(t *testing.T) {
 	args := []any{"arg1", "arg2"}
 
 	dispatcher.Info(ctx, msg, args...)
-	storedEvents := store.GetEvents(deploymentID)
+	storedEvents, err := store.GetEvents(deploymentID)
+	assert.NoError(t, err)
 
 	if len(storedEvents) != 1 {
 		t.Errorf("Expected 1 event, got %d", len(storedEvents))
 	}
 
 	storedEvent := storedEvents[0]
-	if storedEvent.Level != api.EventLevel(slog.LevelInfo.String()) {
+	if storedEvent.Level != slog.LevelInfo {
 		t.Errorf("Expected level Info, got %v", storedEvent.Level)
 	}
 }
@@ -80,14 +84,15 @@ func TestError(t *testing.T) {
 	args := []any{"arg1", "arg2"}
 
 	dispatcher.Error(ctx, msg, args...)
-	storedEvents := store.GetEvents(deploymentID)
+	storedEvents, err := store.GetEvents(deploymentID)
+	assert.NoError(t, err)
 
 	if len(storedEvents) != 1 {
 		t.Errorf("Expected 1 event, got %d", len(storedEvents))
 	}
 
 	storedEvent := storedEvents[0]
-	if storedEvent.Level != api.EventLevel(slog.LevelError.String()) {
+	if storedEvent.Level != slog.LevelError {
 		t.Errorf("Expected level Error, got %v", storedEvent.Level)
 	}
 }
@@ -101,14 +106,15 @@ func TestDebug(t *testing.T) {
 	args := []any{"arg1", "arg2"}
 
 	dispatcher.Debug(ctx, msg, args...)
-	storedEvents := store.GetEvents(deploymentID)
+	storedEvents, err := store.GetEvents(deploymentID)
+	assert.NoError(t, err)
 
 	if len(storedEvents) != 1 {
 		t.Errorf("Expected 1 event, got %d", len(storedEvents))
 	}
 
 	storedEvent := storedEvents[0]
-	if storedEvent.Level != api.EventLevel(slog.LevelDebug.String()) {
+	if storedEvent.Level != slog.LevelDebug {
 		t.Errorf("Expected level Debug, got %v", storedEvent.Level)
 	}
 }
@@ -122,14 +128,15 @@ func TestWarn(t *testing.T) {
 	args := []any{"arg1", "arg2"}
 
 	dispatcher.Warn(ctx, msg, args...)
-	storedEvents := store.GetEvents(deploymentID)
+	storedEvents, err := store.GetEvents(deploymentID)
+	assert.NoError(t, err)
 
 	if len(storedEvents) != 1 {
 		t.Errorf("Expected 1 event, got %d", len(storedEvents))
 	}
 
 	storedEvent := storedEvents[0]
-	if storedEvent.Level != api.EventLevel(slog.LevelDebug.String()) {
+	if storedEvent.Level != slog.LevelDebug {
 		t.Errorf("Expected level Debug, got %v", storedEvent.Level)
 	}
 }

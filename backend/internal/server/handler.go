@@ -2,9 +2,12 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/modelsdb"
+	"strconv"
 )
 
 // Handler implements the generated strict server interface
@@ -24,12 +27,64 @@ func NewHandler(store storage.DeploymentStorage, service process.Service) *Handl
 // DeployementAPIList implements the StrictServerInterface interface
 func (h *Handler) DeployementAPIList(_ context.Context, _ api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
 	deps, err := h.store.GetDeployments()
-	return api.DeployementAPIList200JSONResponse(deps), err
+	return api.DeployementAPIList200JSONResponse(transformDeployments(deps)), err
+}
+
+func transformEvents(events []*modelsdb.Event) []api.Event {
+	var apiEvents []api.Event
+	for _, event := range events {
+		apiEvents = append(apiEvents, api.Event{
+			Time:  event.Time,
+			Msg:   event.Msg,
+			Level: api.EventLevel(event.Level.String()),
+		})
+	}
+	return apiEvents
+}
+
+func transformFiles(files []*modelsdb.FileDiff) []api.FileDiff {
+	var apiFiles []api.FileDiff
+	for _, file := range files {
+		apiFiles = append(apiFiles, api.FileDiff{
+			Diff:    file.Diff,
+			NewFile: file.NewFile,
+			OldFile: file.OldFile,
+		})
+	}
+	return apiFiles
+}
+
+func transformDeployment(dep *modelsdb.Deployment) api.Deployment {
+	return api.Deployment{
+		Author:  dep.Author,
+		Diff:    dep.Diff,
+		Id:      fmt.Sprintf("%d", dep.ID),
+		Status:  api.DeploymentStatus(dep.Status),
+		Time:    dep.Time,
+		EndTime: dep.EndTime,
+		Title:   dep.Title,
+		Events:  transformEvents(dep.Events),
+		Files:   transformFiles(dep.Files),
+	}
+}
+
+func transformDeployments(deps []*modelsdb.Deployment) []api.Deployment {
+	var apiDeps []api.Deployment
+	for _, dep := range deps {
+		apiDeps = append(apiDeps, transformDeployment(dep))
+	}
+	return apiDeps
 }
 
 // DeployementAPIRead implements the StrictServerInterface interface
 func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
-	return api.DeployementAPIRead200JSONResponse(h.store.GetDeployment(request.Id)), nil
+	id, err := strconv.ParseUint(request.Id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	dep, err := h.store.GetDeployment(id)
+
+	return api.DeployementAPIRead200JSONResponse(transformDeployment(dep)), err
 }
 
 // StatusAPIGet implements the StrictServerInterface interface

@@ -1,0 +1,134 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:4932359351954650694",
+      "lastPropertyId": "7:1672820934742845997",
+      "name": "Deployment",
+      "properties": [
+        {
+          "id": "1:5594018983451234858",
+          "name": "Author",
+          "type": 9
+        },
+        {
+          "id": "2:4163943653800901751",
+          "name": "Diff",
+          "type": 9
+        },
+        {
+          "id": "3:357454033273744038",
+          "name": "ID",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "4:8989814894901159613",
+          "name": "Status",
+          "type": 9
+        },
+        {
+          "id": "5:1269864842788429858",
+          "name": "Time",
+          "type": 10
+        },
+        {
+          "id": "6:7445546539675098816",
+          "name": "Title",
+          "type": 9
+        },
+        {
+          "id": "7:1672820934742845997",
+          "name": "EndTime",
+          "type": 10
+        }
+      ],
+      "relations": [
+        {
+          "id": "1:5383246662726590361",
+          "name": "Events",
+          "targetId": "3:5824277623053869508"
+        },
+        {
+          "id": "2:6789058631577933099",
+          "name": "Files",
+          "targetId": "2:5039716903289663534"
+        }
+      ]
+    },
+    {
+      "id": "2:5039716903289663534",
+      "lastPropertyId": "4:4196299902542153538",
+      "name": "FileDiff",
+      "properties": [
+        {
+          "id": "1:4865574112667400612",
+          "name": "ID",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3375528542688359874",
+          "name": "Diff",
+          "type": 9
+        },
+        {
+          "id": "3:4870050122345638650",
+          "name": "NewFile",
+          "type": 9
+        },
+        {
+          "id": "4:4196299902542153538",
+          "name": "OldFile",
+          "type": 9
+        }
+      ]
+    },
+    {
+      "id": "3:5824277623053869508",
+      "lastPropertyId": "5:3273005205906032723",
+      "name": "Event",
+      "properties": [
+        {
+          "id": "1:224148306401554185",
+          "name": "ID",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:178468701704354373",
+          "name": "Level",
+          "type": 6
+        },
+        {
+          "id": "3:4477093517829547794",
+          "name": "Msg",
+          "type": 9
+        },
+        {
+          "id": "4:1874625364354129834",
+          "name": "Time",
+          "type": 10
+        },
+        {
+          "id": "5:3273005205906032723",
+          "name": "ObjectID",
+          "type": 6,
+          "flags": 8192
+        }
+      ]
+    }
+  ],
+  "lastEntityId": "3:5824277623053869508",
+  "lastIndexId": "",
+  "lastRelationId": "2:6789058631577933099",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

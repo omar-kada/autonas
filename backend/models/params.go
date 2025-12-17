@@ -25,6 +25,11 @@ func (p DeploymentParams) GetRepoDir() string {
 	return filepath.Join(p.WorkingDir, "repo")
 }
 
+// GetDBDir returns the path of the database directory
+func (p DeploymentParams) GetDBDir() string {
+	return filepath.Join(p.WorkingDir, "db")
+}
+
 // ServerParams groups parameters related to the API server
 type ServerParams struct {
 	Port int

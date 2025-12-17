@@ -2,8 +2,8 @@ import type { ContainerStatus } from '@/api/api';
 import dockerLogo from '@/assets/docker.svg';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '../ui/item';
-import { HumanTime } from './human-time';
-import { StatusBadge } from './status-badge';
+import { HumanTime } from '../view/human-time';
+import { ContainerStatusBadge } from './container-status-badge';
 
 const logoPrefix = 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/';
 export function ServiceStatus(props: {
@@ -26,9 +26,9 @@ export function ServiceStatus(props: {
         <ItemDescription>
           <HumanTime time={time} />
           {props.serviceContainers.map((item) => (
-            <StatusBadge
-              label={item.name}
+            <ContainerStatusBadge
               status={item.health}
+              label={item.name}
               className="mx-1"
               key={`${props.serviceName}-${item.name}`}
             />

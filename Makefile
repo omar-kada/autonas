@@ -24,6 +24,9 @@ test-cover:
 	cd backend && go test -coverprofile=coverage.out ./internal/... && \
 	go tool cover -html=coverage.out
 
+gen-db :
+	cd backend && go generate ./...
+
 gen-api : 
 	make tsp-gen 
 	make oapi-gen

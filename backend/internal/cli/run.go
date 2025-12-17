@@ -11,7 +11,9 @@ import (
 	"omar-kada/autonas/internal/server"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+	"omar-kada/autonas/modelsdb"
 
+	"github.com/objectbox/objectbox-go/objectbox"
 	"github.com/spf13/cobra"
 )
 
@@ -78,8 +80,21 @@ func newRunCommand() *cobra.Command {
 	return runCmd
 }
 
+func initObjectBox(dir string) (*objectbox.ObjectBox, error) {
+	objectBox, err := objectbox.NewBuilder().
+		Model(modelsdb.ObjectBoxModel()).
+		Directory(dir).
+		Build()
+	return objectBox, err
+}
+
 func doRun(params RunParams) error {
-	store := storage.NewMemoryStorage()
+	ob, err := initObjectBox(params.GetDBDir())
+	if err != nil {
+		return fmt.Errorf("couldn't init object box %w", err)
+	}
+	store := storage.NewObjectBoxStorage(ob)
+
 	dispatcher := events.NewDefaultDispatcher(store)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)

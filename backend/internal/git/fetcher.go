@@ -4,8 +4,8 @@ package git
 import (
 	"fmt"
 	"log/slog"
-	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/events"
+	"omar-kada/autonas/modelsdb"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +21,7 @@ var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 type Patch struct {
 	Diff   string
 	Title  string
-	Files  []api.FileDiff
+	Files  []*modelsdb.FileDiff
 	Author string
 }
 
@@ -189,13 +189,13 @@ func getPatch(repo *git.Repository, branch string) (Patch, error) {
 	}
 
 	fileDiffs := splitByFile(patch.String())
-	var files []api.FileDiff
+	var files []*modelsdb.FileDiff
 	for _, fileDiff := range fileDiffs {
 		f, err := toFileDiff(fileDiff)
 		if err != nil {
 			return Patch{}, fmt.Errorf("error parsing file diff: %w", err)
 		}
-		files = append(files, f)
+		files = append(files, &f)
 	}
 	return Patch{
 		Title:  remoteCommit.Message,
@@ -220,19 +220,19 @@ func splitByFile(diff string) []string {
 	return fileDiffs
 }
 
-func toFileDiff(strDiff string) (api.FileDiff, error) {
+func toFileDiff(strDiff string) (modelsdb.FileDiff, error) {
 	parts := strings.SplitN(strDiff, "\n", 2)
 	if len(parts) < 2 {
-		return api.FileDiff{}, fmt.Errorf("diff contains less than 2 lines")
+		return modelsdb.FileDiff{}, fmt.Errorf("diff contains less than 2 lines")
 	}
 	header := parts[0]
 	fileNames := strings.Fields(header)
 	if len(fileNames) <= 3 {
-		return api.FileDiff{}, fmt.Errorf("can't find file names")
+		return modelsdb.FileDiff{}, fmt.Errorf("can't find file names")
 	}
-	oldFile := fileNames[2]
-	newFile := fileNames[3]
-	return api.FileDiff{
+	oldFile := fileNames[2][2:]
+	newFile := fileNames[3][2:]
+	return modelsdb.FileDiff{
 		OldFile: oldFile,
 		NewFile: newFile,
 		Diff:    strDiff,

@@ -1,7 +1,6 @@
 # ----------- Builder Stage -----------
 FROM golang:1.25.1-bookworm AS builder
 
-
 RUN mkdir /autonas
 WORKDIR /autonas
 
@@ -9,6 +8,8 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
 COPY backend .
+COPY backend/objectboxlib/lib/libobjectbox.so /usr/lib/
+
 RUN go build -o autonas /autonas/cmd/autonas/main.go
 
 # ----------- Frontend Builder Stage -----------
@@ -55,6 +56,7 @@ RUN mkdir /data
 WORKDIR /app
 
 COPY --from=builder /autonas/autonas /app/
+COPY backend/objectboxlib/lib/libobjectbox.so /usr/lib/
 COPY --from=frontend-builder /app/dist /app/frontend/dist
 
 RUN chmod -R 744 /app

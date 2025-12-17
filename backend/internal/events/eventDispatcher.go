@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+	"omar-kada/autonas/modelsdb"
 	"time"
 )
 
@@ -42,11 +43,11 @@ func (d *dispatcher) dispatchLevel(ctx context.Context, level slog.Level, msg st
 		return
 	}
 	slog.Log(ctx, level, msg, args...)
-	d.store.StoreEvent(models.Event{
+	d.store.StoreEvent(modelsdb.Event{
 		Level:    level,
 		Msg:      msg,
 		Time:     time.Now(),
-		ObjectID: ctx.Value(ObjectID).(string),
+		ObjectID: ctx.Value(ObjectID).(uint64),
 	})
 }
 

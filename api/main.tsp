@@ -29,6 +29,7 @@ model Deployment {
   title: string; // Commit message
   author: string; // Commit message
   time: utcDateTime;
+  endTime: utcDateTime;
   diff: string;
   files: FileDiff[];
   status: "planned" | "running" | "success" | "error";

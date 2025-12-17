@@ -2,7 +2,6 @@
 package models
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/moby/moby/api/types/container"
@@ -16,14 +15,6 @@ type ContainerSummary struct {
 	State     container.ContainerState
 	Health    container.HealthStatus
 	StartedAt time.Time
-}
-
-// Event represent an event inside the deployment process
-type Event struct {
-	Level    slog.Level
-	Msg      string
-	Time     time.Time
-	ObjectID string
 }
 
 // ContextKey is the type of keys used inside context
