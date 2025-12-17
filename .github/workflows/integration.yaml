@@ -38,6 +38,11 @@ jobs:
           name: frontend-api
           path: ./frontend/src/api
 
+      - name: download dependencies
+        run: go mod download
+      - name: generate
+        run: go generate ./...
+
       - name: Set up Docker
         run: |
           sudo systemctl start docker

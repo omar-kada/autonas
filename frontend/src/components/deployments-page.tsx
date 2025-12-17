@@ -19,8 +19,8 @@ export function DeploymentsPage() {
   const handleSelect = useCallback((item: Deployment) => {
     if (item.id !== id) {
       deploymentNavigate(item.id);
-      setShowItem(true);
     }
+    setShowItem(true);
   }, []);
 
   const handleBack = useCallback(() => {
