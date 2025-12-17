@@ -13,14 +13,14 @@ type Storage interface {
 
 // DeploymentStorage is an abstraction of all deployment database operations
 type DeploymentStorage interface {
-	GetDeployments() ([]*modelsdb.Deployment, error)
-	GetDeployment(id uint64) (*modelsdb.Deployment, error)
-	InitDeployment(title string, author string, diff string, files []*modelsdb.FileDiff) (*modelsdb.Deployment, error)
+	GetDeployments() ([]modelsdb.Deployment, error)
+	GetDeployment(id uint64) (modelsdb.Deployment, error)
+	InitDeployment(title string, author string, diff string, files []modelsdb.FileDiff) (modelsdb.Deployment, error)
 	EndDeployment(deploymentID uint64, status modelsdb.DeploymentStatus) error
 }
 
 // EventStorage is an abstraction of all event database operations
 type EventStorage interface {
 	StoreEvent(event modelsdb.Event) error
-	GetEvents(objectID uint64) ([]*modelsdb.Event, error)
+	GetEvents(objectID uint64) ([]modelsdb.Event, error)
 }

@@ -39,7 +39,7 @@ func (m *Mocker) Copy(src, dest string) error {
 
 func newDeployerWithMocks(mocker *Mocker) *deployer {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test commit", "Test", "", []*modelsdb.FileDiff{})
+	dep, _ := store.InitDeployment("test commit", "Test", "", []modelsdb.FileDiff{})
 	ctx := context.WithValue(context.Background(), events.ObjectID, dep.ID)
 	return &deployer{
 		dispatcher: events.NewDefaultDispatcher(store),

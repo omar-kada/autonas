@@ -14,7 +14,7 @@ var deploymentID uint64
 
 func newStore() storage.EventStorage {
 	store := storage.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test", "author", "", []*modelsdb.FileDiff{})
+	dep, _ := store.InitDeployment("test", "author", "", []modelsdb.FileDiff{})
 	deploymentID = dep.ID
 	return store
 }

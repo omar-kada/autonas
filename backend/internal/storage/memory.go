@@ -10,20 +10,20 @@ import (
 
 // MemoryStorage uses memory to store data (to be used mainly for testing)
 type MemoryStorage struct {
-	deployments *orderedmap.OrderedMap[uint64, *modelsdb.Deployment]
+	deployments *orderedmap.OrderedMap[uint64, modelsdb.Deployment]
 }
 
 // NewMemoryStorage instanciates a new memory storage
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
-		deployments: orderedmap.NewOrderedMap[uint64, *modelsdb.Deployment](),
+		deployments: orderedmap.NewOrderedMap[uint64, modelsdb.Deployment](),
 	}
 }
 
 // GetDeployments returns stored deployments
-func (s *MemoryStorage) GetDeployments() ([]*modelsdb.Deployment, error) {
+func (s *MemoryStorage) GetDeployments() ([]modelsdb.Deployment, error) {
 	// transform map to slice
-	var deployments []*modelsdb.Deployment
+	var deployments []modelsdb.Deployment
 	for _, deployment := range s.deployments.AllFromBack() {
 		deployments = append(deployments, deployment)
 	}
@@ -32,10 +32,10 @@ func (s *MemoryStorage) GetDeployments() ([]*modelsdb.Deployment, error) {
 }
 
 // GetDeployment returns deployment by id
-func (s *MemoryStorage) GetDeployment(id uint64) (*modelsdb.Deployment, error) {
+func (s *MemoryStorage) GetDeployment(id uint64) (modelsdb.Deployment, error) {
 	deployment, exists := s.deployments.Get(id)
 	if !exists {
-		return nil, fmt.Errorf("deployment doesn't exist %d", id)
+		return modelsdb.Deployment{}, fmt.Errorf("deployment doesn't exist %d", id)
 	}
 	return deployment, nil
 }
@@ -46,7 +46,7 @@ func newID() uint64 {
 }
 
 // InitDeployment creates a new deployment and returns it
-func (s *MemoryStorage) InitDeployment(title string, author string, diff string, files []*modelsdb.FileDiff) (*modelsdb.Deployment, error) {
+func (s *MemoryStorage) InitDeployment(title string, author string, diff string, files []modelsdb.FileDiff) (modelsdb.Deployment, error) {
 	deployment := modelsdb.Deployment{
 		ID:     newID(),
 		Title:  title,
@@ -55,10 +55,10 @@ func (s *MemoryStorage) InitDeployment(title string, author string, diff string,
 		Status: "running",
 		Diff:   diff,
 		Files:  files,
-		Events: []*modelsdb.Event{},
+		Events: []modelsdb.Event{},
 	}
-	s.deployments.Set(deployment.ID, &deployment)
-	return &deployment, nil
+	s.deployments.Set(deployment.ID, deployment)
+	return deployment, nil
 }
 
 // EndDeployment updates only the status of the deployment
@@ -69,6 +69,7 @@ func (s *MemoryStorage) EndDeployment(deploymentID uint64, status modelsdb.Deplo
 	}
 	deployment.Status = status
 	deployment.EndTime = time.Now()
+	s.deployments.Set(deploymentID, deployment)
 	return nil
 }
 
@@ -78,12 +79,14 @@ func (s *MemoryStorage) StoreEvent(event modelsdb.Event) error {
 	if !exists {
 		return fmt.Errorf("deployment doesn't exist %d", event.ObjectID)
 	}
-	deployment.Events = append(deployment.Events, &event)
+	deployment.Events = append(deployment.Events, event)
+	s.deployments.Set(event.ObjectID, deployment)
+
 	return nil
 }
 
 // GetEvents retreives all events related to the deploymentID
-func (s *MemoryStorage) GetEvents(objectID uint64) ([]*modelsdb.Event, error) {
+func (s *MemoryStorage) GetEvents(objectID uint64) ([]modelsdb.Event, error) {
 	deployment, exists := s.deployments.Get(objectID)
 	if !exists {
 		return nil, fmt.Errorf("deployment doesn't exist %d", objectID)

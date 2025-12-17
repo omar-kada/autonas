@@ -21,7 +21,7 @@ var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 type Patch struct {
 	Diff   string
 	Title  string
-	Files  []*modelsdb.FileDiff
+	Files  []modelsdb.FileDiff
 	Author string
 }
 
@@ -189,13 +189,13 @@ func getPatch(repo *git.Repository, branch string) (Patch, error) {
 	}
 
 	fileDiffs := splitByFile(patch.String())
-	var files []*modelsdb.FileDiff
+	var files []modelsdb.FileDiff
 	for _, fileDiff := range fileDiffs {
 		f, err := toFileDiff(fileDiff)
 		if err != nil {
 			return Patch{}, fmt.Errorf("error parsing file diff: %w", err)
 		}
-		files = append(files, &f)
+		files = append(files, f)
 	}
 	return Patch{
 		Title:  remoteCommit.Message,

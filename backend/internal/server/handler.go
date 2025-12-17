@@ -30,7 +30,7 @@ func (h *Handler) DeployementAPIList(_ context.Context, _ api.DeployementAPIList
 	return api.DeployementAPIList200JSONResponse(transformDeployments(deps)), err
 }
 
-func transformEvents(events []*modelsdb.Event) []api.Event {
+func transformEvents(events []modelsdb.Event) []api.Event {
 	var apiEvents []api.Event
 	for _, event := range events {
 		apiEvents = append(apiEvents, api.Event{
@@ -42,7 +42,7 @@ func transformEvents(events []*modelsdb.Event) []api.Event {
 	return apiEvents
 }
 
-func transformFiles(files []*modelsdb.FileDiff) []api.FileDiff {
+func transformFiles(files []modelsdb.FileDiff) []api.FileDiff {
 	var apiFiles []api.FileDiff
 	for _, file := range files {
 		apiFiles = append(apiFiles, api.FileDiff{
@@ -54,7 +54,7 @@ func transformFiles(files []*modelsdb.FileDiff) []api.FileDiff {
 	return apiFiles
 }
 
-func transformDeployment(dep *modelsdb.Deployment) api.Deployment {
+func transformDeployment(dep modelsdb.Deployment) api.Deployment {
 	return api.Deployment{
 		Author:  dep.Author,
 		Diff:    dep.Diff,
@@ -68,7 +68,7 @@ func transformDeployment(dep *modelsdb.Deployment) api.Deployment {
 	}
 }
 
-func transformDeployments(deps []*modelsdb.Deployment) []api.Deployment {
+func transformDeployments(deps []modelsdb.Deployment) []api.Deployment {
 	var apiDeps []api.Deployment
 	for _, dep := range deps {
 		apiDeps = append(apiDeps, transformDeployment(dep))

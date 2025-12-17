@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-//go:generate go run github.com/objectbox/objectbox-go/cmd/objectbox-gogen
-
 // DeploymentStatus defines model for Deployment.Status.
 type DeploymentStatus string
 
@@ -20,30 +18,31 @@ const (
 
 // Deployment defines a deployment
 type Deployment struct {
+	ID      uint64 `gorm:"primaryKey;autoIncrement:true"`
 	Author  string
 	Diff    string
-	Events  []*Event    `objectbox:"link"`
-	Files   []*FileDiff `objectbox:"link"`
-	ID      uint64      `objectbox:"id"`
-	Status  DeploymentStatus
-	Time    time.Time `objectbox:"date"`
-	EndTime time.Time `objectbox:"date"`
+	Status  DeploymentStatus `gorm:"type:varchar(32)"`
+	Time    time.Time        `gorm:"autoCreateTime"`
+	EndTime time.Time
 	Title   string
+	Files   []FileDiff `gorm:"foreignKey:DeploymentID;constraint:OnDelete:CASCADE;"`
+	Events  []Event    `gorm:"foreignKey:ObjectID;constraint:OnDelete:CASCADE;"`
 }
 
 // FileDiff defines model for FileDiff.
 type FileDiff struct {
-	ID      uint64 `objectbox:"id"`
-	Diff    string
-	NewFile string
-	OldFile string
+	ID           uint64 `gorm:"primaryKey;autoIncrement:true"`
+	Diff         string
+	NewFile      string
+	OldFile      string
+	DeploymentID uint64 `gorm:"index"`
 }
 
 // Event represent an event inside the deployment process
 type Event struct {
-	ID       uint64 `objectbox:"id"`
-	Level    slog.Level
+	ID       uint64     `gorm:"primaryKey;autoIncrement:true"`
+	Level    slog.Level `gorm:"type:int"`
 	Msg      string
-	Time     time.Time `objectbox:"date"`
-	ObjectID uint64
+	Time     time.Time `gorm:"autoCreateTime"`
+	ObjectID uint64    `gorm:"index"`
 }
