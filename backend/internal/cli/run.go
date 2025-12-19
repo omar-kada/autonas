@@ -3,6 +3,9 @@ package cli
 import (
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
+
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
@@ -11,8 +14,6 @@ import (
 	"omar-kada/autonas/internal/server"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"gorm.io/driver/sqlite"
@@ -84,7 +85,7 @@ func newRunCommand() *cobra.Command {
 
 func initGorm(dbFile string, addPerm os.FileMode) (*gorm.DB, error) {
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(dbFile), 0600|addPerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dbFile), 0o600|addPerm); err != nil {
 			return nil, err
 		}
 	}

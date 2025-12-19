@@ -5,13 +5,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"sync"
+
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"reflect"
-	"sync"
 )
 
 // DeploymentID is the key used to store deployment ID in context
