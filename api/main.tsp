@@ -18,6 +18,13 @@ model Event {
   level: "ERROR" | "INFO" | "DEBUG" | "WARN";
 }
 
+enum DeploymentStatus {
+  planned: "planned",
+  running: "running",
+  success: "success",
+  error: "error",
+}
+
 model FileDiff {
   oldFile: string;
   newFile: string;
@@ -32,7 +39,7 @@ model Deployment {
   endTime: utcDateTime;
   diff: string;
   files: FileDiff[];
-  status: "planned" | "running" | "success" | "error";
+  status: DeploymentStatus;
   events: Event[];
 }
 
@@ -57,29 +64,40 @@ model ContainerStatus {
   startedAt: utcDateTime;
 }
 
+model Stats {
+  error: int32;
+  success: int32;
+  nextDeploy: utcDateTime;
+  lastDeploy: utcDateTime;
+  lastStatus: DeploymentStatus;
+  author: string;
+}
+
 @error
 model Error {
   code: int32;
   message: string;
 }
 
-model AnalyzeResult {
-  id: string;
-  analysis: string;
-}
-
 @route("/deployment")
 @tag("Deployment")
 interface DeployementAPI {
-  /** List widgets */
+  /** List deployments */
   @get list(): Deployment[] | Error;
-  /** Read widgets */
+  /** Read deployments */
   @get read(@path id: string): Deployment | Error;
+}
+
+@route("/stats")
+@tag("Stats")
+interface StatsAPI {
+  /** Get deployment statistics */
+  @get get(@path days: int32): Stats | Error;
 }
 
 @route("/status")
 @tag("Status")
 interface StatusAPI {
-  /** List widgets */
+  /** Get current status */
   @get get(): StackStatus[] | Error;
 }

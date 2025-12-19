@@ -1,7 +1,7 @@
 import type { FileDiff } from '@/api/api';
 import { useTheme } from '@/hooks/theme-provider';
 import { DiffModeEnum, DiffView } from '@git-diff-view/react';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileDiff as DiffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
@@ -12,10 +12,16 @@ export function FileDiffView({ fileDiff, className }: { fileDiff: FileDiff; clas
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
       <CollapsibleTrigger
-        className={`w-full justify-between flex bg-accent p-2 cursor-pointer ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
+        className={`w-full  font-light justify-between items-center flex bg-accent p-2 cursor-pointer ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
       >
-        {fileDiff.oldFile + (fileDiff.oldFile !== fileDiff.newFile ? ` > ${fileDiff.newFile}` : '')}
-        <ChevronsUpDown />
+        <span className="flex items-center">
+          <DiffIcon className="size-4 mr-2"></DiffIcon>
+          <span className="font-light">
+            {fileDiff.oldFile +
+              (fileDiff.oldFile !== fileDiff.newFile ? ` > ${fileDiff.newFile}` : '')}
+          </span>
+        </span>
+        {isOpen ? <ChevronUp /> : <ChevronDown />}
       </CollapsibleTrigger>
       <CollapsibleContent>
         <DiffView<string>

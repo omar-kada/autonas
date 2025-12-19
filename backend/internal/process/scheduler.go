@@ -3,9 +3,11 @@ package process
 import (
 	"fmt"
 	"log/slog"
+	"sync"
+	"time"
+
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"sync"
 
 	"github.com/robfig/cron/v3"
 )
@@ -13,6 +15,7 @@ import (
 // ConfigScheduler is responsible for cron running a sheduled job with updated config
 type ConfigScheduler interface {
 	Schedule(fn func(cfg models.Config)) *cron.Cron
+	getNext() time.Time
 }
 
 // NewConfigScheduler creates a new ConfigScheduler that ensures only one cron job runs at a time.
@@ -61,4 +64,15 @@ func (a *AtomicConfigScheduler) generateAndRun(fn func(cfg models.Config)) model
 	}
 	fn(cfg)
 	return cfg
+}
+
+func (a *AtomicConfigScheduler) getNext() time.Time {
+	if a.cron == nil {
+		return time.Time{}
+	}
+	entries := a.cron.Entries()
+	if len(entries) == 0 {
+		return time.Time{}
+	}
+	return entries[0].Next
 }

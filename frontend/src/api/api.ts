@@ -26,11 +26,6 @@ import type {
   AxiosResponse
 } from 'axios';
 
-export interface AnalyzeResult {
-  id: string;
-  analysis: string;
-}
-
 export type ContainerStatusState = typeof ContainerStatusState[keyof typeof ContainerStatusState];
 
 
@@ -64,17 +59,6 @@ export interface ContainerStatus {
   startedAt: string;
 }
 
-export type DeploymentStatus = typeof DeploymentStatus[keyof typeof DeploymentStatus];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const DeploymentStatus = {
-  planned: 'planned',
-  running: 'running',
-  success: 'success',
-  error: 'error',
-} as const;
-
 export interface Deployment {
   id: string;
   title: string;
@@ -86,6 +70,17 @@ export interface Deployment {
   status: DeploymentStatus;
   events: Event[];
 }
+
+export type DeploymentStatus = typeof DeploymentStatus[keyof typeof DeploymentStatus];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const DeploymentStatus = {
+  planned: 'planned',
+  running: 'running',
+  success: 'success',
+  error: 'error',
+} as const;
 
 export interface Error {
   code: number;
@@ -121,6 +116,15 @@ export interface StackStatus {
   services: ContainerStatus[];
 }
 
+export interface Stats {
+  error: number;
+  success: number;
+  nextDeploy: string;
+  lastDeploy: string;
+  lastStatus: DeploymentStatus;
+  author: string;
+}
+
 export type Versions = typeof Versions[keyof typeof Versions];
 
 
@@ -130,7 +134,7 @@ export const Versions = {
 } as const;
 
 /**
- * List widgets
+ * List deployments
  */
 export const deployementAPIList = (
      options?: AxiosRequestConfig
@@ -218,7 +222,7 @@ export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployem
 
 
 /**
- * Read widgets
+ * Read deployments
  */
 export const deployementAPIRead = (
     id: string, options?: AxiosRequestConfig
@@ -306,7 +310,95 @@ export function useDeployementAPIRead<TData = Awaited<ReturnType<typeof deployem
 
 
 /**
- * List widgets
+ * Get deployment statistics
+ */
+export const statsAPIGet = (
+    days: number, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Stats>> => {
+    
+    
+    return axios.default.get(
+      `/api/stats/${days}`,options
+    );
+  }
+
+
+
+
+export const getStatsAPIGetQueryKey = (days?: number,) => {
+    return [
+    `/api/stats/${days}`
+    ] as const;
+    }
+
+    
+export const getStatsAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStatsAPIGetQueryKey(days);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof statsAPIGet>>> = ({ signal }) => statsAPIGet(days, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(days), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StatsAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof statsAPIGet>>>
+export type StatsAPIGetQueryError = AxiosError<Error>
+
+
+export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
+ days: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof statsAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof statsAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
+ days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof statsAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof statsAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
+ days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
+ days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStatsAPIGetQueryOptions(days,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get current status
  */
 export const statusAPIGet = (
      options?: AxiosRequestConfig

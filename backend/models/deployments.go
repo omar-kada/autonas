@@ -46,3 +46,13 @@ type Event struct {
 	Time     time.Time `gorm:"autoCreateTime"`
 	ObjectID uint64    `gorm:"index"`
 }
+
+// Stats defines model for Stats.
+type Stats struct {
+	Author     string
+	Error      int32
+	LastDeploy time.Time
+	LastStatus DeploymentStatus
+	NextDeploy time.Time
+	Success    int32
+}

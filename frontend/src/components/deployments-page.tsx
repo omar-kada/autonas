@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useParams } from 'react-router-dom';
-import { DeploymentDetail, DeploymentList } from './deployment';
+import { DeploymentDetail, DeploymentList, DeploymentStats } from './deployment';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -43,28 +43,32 @@ export function DeploymentsPage() {
     return <Navigate to={deployments[0].id}></Navigate>;
   }
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Sidebar (hidden on mobile if an item is selected) */}
+    <>
+      {/* Topbar (hidden on mobile if an item is selected) */}
+      <DeploymentStats className={showItem ? 'hidden sm:flex' : ''}></DeploymentStats>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar (hidden on mobile if an item is selected) */}
 
-      <aside
-        className={`w-full sm:w-75 sm:shrink-0 border-r bg-muted/30 ${showItem ? 'hidden sm:block' : ''}`}
-      >
-        <ScrollArea className="h-full m-2">
-          <DeploymentList deployments={deployments} OnSelect={handleSelect} />
-        </ScrollArea>
-      </aside>
+        <aside
+          className={`w-full sm:w-75 sm:shrink-0 border rounded-lg m-2 bg-muted/30 pb-4 ${showItem ? 'hidden sm:block' : ''}`}
+        >
+          <ScrollArea className="h-full m-2">
+            <DeploymentList deployments={deployments} OnSelect={handleSelect} />
+          </ScrollArea>
+        </aside>
 
-      {/* Main content (hidden on mobile until item is selected) */}
-      <main className={`flex-col ${!showItem ? 'hidden sm:block sm:flex-1' : 'w-full'}`}>
-        {/* Mobile back button (only shows when content is open) */}
-        <Button variant="ghost" className="sm:hidden mx-4 mt-2" onClick={handleBack}>
-          <ArrowLeft className="h-5 w-5" /> {t('BACK')}
-        </Button>
+        {/* Main content (hidden on mobile until item is selected) */}
+        <main className={`flex-col ${!showItem ? 'hidden sm:block sm:flex-1' : 'w-full'}`}>
+          {/* Mobile back button (only shows when content is open) */}
+          <Button variant="ghost" className="sm:hidden mx-4 mt-2" onClick={handleBack}>
+            <ArrowLeft className="h-5 w-5" /> {t('BACK')}
+          </Button>
 
-        <ScrollArea className=" p-6 overflow-auto w-full h-full">
-          <DeploymentDetail id={id}></DeploymentDetail>
-        </ScrollArea>
-      </main>
-    </div>
+          <ScrollArea className=" p-6 overflow-auto w-full h-full">
+            <DeploymentDetail id={id}></DeploymentDetail>
+          </ScrollArea>
+        </main>
+      </div>
+    </>
   );
 }

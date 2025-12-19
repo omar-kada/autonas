@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"omar-kada/autonas/models"
 	"time"
+
+	"omar-kada/autonas/models"
 
 	"github.com/elliotchance/orderedmap/v3"
 )
@@ -38,6 +39,14 @@ func (s *MemoryStorage) GetDeployment(id uint64) (models.Deployment, error) {
 		return models.Deployment{}, fmt.Errorf("deployment doesn't exist %d", id)
 	}
 	return deployment, nil
+}
+
+// GetLastDeployment returns the most recent deployment or an error if none exist
+func (s *MemoryStorage) GetLastDeployment() (models.Deployment, error) {
+	for _, deployment := range s.deployments.AllFromBack() {
+		return deployment, nil
+	}
+	return models.Deployment{}, fmt.Errorf("no deployments available")
 }
 
 func newID() uint64 {
