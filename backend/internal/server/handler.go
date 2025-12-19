@@ -121,7 +121,6 @@ func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObjec
 
 // StatsAPIGet implements the StrictServerInterface interface
 func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObject) (api.StatsAPIGetResponseObject, error) {
-
 	stats, err := h.processSvc.GetCurrentStats(int(req.Days))
 	if err != nil {
 		return nil, err
