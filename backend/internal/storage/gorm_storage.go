@@ -25,7 +25,7 @@ func NewGormStorage(db *gorm.DB) (Storage, error) {
 // GetDeployments retrieves all deployments with their associated files and events
 func (s *gormStorage) GetDeployments() ([]models.Deployment, error) {
 	var deps []models.Deployment
-	if err := s.db.Preload("Files").Preload("Events").Find(&deps).Error; err != nil {
+	if err := s.db.Preload("Files").Preload("Events").Order("Time desc").Limit(20).Find(&deps).Error; err != nil {
 		return nil, err
 	}
 	return deps, nil
@@ -69,6 +69,15 @@ func (s *gormStorage) EndDeployment(deploymentID uint64, status models.Deploymen
 	dep.Status = status
 	dep.EndTime = time.Now()
 	return s.db.Save(&dep).Error
+}
+
+// GetLastDeployment returns the most recent deployment based on Time (or ID) descending
+func (s *gormStorage) GetLastDeployment() (models.Deployment, error) {
+	var dep models.Deployment
+	if err := s.db.Preload("Files").Preload("Events").Order("time DESC").First(&dep).Error; err != nil {
+		return models.Deployment{}, err
+	}
+	return dep, nil
 }
 
 // StoreEvent creates a new event and associates it with an existing deployment

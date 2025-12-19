@@ -119,6 +119,25 @@ func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObjec
 	return api.StatusAPIGet200JSONResponse(response), nil
 }
 
+// StatsAPIGet implements the StrictServerInterface interface
+func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObject) (api.StatsAPIGetResponseObject, error) {
+
+	stats, err := h.processSvc.GetCurrentStats(int(req.Days))
+	if err != nil {
+		return nil, err
+	}
+
+	response := api.Stats{
+		Author:     stats.Author,
+		Error:      stats.Error,
+		Success:    stats.Success,
+		LastDeploy: stats.LastDeploy,
+		NextDeploy: stats.NextDeploy,
+		LastStatus: api.DeploymentStatus(stats.LastStatus),
+	}
+	return api.StatsAPIGet200JSONResponse(response), nil
+}
+
 /*
 // CreateHTTPHandler creates an HTTP handler for the API
 func (h *Handler) CreateHTTPHandler() http.Handler {

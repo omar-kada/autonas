@@ -127,7 +127,8 @@ func doRun(params RunParams) error {
 		inspector,
 		git.NewFetcher(params.GetAddWritePerm()),
 		store,
-		dispatcher)
+		dispatcher,
+		scheduler)
 	go func() {
 		scheduler.Schedule(func(cfg models.Config) {
 			err := service.SyncDeployment(cfg)

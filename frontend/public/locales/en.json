@@ -7,5 +7,12 @@
   "LOGS": "Logs",
   "BACK": "Back",
   "TOGGLE_THEME": "Toggle Theme",
-  "JUST_NOW": "Just now"
+  "JUST_NOW": "Just now",
+  "IN_FEW_SECONDS": "In a few seconds",
+  "AUTO_SYNC": "Auto sync",
+  "SYNC_NOW": "Sync now",
+  "DIFF": "Diff",
+  "LAST_X_DAYS": "Last {{days}} days",
+  "UPDATED_FILES": "Updated files",
+  "EVENTS_LOG": "Events log"
 }

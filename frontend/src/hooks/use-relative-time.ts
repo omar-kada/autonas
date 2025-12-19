@@ -12,7 +12,11 @@ export function humanizeFromNow(
   const diffMs = target - Date.now();
 
   if (Math.abs(diffMs) < 60_000) {
-    return t('JUST_NOW');
+    if (diffMs < 0) {
+      return t('JUST_NOW');
+    } else {
+      return t('IN_FEW_SECONDS');
+    }
   }
 
   return humanizeDurationMs(diffMs, locale);

@@ -6,11 +6,12 @@ import { cn } from '@/lib/utils';
 export function DeploymentStatusBadge(props: {
   status: DeploymentStatus;
   iconOnly?: boolean;
+  label?: string;
   className?: string;
 }) {
   return (
     <Badge className={cn(colorForStatus(props.status), props.className)}>
-      {iconForStatus(props.status)} {!props.iconOnly && (props.status ?? 'unknown')}
+      {iconForStatus(props.status)} {!props.iconOnly && (props.label ?? props.status ?? 'unknown')}
     </Badge>
   );
 }

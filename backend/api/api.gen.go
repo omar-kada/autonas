@@ -59,12 +59,6 @@ const (
 	VersionsN10 Versions = "1.0"
 )
 
-// AnalyzeResult defines model for AnalyzeResult.
-type AnalyzeResult struct {
-	Analysis string `json:"analysis"`
-	Id       string `json:"id"`
-}
-
 // ContainerStatus defines model for ContainerStatus.
 type ContainerStatus struct {
 	ContainerId string                `json:"containerId"`
@@ -93,7 +87,7 @@ type Deployment struct {
 	Title   string           `json:"title"`
 }
 
-// DeploymentStatus defines model for Deployment.Status.
+// DeploymentStatus defines model for DeploymentStatus.
 type DeploymentStatus string
 
 // Error defines model for Error.
@@ -124,6 +118,16 @@ type StackStatus struct {
 	Name     string            `json:"name"`
 	Services []ContainerStatus `json:"services"`
 	StackId  string            `json:"stackId"`
+}
+
+// Stats defines model for Stats.
+type Stats struct {
+	Author     string           `json:"author"`
+	Error      int32            `json:"error"`
+	LastDeploy time.Time        `json:"lastDeploy"`
+	LastStatus DeploymentStatus `json:"lastStatus"`
+	NextDeploy time.Time        `json:"nextDeploy"`
+	Success    int32            `json:"success"`
 }
 
 // Versions defines model for Versions.
@@ -208,6 +212,9 @@ type ClientInterface interface {
 	// DeployementAPIRead request
 	DeployementAPIRead(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// StatsAPIGet request
+	StatsAPIGet(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// StatusAPIGet request
 	StatusAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -226,6 +233,18 @@ func (c *Client) DeployementAPIList(ctx context.Context, reqEditors ...RequestEd
 
 func (c *Client) DeployementAPIRead(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeployementAPIReadRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) StatsAPIGet(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStatsAPIGetRequest(c.Server, days)
 	if err != nil {
 		return nil, err
 	}
@@ -292,6 +311,40 @@ func NewDeployementAPIReadRequest(server string, id string) (*http.Request, erro
 	}
 
 	operationPath := fmt.Sprintf("/api/deployment/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewStatsAPIGetRequest generates requests for StatsAPIGet
+func NewStatsAPIGetRequest(server string, days int32) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "days", runtime.ParamLocationPath, days)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/stats/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -385,6 +438,9 @@ type ClientWithResponsesInterface interface {
 	// DeployementAPIReadWithResponse request
 	DeployementAPIReadWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeployementAPIReadResponse, error)
 
+	// StatsAPIGetWithResponse request
+	StatsAPIGetWithResponse(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*StatsAPIGetResponse, error)
+
 	// StatusAPIGetWithResponse request
 	StatusAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StatusAPIGetResponse, error)
 }
@@ -435,6 +491,29 @@ func (r DeployementAPIReadResponse) StatusCode() int {
 	return 0
 }
 
+type StatsAPIGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Stats
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r StatsAPIGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r StatsAPIGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type StatusAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -474,6 +553,15 @@ func (c *ClientWithResponses) DeployementAPIReadWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseDeployementAPIReadResponse(rsp)
+}
+
+// StatsAPIGetWithResponse request returning *StatsAPIGetResponse
+func (c *ClientWithResponses) StatsAPIGetWithResponse(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*StatsAPIGetResponse, error) {
+	rsp, err := c.StatsAPIGet(ctx, days, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseStatsAPIGetResponse(rsp)
 }
 
 // StatusAPIGetWithResponse request returning *StatusAPIGetResponse
@@ -551,6 +639,39 @@ func ParseDeployementAPIReadResponse(rsp *http.Response) (*DeployementAPIReadRes
 	return response, nil
 }
 
+// ParseStatsAPIGetResponse parses an HTTP response from a StatsAPIGetWithResponse call
+func ParseStatsAPIGetResponse(rsp *http.Response) (*StatsAPIGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &StatsAPIGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Stats
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseStatusAPIGetResponse parses an HTTP response from a StatusAPIGetWithResponse call
 func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -586,11 +707,15 @@ func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+
 	// (GET /api/deployment)
 	DeployementAPIList(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/deployment/{id})
 	DeployementAPIRead(w http.ResponseWriter, r *http.Request, id string)
+
+	// (GET /api/stats/{days})
+	StatsAPIGet(w http.ResponseWriter, r *http.Request, days int32)
 
 	// (GET /api/status)
 	StatusAPIGet(w http.ResponseWriter, r *http.Request)
@@ -607,6 +732,7 @@ type MiddlewareFunc func(http.Handler) http.Handler
 
 // DeployementAPIList operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *http.Request) {
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployementAPIList(w, r)
 	}))
@@ -620,6 +746,7 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 
 // DeployementAPIRead operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *http.Request) {
+
 	var err error
 
 	// ------------- Path parameter "id" -------------
@@ -642,8 +769,34 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// StatsAPIGet operation middleware
+func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "days" -------------
+	var days int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "days", r.PathValue("days"), &days, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "days", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StatsAPIGet(w, r, days)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // StatusAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) StatusAPIGet(w http.ResponseWriter, r *http.Request) {
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.StatusAPIGet(w, r)
 	}))
@@ -777,12 +930,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment", wrapper.DeployementAPIList)
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
+	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
 
 	return m
 }
 
-type DeployementAPIListRequestObject struct{}
+type DeployementAPIListRequestObject struct {
+}
 
 type DeployementAPIListResponseObject interface {
 	VisitDeployementAPIListResponse(w http.ResponseWriter) error
@@ -838,7 +993,37 @@ func (response DeployementAPIReaddefaultJSONResponse) VisitDeployementAPIReadRes
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type StatusAPIGetRequestObject struct{}
+type StatsAPIGetRequestObject struct {
+	Days int32 `json:"days"`
+}
+
+type StatsAPIGetResponseObject interface {
+	VisitStatsAPIGetResponse(w http.ResponseWriter) error
+}
+
+type StatsAPIGet200JSONResponse Stats
+
+func (response StatsAPIGet200JSONResponse) VisitStatsAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StatsAPIGetdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response StatsAPIGetdefaultJSONResponse) VisitStatsAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type StatusAPIGetRequestObject struct {
+}
 
 type StatusAPIGetResponseObject interface {
 	VisitStatusAPIGetResponse(w http.ResponseWriter) error
@@ -867,20 +1052,22 @@ func (response StatusAPIGetdefaultJSONResponse) VisitStatusAPIGetResponse(w http
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+
 	// (GET /api/deployment)
 	DeployementAPIList(ctx context.Context, request DeployementAPIListRequestObject) (DeployementAPIListResponseObject, error)
 
 	// (GET /api/deployment/{id})
 	DeployementAPIRead(ctx context.Context, request DeployementAPIReadRequestObject) (DeployementAPIReadResponseObject, error)
 
+	// (GET /api/stats/{days})
+	StatsAPIGet(ctx context.Context, request StatsAPIGetRequestObject) (StatsAPIGetResponseObject, error)
+
 	// (GET /api/status)
 	StatusAPIGet(ctx context.Context, request StatusAPIGetRequestObject) (StatusAPIGetResponseObject, error)
 }
 
-type (
-	StrictHandlerFunc    = strictnethttp.StrictHTTPHandlerFunc
-	StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
-)
+type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
+type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
 
 type StrictHTTPServerOptions struct {
 	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
@@ -951,6 +1138,32 @@ func (sh *strictHandler) DeployementAPIRead(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeployementAPIReadResponseObject); ok {
 		if err := validResponse.VisitDeployementAPIReadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StatsAPIGet operation middleware
+func (sh *strictHandler) StatsAPIGet(w http.ResponseWriter, r *http.Request, days int32) {
+	var request StatsAPIGetRequestObject
+
+	request.Days = days
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StatsAPIGet(ctx, request.(StatsAPIGetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StatsAPIGet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StatsAPIGetResponseObject); ok {
+		if err := validResponse.VisitStatsAPIGetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -40,6 +40,14 @@ func (s *MemoryStorage) GetDeployment(id uint64) (models.Deployment, error) {
 	return deployment, nil
 }
 
+// GetLastDeployment returns the most recent deployment or an error if none exist
+func (s *MemoryStorage) GetLastDeployment() (models.Deployment, error) {
+	for _, deployment := range s.deployments.AllFromBack() {
+		return deployment, nil
+	}
+	return models.Deployment{}, fmt.Errorf("no deployments available")
+}
+
 func newID() uint64 {
 	id := uint64(time.Now().UnixNano())
 	return id
