@@ -136,7 +136,7 @@ func (f *fetcher) DiffWithRemote() (Patch, error) {
 		return Patch{}, err
 	}
 
-	return f.getPatch(repo, f.cfg.GetBranch())
+	return f.getPatch(repo)
 }
 
 func (f *fetcher) reset(repo *git.Repository, branch string, hash string) error {
@@ -204,7 +204,7 @@ func branchExists(repo *git.Repository, branch string) bool {
 	return branchErr == nil
 }
 
-func (f *fetcher) getPatch(repo *git.Repository, branch string) (Patch, error) {
+func (f *fetcher) getPatch(repo *git.Repository) (Patch, error) {
 	// Get local HEAD commit
 	localCommit, err := getLocalHeadCommit(repo)
 	if err != nil {

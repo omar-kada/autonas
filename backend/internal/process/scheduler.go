@@ -60,6 +60,8 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 	return nil, fmt.Errorf("couldn't schedule job, no cron period is defined")
 }
 
+// GetNext returns the next scheduled time of the cron job.
+// If no cron job is scheduled or no entries are present, it returns the zero time.
 func (a *AtomicConfigScheduler) GetNext() time.Time {
 	if a.cron == nil {
 		return time.Time{}
