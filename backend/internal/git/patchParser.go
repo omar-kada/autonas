@@ -2,8 +2,9 @@ package git
 
 import (
 	"fmt"
-	"omar-kada/autonas/models"
 	"strings"
+
+	"omar-kada/autonas/models"
 
 	gitObject "github.com/go-git/go-git/v6/plumbing/object"
 )

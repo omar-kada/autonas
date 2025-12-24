@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"omar-kada/autonas/internal/docker"
-	"omar-kada/autonas/internal/events"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"omar-kada/autonas/internal/docker"
+	"omar-kada/autonas/internal/events"
 
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/docker/api/types/container"
@@ -37,11 +38,11 @@ func TestFileGeneration(t *testing.T) {
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
 	configDir := filepath.Join(baseDir, "config")
-	err = os.Mkdir(servicesDir, 0750)
+	err = os.Mkdir(servicesDir, 0o750)
 	assert.NoError(t, err)
-	err = os.Mkdir(dataDir, 0750)
+	err = os.Mkdir(dataDir, 0o750)
 	assert.NoError(t, err)
-	err = os.Mkdir(configDir, 0750)
+	err = os.Mkdir(configDir, 0o750)
 	assert.NoError(t, err)
 
 	err = os.WriteFile(filepath.Join(configDir, "config.yaml"),
@@ -54,7 +55,7 @@ func TestFileGeneration(t *testing.T) {
 			"services:",
 			"  homepage:",
 			"    port : 12345",
-		}, "\n")), 0750)
+		}, "\n")), 0o750)
 	assert.NoError(t, err, "error while creating config file")
 
 	// When

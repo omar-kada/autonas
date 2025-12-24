@@ -4,10 +4,11 @@ package git
 import (
 	"fmt"
 	"log/slog"
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
+
+	"omar-kada/autonas/internal/events"
+	"omar-kada/autonas/models"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
@@ -104,7 +105,6 @@ func (f *fetcher) PullBranch(branch string, commitHash string) error {
 }
 
 func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
-
 	if !repoExists(f.repoPath) {
 		repo, err = git.PlainClone(f.repoPath, &git.CloneOptions{
 			URL:           f.cfg.Repo,
@@ -140,7 +140,6 @@ func (f *fetcher) DiffWithRemote() (Patch, error) {
 }
 
 func (f *fetcher) reset(repo *git.Repository, branch string, hash string) error {
-
 	wt, err := repo.Worktree()
 	if err != nil {
 		return fmt.Errorf("error while getting worktree: %w", err)

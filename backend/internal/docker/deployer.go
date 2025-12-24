@@ -4,12 +4,13 @@ package docker
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"slices"
+
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/models"
-	"path/filepath"
-	"slices"
 )
 
 // Deployer defines methods for managing containerized services.

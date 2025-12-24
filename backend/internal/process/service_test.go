@@ -3,13 +3,14 @@ package process
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"testing"
-	"time"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/robfig/cron/v3"
@@ -51,7 +52,6 @@ func (m *Mocker) GetNext() time.Time {
 }
 
 func (m *Mocker) Schedule(fn func()) (*cron.Cron, error) {
-
 	args := m.Called(fn)
 	return args.Get(0).(*cron.Cron), args.Error(1)
 }
@@ -60,18 +60,22 @@ func (m *Mocker) ClearRepo() error {
 	args := m.Called()
 	return args.Error(0)
 }
+
 func (m *Mocker) CheckoutBranch(branch string) error {
 	args := m.Called(branch)
 	return args.Error(0)
 }
+
 func (m *Mocker) PullBranch(branch string, commitSHA string) error {
 	args := m.Called(branch, commitSHA)
 	return args.Error(0)
 }
+
 func (m *Mocker) WithConfig(cfg models.Config) git.Fetcher {
 	args := m.Called(cfg)
 	return args.Get(0).(git.Fetcher)
 }
+
 func (m *Mocker) DiffWithRemote() (git.Patch, error) {
 	args := m.Called()
 	return args.Get(0).(git.Patch), args.Error(1)
@@ -102,7 +106,6 @@ var (
 )
 
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
-
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
 	configStore.Update(currentCfg)
 	svc := NewService(
@@ -168,7 +171,6 @@ func TestSync_Success(t *testing.T) {
 	assert.Equal(t, models.DeploymentStatusSuccess, newDep.Status)
 
 	mocker.AssertExpectations(t)
-
 }
 
 func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
@@ -210,7 +212,6 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 }
 
 func TestSync_ErrorsOnPullbranch(t *testing.T) {
-
 	mocker := &Mocker{}
 	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
@@ -269,7 +270,6 @@ func TestSync_Errors(t *testing.T) {
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, models.DeploymentStatusError, newDep.Status)
-
 }
 
 func TestGetCurrentStats_NoDeployments(t *testing.T) {

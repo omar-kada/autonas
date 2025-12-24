@@ -22,6 +22,7 @@ var diffFile1 = strings.Join(
 	},
 	"\n",
 )
+
 var diffFile2 = strings.Join(
 	[]string{
 		"diff --git a/another_file.txt b/another_file.txt",

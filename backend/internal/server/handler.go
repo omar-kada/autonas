@@ -93,7 +93,6 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 
 // DeployementAPISync implements the StrictServerInterface interface
 func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
-
 	dep, err := h.processSvc.SyncDeployment()
 	if err != nil {
 		slog.Error(err.Error())
