@@ -50,7 +50,7 @@ func TestFileGeneration(t *testing.T) {
 			"SERVICES_PATH: " + servicesDir,
 			"DATA_PATH: " + dataDir,
 			"repo: \"https://github.com/omar-kada/autonas-config\"",
-			"cron: \"*/10 * * * *\"",
+			"cron: \"* * * * *\"",
 			"services:",
 			"  homepage:",
 			"    port : 12345",
@@ -87,7 +87,7 @@ func TestFileGeneration(t *testing.T) {
 	// Wait for file to be generated (polling)
 	targetFile := filepath.Join(servicesDir, "homepage", ".env")
 
-	ok := waitForFile(targetFile, 1*time.Minute)
+	ok := waitForFile(targetFile, 2*time.Minute)
 	if !ok {
 		t.Fatalf("expected file was not generated: %s", targetFile)
 	}

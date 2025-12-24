@@ -116,12 +116,12 @@ func (d deployer) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models
 	enabledServiecs := cfg.GetEnabledServices()
 
 	if errs := d.copyServicesFiles(enabledServiecs, params); len(errs) > 0 {
-		return fmt.Errorf("error while copying services files : %v", errs)
+		return fmt.Errorf("error(s) while copying services files : %v", errs)
 	}
 
 	d.dispatcher.Debug(d.ctx, "deploying enabled services", "services", enabledServiecs)
 	if errs := d.DeployServices(cfg, params.ServicesDir); len(errs) > 0 {
-		return fmt.Errorf("error while deploying services : %v", errs)
+		return fmt.Errorf("error(s) while deploying services : %v", errs)
 	}
 	return nil
 }

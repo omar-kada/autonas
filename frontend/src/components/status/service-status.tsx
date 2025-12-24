@@ -23,7 +23,7 @@ export function ServiceStatus(props: {
       </ItemMedia>
       <ItemContent>
         <ItemTitle>{props.serviceName}</ItemTitle>
-        <ItemDescription>
+        <ItemDescription className="line-clamp-none">
           <HumanTime time={time} />
           {props.serviceContainers.map((item) => (
             <ContainerStatusBadge

@@ -126,17 +126,21 @@ func doRun(params RunParams) error {
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher),
 		inspector,
-		git.NewFetcher(params.GetAddWritePerm()),
+		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir()),
 		store,
+		configStore,
 		dispatcher,
 		scheduler)
 	go func() {
-		scheduler.Schedule(func(cfg models.Config) {
-			err := service.SyncDeployment(cfg)
+		_, err = scheduler.Schedule(func() {
+			_, err := service.SyncDeployment()
 			if err != nil {
 				slog.Error(err.Error())
 			}
 		})
+		if err != nil {
+			slog.Warn(err.Error())
+		}
 	}()
 	server := server.NewServer(store, service)
 	return server.Serve(params.Port)

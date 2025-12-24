@@ -1,4 +1,5 @@
-import { useDeployementAPIList } from '@/api/api';
+import { getDeployementAPIListQueryOptions, useDeployementAPIList } from '@/api/api';
+import type { QueryClient } from '@tanstack/react-query';
 
 export const useDeployments = () => {
   const { data, isLoading, error } = useDeployementAPIList({
@@ -9,7 +10,11 @@ export const useDeployments = () => {
 
   return {
     deployments: data?.data ?? [],
-    isLoading,
+    isLoading: isLoading,
     error,
   };
 };
+
+export function refetchDeployments(queryClient: QueryClient) {
+  queryClient.refetchQueries(getDeployementAPIListQueryOptions());
+}

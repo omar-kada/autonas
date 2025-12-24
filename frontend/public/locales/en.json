@@ -14,5 +14,10 @@
   "DIFF": "Diff",
   "LAST_X_DAYS": "Last {{days}} days",
   "UPDATED_FILES": "Updated files",
-  "EVENTS_LOG": "Events log"
+  "EVENTS_LOG": "Events log",
+  "DIFF_BETWEEN_DEPLOYED_AND_REMOTE": "New changes from git repo",
+  "SYNCHRONIZING": "Synchronizing",
+  "SYNC_SUCCESS": "Success, Deployment is running",
+  "SYNC_NO_CHANGES": "No changes to synchronize",
+  "SYNC_ERROR": "Error while Synchronizing"
 }

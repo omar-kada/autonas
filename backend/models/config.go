@@ -40,3 +40,10 @@ func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, stri
 func (cfg Config) GetEnabledServices() []string {
 	return slices.Collect(maps.Keys(cfg.Services))
 }
+
+func (cfg Config) GetBranch() string {
+	if cfg.Branch != "" {
+		return cfg.Branch
+	}
+	return "main"
+}

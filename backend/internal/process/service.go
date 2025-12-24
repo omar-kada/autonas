@@ -13,6 +13,8 @@ import (
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+
+	"github.com/moby/moby/api/types/container"
 )
 
 // DeploymentID is the key used to store deployment ID in context
@@ -20,8 +22,9 @@ const DeploymentID = "deployment_id"
 
 // Service abstracts service deployment operations
 type Service interface {
-	SyncDeployment(cfg models.Config) error
+	SyncDeployment() (models.Deployment, error)
 	GetCurrentStats(days int) (models.Stats, error)
+	GetDiff() ([]models.FileDiff, error)
 	GetManagedStacks() (map[string][]models.ContainerSummary, error)
 }
 
@@ -32,17 +35,21 @@ func NewService(
 	containersInspector docker.Inspector,
 	fetcher git.Fetcher,
 	store storage.DeploymentStorage,
+	configStore storage.ConfigStore,
 	dispatcher events.Dispatcher,
 	scheduler ConfigScheduler,
 ) Service {
+	cfg, _ := configStore.Get()
 	return &service{
 		containersDeployer:  containersDeployer,
 		containersInspector: containersInspector,
 		fetcher:             fetcher,
 		store:               store,
+		configStore:         configStore,
 		dispatcher:          dispatcher,
 		params:              deployParams,
 		scheduler:           scheduler,
+		currentCfg:          cfg,
 	}
 }
 
@@ -52,6 +59,7 @@ type service struct {
 	containersInspector docker.Inspector
 	fetcher             git.Fetcher
 	store               storage.DeploymentStorage
+	configStore         storage.ConfigStore
 	dispatcher          events.Dispatcher
 	scheduler           ConfigScheduler
 	params              models.DeploymentParams
@@ -60,28 +68,28 @@ type service struct {
 	mu         sync.Mutex
 }
 
-func (s *service) SyncDeployment(cfg models.Config) (err error) {
+func (s *service) SyncDeployment() (models.Deployment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	cfg, err := s.configStore.Get()
+	if err != nil {
+		return models.Deployment{}, fmt.Errorf("error getting current config:  %w", err)
+	}
+	fetcher := s.fetcher.WithConfig(cfg)
 	slog.Info("deploying from " + cfg.Repo + "/" + cfg.Branch)
 
-	var syncErr error
-	var patch git.Patch
-	if s.currentCfg.Repo == "" || cfg.Repo == s.currentCfg.Repo {
-		patch, syncErr = s.fetcher.Fetch(cfg.Repo, cfg.Branch, s.params.GetRepoDir())
-	} else {
-		patch, syncErr = s.fetcher.ReFetch(cfg.Repo, cfg.Branch, s.params.GetRepoDir())
-	}
+	patch, syncErr := fetcher.DiffWithRemote()
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
-		return fmt.Errorf("error getting config repo:  %w", syncErr)
+		return models.Deployment{}, fmt.Errorf("error getting config repo:  %w", syncErr)
 	}
 
 	// check if the config changed from last run
-	if patch.Diff == "" && reflect.DeepEqual(s.currentCfg, cfg) {
-		slog.Info("Configuration and repository are up to date. No changes detected.")
-		return nil
+	if patch.Diff == "" && reflect.DeepEqual(s.currentCfg, cfg) && s.areStacksHealthy(cfg) {
+		slog.Info("Configuration and repository are up to date. No changes detected.",
+			"oldConfig", s.currentCfg, "newConfig", cfg, "diff", patch.Diff)
+		return models.Deployment{}, nil
 	}
 	title := patch.Title
 	if title == "" {
@@ -90,27 +98,63 @@ func (s *service) SyncDeployment(cfg models.Config) (err error) {
 
 	deployment, err := s.store.InitDeployment(title, patch.Author, patch.Diff, patch.Files)
 	if err != nil {
-		return err
+		return deployment, err
 	}
-	ctx := context.WithValue(context.Background(), events.ObjectID, deployment.ID)
-
-	defer func() {
+	go func() {
+		ctx := context.WithValue(context.Background(), events.ObjectID, deployment.ID)
+		err := fetcher.PullBranch("to_be_deployed", "")
 		if err != nil {
-			s.dispatcher.Error(ctx, fmt.Sprintf("Deployment failed %v", err))
-			s.store.EndDeployment(deployment.ID, "error")
-		} else {
-			s.dispatcher.Info(ctx, "Deployment done successfully")
-			err = s.store.EndDeployment(deployment.ID, "success")
+			s.updateDeploymentStatus(ctx, deployment, err)
+			return
 		}
+		s.dispatcher.Info(ctx, "Pulled new changes into working branch")
+
+		err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(s.currentCfg, cfg, s.params)
+		if err != nil {
+			s.updateDeploymentStatus(ctx, deployment, err)
+			return
+		}
+		s.dispatcher.Info(ctx, "Deployed changes to running stacks")
+
+		err = fetcher.PullBranch(cfg.Branch, patch.CommitHash)
+		s.updateDeploymentStatus(ctx, deployment, err)
+
+		s.currentCfg = cfg
 	}()
 
-	err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(s.currentCfg, cfg, s.params)
-	if err != nil {
-		return fmt.Errorf("error deploying services: %w", err)
-	}
+	return deployment, nil
+}
 
-	s.currentCfg = cfg
-	return nil
+func (s *service) areStacksHealthy(cfg models.Config) bool {
+	runningStacks, err := s.containersInspector.GetManagedStacks(s.params.ServicesDir)
+	if err != nil {
+		return false
+	}
+	enabledServices := cfg.GetEnabledServices()
+	for _, service := range enabledServices {
+		serviceContainers := runningStacks[service]
+		if len(serviceContainers) == 0 {
+			return false
+		}
+		for _, ctr := range serviceContainers {
+			if ctr.Health == container.Unhealthy {
+				return false
+			}
+		}
+	}
+	slog.Info("services are healthy ", "stacks", runningStacks)
+	return true
+}
+
+func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.Deployment, err error) {
+	if err != nil {
+		s.dispatcher.Error(ctx, fmt.Sprintf("Deployment failed %v", err))
+		slog.Error(err.Error())
+		s.store.EndDeployment(deployment.ID, "error")
+	} else {
+		s.dispatcher.Info(ctx, "Deployment done successfully")
+		s.store.EndDeployment(deployment.ID, "success")
+	}
 }
 
 // GetManagedStacks returns a map of all containers managed by the tool
@@ -139,6 +183,26 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 		stats.LastDeploy = last.Time
 		stats.LastStatus = last.Status
 	}
-	stats.NextDeploy = s.scheduler.getNext()
+	stats.NextDeploy = s.scheduler.GetNext()
 	return stats, nil
+}
+
+// GetDiff returns the changed files between what's deployed and the repo
+func (s *service) GetDiff() ([]models.FileDiff, error) {
+	cfg, err := s.getConfig()
+	if err != nil {
+		return []models.FileDiff{}, fmt.Errorf("error while getting config : %w", err)
+	}
+	patch, err := s.fetcher.WithConfig(cfg).DiffWithRemote()
+	if err != nil {
+		return []models.FileDiff{}, err
+	}
+	return patch.Files, nil
+}
+
+func (s *service) getConfig() (models.Config, error) {
+	if s.currentCfg.Repo != "" {
+		return s.currentCfg, nil
+	}
+	return s.configStore.Get()
 }

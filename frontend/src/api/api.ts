@@ -5,16 +5,20 @@
  * OpenAPI spec version: 1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -25,6 +29,17 @@ import type {
   AxiosRequestConfig,
   AxiosResponse
 } from 'axios';
+
+export type ContainerHealth = typeof ContainerHealth[keyof typeof ContainerHealth];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ContainerHealth = {
+  healthy: 'healthy',
+  unhealthy: 'unhealthy',
+  starting: 'starting',
+  none: 'none',
+} as const;
 
 export type ContainerStatusState = typeof ContainerStatusState[keyof typeof ContainerStatusState];
 
@@ -121,7 +136,8 @@ export interface Stats {
   success: number;
   nextDeploy: string;
   lastDeploy: string;
-  lastStatus: DeploymentStatus;
+  status: DeploymentStatus;
+  health: ContainerHealth;
   author: string;
 }
 
@@ -222,6 +238,64 @@ export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployem
 
 
 /**
+ * Sync and deploy if changes
+ */
+export const deployementAPISync = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Deployment>> => {
+    
+    
+    return axios.default.post(
+      `/api/deployment`,undefined,options
+    );
+  }
+
+
+
+export const getDeployementAPISyncMutationOptions = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deployementAPISync>>, TError,void, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deployementAPISync>>, TError,void, TContext> => {
+
+const mutationKey = ['deployementAPISync'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deployementAPISync>>, void> = () => {
+          
+
+          return  deployementAPISync(axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeployementAPISyncMutationResult = NonNullable<Awaited<ReturnType<typeof deployementAPISync>>>
+    
+    export type DeployementAPISyncMutationError = AxiosError<Error>
+
+    export const useDeployementAPISync = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deployementAPISync>>, TError,void, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deployementAPISync>>,
+        TError,
+        void,
+        TContext
+      > => {
+
+      const mutationOptions = getDeployementAPISyncMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
  * Read deployments
  */
 export const deployementAPIRead = (
@@ -297,6 +371,94 @@ export function useDeployementAPIRead<TData = Awaited<ReturnType<typeof deployem
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDeployementAPIReadQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+/**
+ * Get diff with repo
+ */
+export const diffAPIGet = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<FileDiff[]>> => {
+    
+    
+    return axios.default.get(
+      `/api/diff`,options
+    );
+  }
+
+
+
+
+export const getDiffAPIGetQueryKey = () => {
+    return [
+    `/api/diff`
+    ] as const;
+    }
+
+    
+export const getDiffAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof diffAPIGet>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof diffAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDiffAPIGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof diffAPIGet>>> = ({ signal }) => diffAPIGet({ signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof diffAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DiffAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof diffAPIGet>>>
+export type DiffAPIGetQueryError = AxiosError<Error>
+
+
+export function useDiffAPIGet<TData = Awaited<ReturnType<typeof diffAPIGet>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof diffAPIGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof diffAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof diffAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDiffAPIGet<TData = Awaited<ReturnType<typeof diffAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof diffAPIGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof diffAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof diffAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDiffAPIGet<TData = Awaited<ReturnType<typeof diffAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof diffAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDiffAPIGet<TData = Awaited<ReturnType<typeof diffAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof diffAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDiffAPIGetQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

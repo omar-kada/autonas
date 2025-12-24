@@ -25,6 +25,13 @@ enum DeploymentStatus {
   error: "error",
 }
 
+enum ContainerHealth {
+  healthy: "healthy",
+  unhealthy: "unhealthy",
+  starting: "starting",
+  none: "none",
+}
+
 model FileDiff {
   oldFile: string;
   newFile: string;
@@ -69,7 +76,8 @@ model Stats {
   success: int32;
   nextDeploy: utcDateTime;
   lastDeploy: utcDateTime;
-  lastStatus: DeploymentStatus;
+  status: DeploymentStatus;
+  health: ContainerHealth;
   author: string;
 }
 
@@ -86,6 +94,15 @@ interface DeployementAPI {
   @get list(): Deployment[] | Error;
   /** Read deployments */
   @get read(@path id: string): Deployment | Error;
+  /** Sync and deploy if changes */
+  @post sync(): Deployment | Error;
+}
+
+@route("/diff")
+@tag("Diff")
+interface DiffAPI {
+  /** Get diff with repo */
+  @get get(): FileDiff[] | Error;
 }
 
 @route("/stats")

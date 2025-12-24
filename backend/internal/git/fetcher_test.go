@@ -1,132 +1,174 @@
 package git
 
 import (
-	"fmt"
+	"errors"
+	"omar-kada/autonas/models"
 	"omar-kada/autonas/testutil"
 	"os"
+	"strings"
 	"testing"
 
-	git "github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+var mockConfig = models.Config{
+	Repo:   "https://github.com/test/repo.git",
+	Branch: "main",
+}
+
+var (
+	ErrClearRepo      = errors.New("clear repo error")
+	ErrCheckoutBranch = errors.New("checkout branch error")
+	ErrPullBranch     = errors.New("pull branch error")
+	ErrDiffWithRemote = errors.New("diff with remote error")
 )
 
 func assertBranch(t *testing.T, clonePath string, branch string) {
 	t.Helper()
 	r, err := git.PlainOpen(clonePath)
-	if err != nil {
-		t.Fatalf("Failed to open cloned repo: %v", err)
-	}
+	require.NoError(t, err)
 
 	ref, err := r.Head()
-	if err != nil {
-		t.Fatalf("Failed to get HEAD of cloned repo: %v", err)
-	}
+	require.NoError(t, err)
 
-	if ref.Name().Short() != branch {
-		t.Errorf("Expected branch '%s', got '%s'", branch, ref.Name().Short())
-	}
+	assert.Equal(t, ref.Name().Short(), branch)
 }
 
 func assertFileContent(t *testing.T, filePath string, wantContent string) {
 	t.Helper()
 	content, err := os.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("Failed to read %s in cloned repo: %v", filePath, err)
-	}
+	require.NoError(t, err)
 
-	if string(content) != wantContent {
-		t.Errorf("Expected %s to have %s, but got M%s", filePath, wantContent, content)
+	assert.Equal(t, wantContent, string(content))
+
+}
+
+func TestClearRepo(t *testing.T) {
+	fetcher := NewFetcher(os.FileMode(0000), t.TempDir()+"/clone-repo")
+
+	err := fetcher.ClearRepo()
+	assert.NoError(t, err)
+
+	// Verify the repo directory is removed
+	_, err = os.Stat(t.TempDir() + "/clone-repo")
+	if !os.IsNotExist(err) {
+		t.Fatalf("Expected repo directory to be removed, but it still exists")
 	}
 }
 
-func TestFetch_HappyPath(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0000))
+func TestCheckoutBranch(t *testing.T) {
+	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	mockConfig.Repo = remoteRepoPath
+	fetcher := NewFetcher(os.FileMode(0000), clonePath).WithConfig(mockConfig)
+
+	err := fetcher.CheckoutBranch("main")
+	assert.NoError(t, err)
+
+	assertBranch(t, clonePath, "main")
+}
+
+func TestPullBranch(t *testing.T) {
+	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	mockConfig.Repo = remoteRepoPath
+	clonePath := t.TempDir() + "/clone-repo"
+	fetcher := NewFetcher(os.FileMode(0000), clonePath).WithConfig(mockConfig)
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", "dummy readme")
-	clonePath := t.TempDir() + "/clone-repo"
 
-	patch, err := fetcher.Fetch(remoteRepoPath, "main", clonePath)
-	if err != nil {
-		t.Fatalf("Fetch failed: %v", err)
-	}
-
+	// Use the fetcher methods directly
+	err := fetcher.PullBranch("main", "")
+	assert.NoError(t, err)
 	assertFileContent(t, clonePath+"/README.md", "dummy readme")
 	assertBranch(t, clonePath, "main")
-	assert.True(t, assert.ObjectsAreEqual(Patch{}, patch),
-		fmt.Sprintf("patch should be empty but is : %v", patch),
-	)
-
-	testutil.AddCommitToRepo(t, remoteRepoPath, "NEWFILE.txt", "new file content")
-
-	patch, err = fetcher.Fetch(remoteRepoPath, "main", clonePath)
-	if err != nil {
-		t.Fatalf("Fetch failed: %v", err)
-	}
-
-	assertFileContent(t, clonePath+"/NEWFILE.txt", "new file content")
-	assert.Equal(t, "add NEWFILE.txt", patch.Title)
-	assert.Equal(t, "Test", patch.Author)
 }
 
-func TestFetch_NoChanges(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0000))
-
-	remoteRepoPath := testutil.SetupRemoteRepo(t)
+func TestDiffWithRemote(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
+	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	mockConfig.Repo = remoteRepoPath
+	fetcher := NewFetcher(os.FileMode(0000), clonePath).WithConfig(mockConfig)
 
-	_, err := fetcher.Fetch(remoteRepoPath, "main", clonePath)
-	if err != nil {
-		t.Fatalf("Fetch failed: %v", err)
-	}
+	// Initial pull to set up the repo
+	err := fetcher.PullBranch("main", "")
+	assert.NoError(t, err)
 
-	patch, err := fetcher.Fetch(remoteRepoPath, "main", clonePath)
-	if err != NoErrAlreadyUpToDate {
-		t.Fatalf("Expected NoErrAlreadyUpToDate, got: %v", err)
-	}
+	// Add a commit to the remote repo
+	testutil.AddCommitToRepo(t, remoteRepoPath, "NEWFILE.txt", "new file content")
+
+	// Get the diff with remote
+	patch, err := fetcher.DiffWithRemote()
+	assert.NoError(t, err)
+
+	wantDiff := strings.Join([]string{
+		"+++ b/NEWFILE.txt",
+		"@@ -0,0 +1 @@",
+		"+new file content",
+	}, "\n")
+
+	assert.Contains(t, patch.Diff, wantDiff)
+	assert.Equal(t, "Test", patch.Author)
+	assert.Equal(t, "add NEWFILE.txt", patch.Title)
+	assert.Equal(t, 1, len(patch.Files))
+	assert.Equal(t, "NEWFILE.txt", patch.Files[0].NewFile)
+}
+
+func TestDiffWithRemote_NoChanges(t *testing.T) {
+	clonePath := t.TempDir() + "/clone-repo"
+	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	mockConfig.Repo = remoteRepoPath
+	fetcher := NewFetcher(os.FileMode(0000), clonePath).WithConfig(mockConfig)
+
+	err := fetcher.PullBranch("main", "")
+	assert.NoError(t, err)
+
+	// Get the diff with remote
+	patch, err := fetcher.DiffWithRemote()
+	assert.NoError(t, err)
 	assert.Equal(t, "", patch.Diff)
 }
 
-func TestFetch_NonExistentRepo(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0000))
+func TestPullBranch_NonExistentRepo(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
-	_, err := fetcher.Fetch("/path/does/not/exist", "main", clonePath)
-	if err == nil {
-		t.Fatalf("Expected error for non-existent repo, got nil")
-	}
+
+	fetcher := NewFetcher(os.FileMode(0000), clonePath).WithConfig(models.Config{
+		Repo:   "/path/does/not/exist",
+		Branch: "main",
+	})
+	err := fetcher.PullBranch("main", "")
+	assert.Error(t, err)
 }
 
 func TestFetch_NonExistentBranch(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0000))
-	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	clonePath := t.TempDir() + "/clone-repo"
+	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	mockConfig.Repo = remoteRepoPath
+	fetcher := NewFetcher(os.FileMode(0000), clonePath).WithConfig(mockConfig)
 
-	_, err := fetcher.Fetch(remoteRepoPath, "non-existent-branch", clonePath)
-	if err == nil {
-		t.Fatalf("Expected error for non-existent branch, got nil")
-	}
+	err := fetcher.CheckoutBranch("non-existent-branch")
+
+	assert.NoError(t, err)
+	assertBranch(t, clonePath, "non-existent-branch")
+
 }
 
 func TestFetch_WithAddPermissions(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0755))
+	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	mockConfig.Repo = remoteRepoPath
+	fetcher := NewFetcher(os.FileMode(0755), clonePath).WithConfig(mockConfig)
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", "dummy readme")
-	clonePath := t.TempDir() + "/clone-repo"
 
-	_, err := fetcher.Fetch(remoteRepoPath, "main", clonePath)
-	if err != nil {
-		t.Fatalf("Fetch failed: %v", err)
-	}
+	err := fetcher.PullBranch("main", "")
+	assert.NoError(t, err)
 
 	// Check file permissions
 	fileInfo, err := os.Stat(clonePath + "/README.md")
-	if err != nil {
-		t.Fatalf("Failed to get file info: %v", err)
-	}
+	assert.NoError(t, err)
 
 	expectedPerm := os.FileMode(0755)
-	if fileInfo.Mode().Perm() != expectedPerm {
-		t.Errorf("Expected file permissions %v, got %v", expectedPerm, fileInfo.Mode().Perm())
-	}
+	assert.Equal(t, expectedPerm, fileInfo.Mode().Perm())
 }
