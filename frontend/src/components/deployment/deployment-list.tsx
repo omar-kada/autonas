@@ -1,4 +1,5 @@
 import type { Deployment } from '@/api/api';
+import { useDeployments } from '@/hooks';
 import { colorForStatus, iconForStatus } from '@/lib';
 import { ChevronRight } from 'lucide-react';
 import { useCallback } from 'react';
@@ -7,13 +8,8 @@ import { Badge } from '../ui/badge';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '../ui/item';
 import { HumanTime } from '../view';
 
-export function DeploymentList({
-  deployments,
-  OnSelect,
-}: {
-  deployments: Deployment[];
-  OnSelect: (item: Deployment) => void;
-}) {
+export function DeploymentList({ OnSelect }: { OnSelect: (item: Deployment) => void }) {
+  const { deployments } = useDeployments();
   const { id: selectedDeployment } = useParams();
 
   const onDeploymentClick = useCallback(

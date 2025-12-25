@@ -3,7 +3,7 @@ import { useStatsAPIGet } from '@/api/api';
 export const useStats = (days: number) => {
   const { data, isLoading, error } = useStatsAPIGet(days, {
     query: {
-      refetchInterval: 50000,
+      refetchInterval: 10000,
     },
   });
 

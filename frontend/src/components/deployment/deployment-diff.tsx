@@ -4,7 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { FileDiffView } from '.';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
-export function DeploymentDiff({ fileDiffs }: { fileDiffs: FileDiff[] }) {
+export function DeploymentDiff({
+  fileDiffs,
+  autoOpen,
+}: {
+  fileDiffs: FileDiff[];
+  autoOpen?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <Card>
@@ -17,7 +23,12 @@ export function DeploymentDiff({ fileDiffs }: { fileDiffs: FileDiff[] }) {
       </CardHeader>
       <CardContent>
         {fileDiffs.map((fileDiff) => (
-          <FileDiffView fileDiff={fileDiff} key={fileDiff.oldFile} className="mb-2" />
+          <FileDiffView
+            fileDiff={fileDiff}
+            key={fileDiff.oldFile}
+            autoOpen={autoOpen}
+            className="mb-2"
+          />
         ))}
       </CardContent>
     </Card>

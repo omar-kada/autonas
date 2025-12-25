@@ -19,6 +19,14 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
+// Defines values for ContainerHealth.
+const (
+	ContainerHealthHealthy   ContainerHealth = "healthy"
+	ContainerHealthNone      ContainerHealth = "none"
+	ContainerHealthStarting  ContainerHealth = "starting"
+	ContainerHealthUnhealthy ContainerHealth = "unhealthy"
+)
+
 // Defines values for ContainerStatusHealth.
 const (
 	ContainerStatusHealthHealthy   ContainerStatusHealth = "healthy"
@@ -58,6 +66,9 @@ const (
 const (
 	VersionsN10 Versions = "1.0"
 )
+
+// ContainerHealth defines model for ContainerHealth.
+type ContainerHealth string
 
 // ContainerStatus defines model for ContainerStatus.
 type ContainerStatus struct {
@@ -124,9 +135,10 @@ type StackStatus struct {
 type Stats struct {
 	Author     string           `json:"author"`
 	Error      int32            `json:"error"`
+	Health     ContainerHealth  `json:"health"`
 	LastDeploy time.Time        `json:"lastDeploy"`
-	LastStatus DeploymentStatus `json:"lastStatus"`
 	NextDeploy time.Time        `json:"nextDeploy"`
+	Status     DeploymentStatus `json:"status"`
 	Success    int32            `json:"success"`
 }
 
@@ -209,8 +221,14 @@ type ClientInterface interface {
 	// DeployementAPIList request
 	DeployementAPIList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeployementAPISync request
+	DeployementAPISync(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeployementAPIRead request
 	DeployementAPIRead(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DiffAPIGet request
+	DiffAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// StatsAPIGet request
 	StatsAPIGet(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -231,8 +249,32 @@ func (c *Client) DeployementAPIList(ctx context.Context, reqEditors ...RequestEd
 	return c.Client.Do(req)
 }
 
+func (c *Client) DeployementAPISync(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeployementAPISyncRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) DeployementAPIRead(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeployementAPIReadRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DiffAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiffAPIGetRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -294,6 +336,33 @@ func NewDeployementAPIListRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewDeployementAPISyncRequest generates requests for DeployementAPISync
+func NewDeployementAPISyncRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/deployment")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeployementAPIReadRequest generates requests for DeployementAPIRead
 func NewDeployementAPIReadRequest(server string, id string) (*http.Request, error) {
 	var err error
@@ -311,6 +380,33 @@ func NewDeployementAPIReadRequest(server string, id string) (*http.Request, erro
 	}
 
 	operationPath := fmt.Sprintf("/api/deployment/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDiffAPIGetRequest generates requests for DiffAPIGet
+func NewDiffAPIGetRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/diff")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -435,8 +531,14 @@ type ClientWithResponsesInterface interface {
 	// DeployementAPIListWithResponse request
 	DeployementAPIListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error)
 
+	// DeployementAPISyncWithResponse request
+	DeployementAPISyncWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeployementAPISyncResponse, error)
+
 	// DeployementAPIReadWithResponse request
 	DeployementAPIReadWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeployementAPIReadResponse, error)
+
+	// DiffAPIGetWithResponse request
+	DiffAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DiffAPIGetResponse, error)
 
 	// StatsAPIGetWithResponse request
 	StatsAPIGetWithResponse(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*StatsAPIGetResponse, error)
@@ -468,6 +570,29 @@ func (r DeployementAPIListResponse) StatusCode() int {
 	return 0
 }
 
+type DeployementAPISyncResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Deployment
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeployementAPISyncResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeployementAPISyncResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DeployementAPIReadResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -485,6 +610,29 @@ func (r DeployementAPIReadResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeployementAPIReadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DiffAPIGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]FileDiff
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DiffAPIGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DiffAPIGetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -546,6 +694,15 @@ func (c *ClientWithResponses) DeployementAPIListWithResponse(ctx context.Context
 	return ParseDeployementAPIListResponse(rsp)
 }
 
+// DeployementAPISyncWithResponse request returning *DeployementAPISyncResponse
+func (c *ClientWithResponses) DeployementAPISyncWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeployementAPISyncResponse, error) {
+	rsp, err := c.DeployementAPISync(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeployementAPISyncResponse(rsp)
+}
+
 // DeployementAPIReadWithResponse request returning *DeployementAPIReadResponse
 func (c *ClientWithResponses) DeployementAPIReadWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*DeployementAPIReadResponse, error) {
 	rsp, err := c.DeployementAPIRead(ctx, id, reqEditors...)
@@ -553,6 +710,15 @@ func (c *ClientWithResponses) DeployementAPIReadWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseDeployementAPIReadResponse(rsp)
+}
+
+// DiffAPIGetWithResponse request returning *DiffAPIGetResponse
+func (c *ClientWithResponses) DiffAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DiffAPIGetResponse, error) {
+	rsp, err := c.DiffAPIGet(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDiffAPIGetResponse(rsp)
 }
 
 // StatsAPIGetWithResponse request returning *StatsAPIGetResponse
@@ -606,6 +772,39 @@ func ParseDeployementAPIListResponse(rsp *http.Response) (*DeployementAPIListRes
 	return response, nil
 }
 
+// ParseDeployementAPISyncResponse parses an HTTP response from a DeployementAPISyncWithResponse call
+func ParseDeployementAPISyncResponse(rsp *http.Response) (*DeployementAPISyncResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeployementAPISyncResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Deployment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDeployementAPIReadResponse parses an HTTP response from a DeployementAPIReadWithResponse call
 func ParseDeployementAPIReadResponse(rsp *http.Response) (*DeployementAPIReadResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -622,6 +821,39 @@ func ParseDeployementAPIReadResponse(rsp *http.Response) (*DeployementAPIReadRes
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Deployment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDiffAPIGetResponse parses an HTTP response from a DiffAPIGetWithResponse call
+func ParseDiffAPIGetResponse(rsp *http.Response) (*DiffAPIGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DiffAPIGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []FileDiff
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -710,8 +942,14 @@ type ServerInterface interface {
 	// (GET /api/deployment)
 	DeployementAPIList(w http.ResponseWriter, r *http.Request)
 
+	// (POST /api/deployment)
+	DeployementAPISync(w http.ResponseWriter, r *http.Request)
+
 	// (GET /api/deployment/{id})
 	DeployementAPIRead(w http.ResponseWriter, r *http.Request, id string)
+
+	// (GET /api/diff)
+	DiffAPIGet(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/stats/{days})
 	StatsAPIGet(w http.ResponseWriter, r *http.Request, days int32)
@@ -742,6 +980,19 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// DeployementAPISync operation middleware
+func (siw *ServerInterfaceWrapper) DeployementAPISync(w http.ResponseWriter, r *http.Request) {
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeployementAPISync(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeployementAPIRead operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -757,6 +1008,19 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployementAPIRead(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DiffAPIGet operation middleware
+func (siw *ServerInterfaceWrapper) DiffAPIGet(w http.ResponseWriter, r *http.Request) {
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DiffAPIGet(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -924,7 +1188,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment", wrapper.DeployementAPIList)
+	m.HandleFunc("POST "+options.BaseURL+"/api/deployment", wrapper.DeployementAPISync)
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
+	m.HandleFunc("GET "+options.BaseURL+"/api/diff", wrapper.DiffAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
 
@@ -958,6 +1224,33 @@ func (response DeployementAPIListdefaultJSONResponse) VisitDeployementAPIListRes
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type DeployementAPISyncRequestObject struct{}
+
+type DeployementAPISyncResponseObject interface {
+	VisitDeployementAPISyncResponse(w http.ResponseWriter) error
+}
+
+type DeployementAPISync200JSONResponse Deployment
+
+func (response DeployementAPISync200JSONResponse) VisitDeployementAPISyncResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeployementAPISyncdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response DeployementAPISyncdefaultJSONResponse) VisitDeployementAPISyncResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type DeployementAPIReadRequestObject struct {
 	Id string `json:"id"`
 }
@@ -981,6 +1274,33 @@ type DeployementAPIReaddefaultJSONResponse struct {
 }
 
 func (response DeployementAPIReaddefaultJSONResponse) VisitDeployementAPIReadResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DiffAPIGetRequestObject struct{}
+
+type DiffAPIGetResponseObject interface {
+	VisitDiffAPIGetResponse(w http.ResponseWriter) error
+}
+
+type DiffAPIGet200JSONResponse []FileDiff
+
+func (response DiffAPIGet200JSONResponse) VisitDiffAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DiffAPIGetdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response DiffAPIGetdefaultJSONResponse) VisitDiffAPIGetResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -1048,8 +1368,14 @@ type StrictServerInterface interface {
 	// (GET /api/deployment)
 	DeployementAPIList(ctx context.Context, request DeployementAPIListRequestObject) (DeployementAPIListResponseObject, error)
 
+	// (POST /api/deployment)
+	DeployementAPISync(ctx context.Context, request DeployementAPISyncRequestObject) (DeployementAPISyncResponseObject, error)
+
 	// (GET /api/deployment/{id})
 	DeployementAPIRead(ctx context.Context, request DeployementAPIReadRequestObject) (DeployementAPIReadResponseObject, error)
+
+	// (GET /api/diff)
+	DiffAPIGet(ctx context.Context, request DiffAPIGetRequestObject) (DiffAPIGetResponseObject, error)
 
 	// (GET /api/stats/{days})
 	StatsAPIGet(ctx context.Context, request StatsAPIGetRequestObject) (StatsAPIGetResponseObject, error)
@@ -1113,6 +1439,30 @@ func (sh *strictHandler) DeployementAPIList(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// DeployementAPISync operation middleware
+func (sh *strictHandler) DeployementAPISync(w http.ResponseWriter, r *http.Request) {
+	var request DeployementAPISyncRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeployementAPISync(ctx, request.(DeployementAPISyncRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeployementAPISync")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeployementAPISyncResponseObject); ok {
+		if err := validResponse.VisitDeployementAPISyncResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DeployementAPIRead operation middleware
 func (sh *strictHandler) DeployementAPIRead(w http.ResponseWriter, r *http.Request, id string) {
 	var request DeployementAPIReadRequestObject
@@ -1132,6 +1482,30 @@ func (sh *strictHandler) DeployementAPIRead(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeployementAPIReadResponseObject); ok {
 		if err := validResponse.VisitDeployementAPIReadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DiffAPIGet operation middleware
+func (sh *strictHandler) DiffAPIGet(w http.ResponseWriter, r *http.Request) {
+	var request DiffAPIGetRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DiffAPIGet(ctx, request.(DiffAPIGetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DiffAPIGet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DiffAPIGetResponseObject); ok {
+		if err := validResponse.VisitDiffAPIGetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

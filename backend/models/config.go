@@ -40,3 +40,12 @@ func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, stri
 func (cfg Config) GetEnabledServices() []string {
 	return slices.Collect(maps.Keys(cfg.Services))
 }
+
+// GetBranch returns the branch name from the configuration. If no branch is specified,
+// it defaults to "main".
+func (cfg Config) GetBranch() string {
+	if cfg.Branch != "" {
+		return cfg.Branch
+	}
+	return "main"
+}

@@ -1,13 +1,23 @@
 import type { FileDiff } from '@/api/api';
+import { useIsMobile } from '@/hooks';
 import { useTheme } from '@/hooks/theme-provider';
 import { DiffModeEnum, DiffView } from '@git-diff-view/react';
 import { ChevronDown, ChevronUp, FileDiff as DiffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
-export function FileDiffView({ fileDiff, className }: { fileDiff: FileDiff; className?: string }) {
+export function FileDiffView({
+  fileDiff,
+  autoOpen,
+  className,
+}: {
+  fileDiff: FileDiff;
+  autoOpen?: boolean;
+  className?: string;
+}) {
   const { theme } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(autoOpen);
+  const isMobile = useIsMobile();
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
@@ -33,7 +43,7 @@ export function FileDiffView({ fileDiff, className }: { fileDiff: FileDiff; clas
           }}
           diffViewTheme={theme}
           diffViewHighlight
-          diffViewMode={DiffModeEnum.Split}
+          diffViewMode={isMobile ? DiffModeEnum.Unified : DiffModeEnum.Split}
           diffViewWrap
         />
       </CollapsibleContent>

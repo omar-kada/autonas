@@ -18,6 +18,41 @@ export function colorForStatus(status: ContainerStatusHealth | DeploymentStatus)
   }
 }
 
+export function borderForStatus(status: ContainerStatusHealth | DeploymentStatus): string {
+  switch (status) {
+    case 'healthy':
+    case 'success':
+      return 'border-green-400';
+    case 'unhealthy':
+    case 'error':
+      return 'border-red-400';
+    case 'starting':
+    case 'planned':
+      return 'border-slate-400';
+    case 'running':
+      return 'border-blue-400';
+    default:
+      return '';
+  }
+}
+export function textColorForStatus(status: ContainerStatusHealth | DeploymentStatus): string {
+  switch (status) {
+    case 'healthy':
+    case 'success':
+      return 'text-green-400';
+    case 'unhealthy':
+    case 'error':
+      return 'text-red-400';
+    case 'starting':
+    case 'planned':
+      return 'text-slate-400';
+    case 'running':
+      return 'text-blue-400';
+    default:
+      return '';
+  }
+}
+
 export function logColor(level: EventLevel): string {
   switch (level) {
     case 'ERROR':

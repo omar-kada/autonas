@@ -3,12 +3,15 @@ package server
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+
+	"github.com/moby/moby/api/types/container"
 )
 
 // Handler implements the generated strict server interface
@@ -44,7 +47,7 @@ func transformEvents(events []models.Event) []api.Event {
 }
 
 func transformFiles(files []models.FileDiff) []api.FileDiff {
-	var apiFiles []api.FileDiff
+	apiFiles := []api.FileDiff{}
 	for _, file := range files {
 		apiFiles = append(apiFiles, api.FileDiff{
 			Diff:    file.Diff,
@@ -88,6 +91,15 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	return api.DeployementAPIRead200JSONResponse(transformDeployment(dep)), err
 }
 
+// DeployementAPISync implements the StrictServerInterface interface
+func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
+	dep, err := h.processSvc.SyncDeployment()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	return api.DeployementAPISync200JSONResponse(transformDeployment(dep)), err
+}
+
 // StatusAPIGet implements the StrictServerInterface interface
 func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
 	// TODO: Implement your logic here
@@ -126,6 +138,21 @@ func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObjec
 	if err != nil {
 		return nil, err
 	}
+	stacks, err := h.processSvc.GetManagedStacks()
+	if err != nil {
+		return nil, err
+	}
+	health := api.ContainerHealthHealthy
+
+outerLoop:
+	for _, containers := range stacks {
+		for _, ctnr := range containers {
+			if container.Unhealthy == ctnr.Health {
+				health = api.ContainerHealthUnhealthy
+				break outerLoop
+			}
+		}
+	}
 
 	response := api.Stats{
 		Author:     stats.Author,
@@ -133,9 +160,20 @@ func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObjec
 		Success:    stats.Success,
 		LastDeploy: stats.LastDeploy,
 		NextDeploy: stats.NextDeploy,
-		LastStatus: api.DeploymentStatus(stats.LastStatus),
+		Status:     api.DeploymentStatus(stats.LastStatus),
+		Health:     health,
 	}
 	return api.StatsAPIGet200JSONResponse(response), nil
+}
+
+// DiffAPIGet implements the StrictServerInterface interface
+func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
+	fileDiffs, err := h.processSvc.GetDiff()
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, err
+	}
+	return api.DiffAPIGet200JSONResponse(transformFiles(fileDiffs)), nil
 }
 
 /*

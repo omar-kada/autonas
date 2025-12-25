@@ -4,14 +4,15 @@ package git
 import (
 	"fmt"
 	"log/slog"
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
-	"strings"
+
+	"omar-kada/autonas/internal/events"
+	"omar-kada/autonas/models"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
+	gitObject "github.com/go-git/go-git/v6/plumbing/object"
 )
 
 // NoErrAlreadyUpToDate is returned when the repository is already up to date.
@@ -19,61 +20,49 @@ var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 
 // Patch represent the difference between two commits
 type Patch struct {
-	Diff   string
-	Title  string
-	Files  []models.FileDiff
-	Author string
+	Diff       string
+	Title      string
+	Files      []models.FileDiff
+	Author     string
+	CommitHash string
 }
 
 // Fetcher is responsible for syncing files from repo
 type Fetcher interface {
-	Fetch(repoURL, branch, path string) (Patch, error)
-	ReFetch(repoURL, branch, path string) (Patch, error)
+	ClearRepo() error
+	CheckoutBranch(branch string) error
+	PullBranch(branch string, commitSHA string) error
+	WithConfig(cfg models.Config) Fetcher
+	DiffWithRemote() (Patch, error)
 }
 
 // Syncer is responsible for syncing files from repo
 type fetcher struct {
+	parser         PatchParser
 	addPermissions os.FileMode
+	repoPath       string
+	cfg            models.Config
 }
 
 // NewFetcher creates a new Syncer and returns it
-func NewFetcher(addPermissions os.FileMode) Fetcher {
-	return fetcher{
+func NewFetcher(addPermissions os.FileMode, repoPath string) Fetcher {
+	return &fetcher{
+		parser:         NewPatchParser(),
 		addPermissions: addPermissions,
+		repoPath:       repoPath,
 	}
 }
 
-// Fetch clones or updates a Git repository at the specified path,
-// checking out the specified branch.
-// returns NoErrAlreadyUpToDate if the repository is already up to date.
-func (f fetcher) Fetch(repoURL, branch, path string) (patch Patch, err error) {
-	if branch == "" {
-		branch = "main"
-	}
-
-	if repoExists(path) {
-		patch, err = fetchAndPull(path, branch)
-	} else {
-		_, err = git.PlainClone(path, &git.CloneOptions{
-			URL:           repoURL,
-			ReferenceName: plumbing.NewBranchReferenceName(branch),
-			SingleBranch:  true,
-			Progress:      events.NewSlogWriter(slog.LevelInfo),
-		})
-	}
-	if err == nil && f.addPermissions != os.FileMode(0000) {
-		err = f.addPerm(path)
-	}
-	return patch, err
+// WithConfig sets the configuration for the fetcher and returns the modified fetcher.
+// This allows for method chaining when configuring the fetcher.
+func (f *fetcher) WithConfig(cfg models.Config) Fetcher {
+	newFetcher := NewFetcher(f.addPermissions, f.repoPath).(*fetcher)
+	newFetcher.cfg = cfg
+	return newFetcher
 }
 
-func repoExists(path string) bool {
-	_, e := os.Stat(filepath.Join(path, ".git"))
-	return e == nil
-}
-
-func (f fetcher) addPerm(path string) error {
-	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+func (f *fetcher) addPerm() error {
+	return filepath.Walk(f.repoPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -85,83 +74,145 @@ func (f fetcher) addPerm(path string) error {
 	})
 }
 
-func (f fetcher) ReFetch(repoURL, branch, path string) (Patch, error) {
-	if err := os.RemoveAll(path); err != nil {
-		return Patch{}, err
-	}
-	return f.Fetch(repoURL, branch, path)
+// ClearRepo removes the repository directory and all its contents.
+func (f *fetcher) ClearRepo() error {
+	return os.RemoveAll(f.repoPath)
 }
 
-func fetchAndPull(path string, branch string) (Patch, error) {
-	repo, err := git.PlainOpen(path)
+// CheckoutBranch checks out the given local branch. If the branch does not
+// exist locally but exists on the remote (origin/<branch>), it will create
+// the local branch from the remote HEAD and check it out.
+func (f *fetcher) CheckoutBranch(branch string) error {
+	_, err := f.openRepo(branch)
+	if err != nil {
+		return fmt.Errorf("error while opening repo: %w", err)
+	}
+	return nil
+}
+
+// PullBranch pulls changes for a local target branch from origin/main
+// (optionally resetting to a provided commit SHA). It computes the diff
+// between the local branch and origin/main and returns a Patch describing
+// those file diffs.
+func (f *fetcher) PullBranch(branch string, commitHash string) error {
+	repo, err := f.openRepo(branch)
+	if err != nil {
+		return err
+	}
+
+	err = f.reset(repo, branch, commitHash)
+	return err
+}
+
+func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
+	if !repoExists(f.repoPath) {
+		repo, err = git.PlainClone(f.repoPath, &git.CloneOptions{
+			URL:           f.cfg.Repo,
+			ReferenceName: plumbing.NewBranchReferenceName(f.cfg.GetBranch()),
+			SingleBranch:  true,
+			Progress:      events.NewSlogWriter(slog.LevelInfo),
+		})
+	} else {
+		repo, err = git.PlainOpen(f.repoPath)
+	}
+	if err != nil {
+		return repo, fmt.Errorf("error while opening repo : %w, %v", err, *f)
+	}
+	repo.Fetch(&git.FetchOptions{})
+
+	if branch != "" {
+		err = f.checkoutOrCreate(repo, branch)
+		if err != nil {
+			return repo, fmt.Errorf("error while checkout branch '%v': %w", branch, err)
+		}
+	}
+	f.addPerm()
+	return repo, nil
+}
+
+func (f *fetcher) DiffWithRemote() (Patch, error) {
+	repo, err := f.openRepo(f.cfg.GetBranch())
 	if err != nil {
 		return Patch{}, err
 	}
 
-	err = repo.Fetch(&git.FetchOptions{
-		RemoteName: "origin",
-		Progress:   events.NewSlogWriter(slog.LevelInfo),
-		Force:      true,
-	})
-	if err != nil && err != git.NoErrAlreadyUpToDate {
-		return Patch{}, err
-	}
+	return f.getPatch(repo)
+}
 
-	patch, err := getPatch(repo, branch)
-	if err != nil {
-		return patch, fmt.Errorf("error while calculating patch : %w", err)
-	}
-	if patch.Diff == "" {
-		// files didn't change, return empty
-		return patch, git.NoErrAlreadyUpToDate
-	}
-	// Checkout branch
+func (f *fetcher) reset(repo *git.Repository, branch string, hash string) error {
 	wt, err := repo.Worktree()
 	if err != nil {
-		return Patch{}, err
+		return fmt.Errorf("error while getting worktree: %w", err)
 	}
-
-	err = wt.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch),
-		Force:  true, // like `--force`
-	})
-	if err != nil {
-		return Patch{}, err
-	}
-
-	// Reset to remote branch
-	remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", branch), true)
-	if err != nil {
-		return Patch{}, err
+	var targetHash plumbing.Hash
+	if hash != "" {
+		targetHash = plumbing.NewHash(hash)
+	} else {
+		remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", f.cfg.GetBranch()), true)
+		if err != nil {
+			return fmt.Errorf("error while getting reference for remote branch '%v': %w", branch, err)
+		}
+		targetHash = remoteRef.Hash()
 	}
 	err = wt.Reset(&git.ResetOptions{
 		Mode:   git.HardReset,
-		Commit: remoteRef.Hash(),
+		Commit: targetHash,
 	})
-	return patch, err
+	if err != nil {
+		return fmt.Errorf("error while resetting to commit '%v': %w", targetHash, err)
+	}
+	f.addPerm()
+	return nil
 }
 
-func getPatch(repo *git.Repository, branch string) (Patch, error) {
-	// Get local HEAD commit
-	headRef, err := repo.Head()
+func (f *fetcher) checkoutOrCreate(repo *git.Repository, branch string) error {
+	wt, err := repo.Worktree()
 	if err != nil {
-		return Patch{}, err
+		return fmt.Errorf("error while getting worktree : %w", err)
+	}
+	shouldCreate := !branchExists(repo, branch)
+	var targetHash plumbing.Hash
+	if shouldCreate {
+		remoteCommit, err := f.getRemoteCommit(repo)
+		if err != nil {
+			return fmt.Errorf("error while getting remote commit : %w", err)
+		}
+		targetHash = remoteCommit.Hash
+	}
+	err = wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branch),
+		Force:  true,
+		Create: shouldCreate,
+		Hash:   targetHash,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to checkout branch '%v' (%v, %v) : %w", branch, shouldCreate, targetHash, err)
 	}
 
-	localCommit, err := repo.CommitObject(headRef.Hash())
+	f.addPerm()
+	return nil
+}
+
+func repoExists(path string) bool {
+	_, e := os.Stat(filepath.Join(path, ".git"))
+	//_, e2 := os.Stat(filepath.Join(path, "services"))
+	return e == nil /*&& e2 == nil*/
+}
+
+func branchExists(repo *git.Repository, branch string) bool {
+	_, branchErr := repo.Reference(plumbing.NewBranchReferenceName(branch), true)
+	return branchErr == nil
+}
+
+func (f *fetcher) getPatch(repo *git.Repository) (Patch, error) {
+	// Get local HEAD commit
+	localCommit, err := getLocalHeadCommit(repo)
 	if err != nil {
 		return Patch{}, err
 	}
 
 	// Get remote HEAD commit (example: origin/main)
-	remoteRefName := plumbing.NewRemoteReferenceName("origin", branch)
-
-	remoteRef, err := repo.Reference(remoteRefName, true)
-	if err != nil {
-		return Patch{}, err
-	}
-
-	remoteCommit, err := repo.CommitObject(remoteRef.Hash())
+	remoteCommit, err := f.getRemoteCommit(repo)
 	if err != nil {
 		return Patch{}, err
 	}
@@ -174,67 +225,47 @@ func getPatch(repo *git.Repository, branch string) (Patch, error) {
 	// Extract trees for diff
 	localTree, err := localCommit.Tree()
 	if err != nil {
-		return Patch{}, err
+		return Patch{}, fmt.Errorf("error while getting local tree: %w", err)
 	}
 
 	remoteTree, err := remoteCommit.Tree()
 	if err != nil {
-		return Patch{}, err
+		return Patch{}, fmt.Errorf("error while getting remote tree: %w", err)
 	}
 
 	// Compute patch (the diff)
 	patch, err := localTree.Patch(remoteTree)
 	if err != nil {
-		return Patch{}, err
+		return Patch{}, fmt.Errorf("error while getting patch: %w", err)
 	}
 
-	fileDiffs := splitByFile(patch.String())
-	var files []models.FileDiff
-	for _, fileDiff := range fileDiffs {
-		f, err := toFileDiff(fileDiff)
-		if err != nil {
-			return Patch{}, fmt.Errorf("error parsing file diff: %w", err)
-		}
-		files = append(files, f)
-	}
-	return Patch{
-		Title:  remoteCommit.Message,
-		Diff:   patch.String(),
-		Files:  files,
-		Author: remoteCommit.Author.Name,
-	}, nil
+	return f.parser.Parse(patch.String(), remoteCommit)
 }
 
-func splitByFile(diff string) []string {
-	// Split the diff string into separate file diffs based on "diff --git" markers
-	fileDiffs := strings.Split(diff, "diff --git")
+func (f *fetcher) getRemoteCommit(repo *git.Repository) (*gitObject.Commit, error) {
+	remoteRefName := plumbing.NewRemoteReferenceName("origin", f.cfg.GetBranch())
 
-	// Remove the first empty element if it exists
-	if len(fileDiffs) > 0 && fileDiffs[0] == "" {
-		fileDiffs = fileDiffs[1:]
+	remoteRef, err := repo.Reference(remoteRefName, true)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting remote reference: %w", err)
 	}
-	// Prepend "diff --git" to each element except the first one
-	for i := range fileDiffs {
-		fileDiffs[i] = "diff --git" + fileDiffs[i]
+
+	remoteCommit, err := repo.CommitObject(remoteRef.Hash())
+	if err != nil {
+		return nil, fmt.Errorf("error while getting remote commit object: %w", err)
 	}
-	return fileDiffs
+	return remoteCommit, nil
 }
 
-func toFileDiff(strDiff string) (models.FileDiff, error) {
-	parts := strings.SplitN(strDiff, "\n", 2)
-	if len(parts) < 2 {
-		return models.FileDiff{}, fmt.Errorf("diff contains less than 2 lines")
+func getLocalHeadCommit(repo *git.Repository) (*gitObject.Commit, error) {
+	headRef, err := repo.Head()
+	if err != nil {
+		return nil, fmt.Errorf("error while getting repo HEAD: %w", err)
 	}
-	header := parts[0]
-	fileNames := strings.Fields(header)
-	if len(fileNames) <= 3 {
-		return models.FileDiff{}, fmt.Errorf("can't find file names")
+
+	localCommit, err := repo.CommitObject(headRef.Hash())
+	if err != nil {
+		return nil, fmt.Errorf("error while getting commitObject : %w", err)
 	}
-	oldFile := fileNames[2][2:]
-	newFile := fileNames[3][2:]
-	return models.FileDiff{
-		OldFile: oldFile,
-		NewFile: newFile,
-		Diff:    strDiff,
-	}, nil
+	return localCommit, nil
 }
