@@ -28,7 +28,7 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
           ) : isLoading ? (
             'Loading '
           ) : (
-            <DeploymentDiff fileDiffs={diffs?.data ?? []} autoOpen={true}></DeploymentDiff>
+            <DeploymentDiff fileDiffs={diffs?.data ?? []} autoOpen></DeploymentDiff>
           )}
         </ScrollArea>
       </DialogContent>

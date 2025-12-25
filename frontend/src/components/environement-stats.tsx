@@ -3,6 +3,7 @@ import { refetchDeployments, useDiff, useStats } from '@/hooks';
 import { cn, useDeploymentNavigate } from '@/lib';
 import { useQueryClient } from '@tanstack/react-query';
 import { FileDiff, RefreshCcw, TriangleAlert } from 'lucide-react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { DeploymentDiffDialog } from './deployment/deployment-diff-dialog';
@@ -34,7 +35,7 @@ export function EnvironementStats({ className }: { className?: string }) {
     toast.promise(
       () =>
         sync().then((res) => {
-          if (res.data?.id && res.data.id != '0') {
+          if (res.data?.id && res.data.id !== '0') {
             refetchDeployments(queryClient);
             depNavigate(res.data.id);
             return true;
@@ -49,6 +50,10 @@ export function EnvironementStats({ className }: { className?: string }) {
       },
     );
   }
+
+  const handleSyncCallback = useCallback(() => {
+    handleSync();
+  }, []);
 
   return (
     <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-4', className)}>
@@ -82,7 +87,7 @@ export function EnvironementStats({ className }: { className?: string }) {
             )}
           </Button>
         </DeploymentDiffDialog>
-        <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
+        <Button variant="outline" onClick={handleSyncCallback} disabled={isSyncLoading}>
           <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
           {t('SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}

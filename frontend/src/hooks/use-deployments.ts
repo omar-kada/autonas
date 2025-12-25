@@ -10,7 +10,7 @@ export const useDeployments = () => {
 
   return {
     deployments: data?.data ?? [],
-    isLoading: isLoading,
+    isLoading,
     error,
   };
 };
