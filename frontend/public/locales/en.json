@@ -16,6 +16,7 @@
   "UPDATED_FILES": "Updated files",
   "EVENTS_LOG": "Events log",
   "DIFF_BETWEEN_DEPLOYED_AND_REMOTE": "New changes from git repo",
+  "DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION": "Showing differences between what's currently deployed and the latest version from the repository.",
   "SYNCHRONIZING": "Synchronizing",
   "SYNC_SUCCESS": "Success, Deployment is running",
   "SYNC_NO_CHANGES": "No changes to synchronize",

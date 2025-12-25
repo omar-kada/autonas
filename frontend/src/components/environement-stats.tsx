@@ -23,15 +23,7 @@ export function EnvironementStats({ className }: { className?: string }) {
 
   const { mutateAsync: sync, isPending: isSyncLoading, error: syncError } = useDeployementAPISync();
 
-  if (isLoading) {
-    return <div>Loading stats...</div>;
-  }
-
-  if (error || stats == null) {
-    return <div>Error fetching stats: {error?.message}</div>;
-  }
-
-  function handleSync() {
+  const handleSync = useCallback(() => {
     toast.promise(
       () =>
         sync().then((res) => {
@@ -49,11 +41,15 @@ export function EnvironementStats({ className }: { className?: string }) {
         error: t('SYNC_ERROR'),
       },
     );
+  }, [sync, t, queryClient, depNavigate]);
+
+  if (isLoading) {
+    return <div>Loading stats...</div>;
   }
 
-  const handleSyncCallback = useCallback(() => {
-    handleSync();
-  }, []);
+  if (error || stats == null) {
+    return <div>Error fetching stats: {error?.message}</div>;
+  }
 
   return (
     <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-4', className)}>
@@ -87,7 +83,7 @@ export function EnvironementStats({ className }: { className?: string }) {
             )}
           </Button>
         </DeploymentDiffDialog>
-        <Button variant="outline" onClick={handleSyncCallback} disabled={isSyncLoading}>
+        <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
           <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
           {t('SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}

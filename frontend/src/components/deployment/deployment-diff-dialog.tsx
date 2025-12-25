@@ -2,7 +2,7 @@ import { useDiffAPIGet } from '@/api/api';
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DeploymentDiff } from '.';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
 
 export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
@@ -22,6 +22,7 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="w-full max-w-none sm:max-w-[90vw] lg:max-w-4xl">
         <DialogTitle>{t('DIFF_BETWEEN_DEPLOYED_AND_REMOTE')}</DialogTitle>
+        <DialogDescription>{t('DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION')}</DialogDescription>
         <ScrollArea className="max-h-[80vh] max-w-[90vw] spa">
           {error ? (
             error.message
