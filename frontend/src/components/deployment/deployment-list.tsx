@@ -19,7 +19,7 @@ export function DeploymentList({ OnSelect }: { OnSelect: (item: Deployment) => v
 
   return (
     <div className="space-y-2">
-      {deployments.map((deployment) =>
+      {deployments.data.map((deployment) =>
         DeploymentItem(deployment, deployment.id === selectedDeployment, onDeploymentClick),
       )}
     </div>

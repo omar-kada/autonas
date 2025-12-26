@@ -26,6 +26,7 @@ type Service interface {
 	GetCurrentStats(days int) (models.Stats, error)
 	GetDiff() ([]models.FileDiff, error)
 	GetManagedStacks() (map[string][]models.ContainerSummary, error)
+	GetDeployments(limit int, offset uint64) ([]models.Deployment, error)
 }
 
 // NewService creates a new process Service instance
@@ -164,7 +165,7 @@ func (s *service) GetManagedStacks() (map[string][]models.ContainerSummary, erro
 
 // GetCurrentStats returns the statistics of deployments for the last N days
 func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
-	deps, err := s.store.GetDeployments()
+	deps, err := s.store.GetDeployments(storage.NewIDCursor(100, 0))
 	if err != nil {
 		return models.Stats{}, err
 	}
@@ -184,7 +185,24 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 		stats.LastStatus = last.Status
 	}
 	stats.NextDeploy = s.scheduler.GetNext()
+
+	stacks, err := s.GetManagedStacks()
+	if err != nil {
+		return models.Stats{}, err
+	}
+	stats.Health = getGlobalHealth(stacks)
 	return stats, nil
+}
+
+func getGlobalHealth(stacks map[string][]models.ContainerSummary) container.HealthStatus {
+	for _, containers := range stacks {
+		for _, ctnr := range containers {
+			if container.Unhealthy == ctnr.Health {
+				return container.Unhealthy
+			}
+		}
+	}
+	return container.Healthy
 }
 
 // GetDiff returns the changed files between what's deployed and the repo
@@ -205,4 +223,9 @@ func (s *service) getConfig() (models.Config, error) {
 		return s.currentCfg, nil
 	}
 	return s.configStore.Get()
+}
+
+// GetDeployments returns a paginated list of deployments.
+func (s *service) GetDeployments(limit int, offset uint64) ([]models.Deployment, error) {
+	return s.store.GetDeployments(storage.NewIDCursor(limit, offset))
 }

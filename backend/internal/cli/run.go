@@ -2,9 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
 	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/docker"
@@ -18,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 const (
@@ -89,7 +92,19 @@ func initGorm(dbFile string, addPerm os.FileMode) (*gorm.DB, error) {
 			return nil, err
 		}
 	}
-	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{})
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold: time.Second, // Slow SQL threshold
+			LogLevel:      logger.Info, // Log level
+			Colorful:      true,        // Enable color
+		},
+	)
+
+	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{
+		Logger: newLogger,
+	})
 	if err != nil {
 		return nil, err
 	}

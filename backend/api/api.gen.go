@@ -124,6 +124,12 @@ type FileDiff struct {
 	OldFile string `json:"oldFile"`
 }
 
+// PageInfo defines model for PageInfo.
+type PageInfo struct {
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
+}
+
 // StackStatus defines model for StackStatus.
 type StackStatus struct {
 	Name     string            `json:"name"`
@@ -144,6 +150,12 @@ type Stats struct {
 
 // Versions defines model for Versions.
 type Versions string
+
+// DeployementAPIListParams defines parameters for DeployementAPIList.
+type DeployementAPIListParams struct {
+	Limit  int32   `form:"limit" json:"limit"`
+	Offset *string `form:"offset,omitempty" json:"offset,omitempty"`
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -219,7 +231,7 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// DeployementAPIList request
-	DeployementAPIList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeployementAPIList(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeployementAPISync request
 	DeployementAPISync(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -237,8 +249,8 @@ type ClientInterface interface {
 	StatusAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) DeployementAPIList(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeployementAPIListRequest(c.Server)
+func (c *Client) DeployementAPIList(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeployementAPIListRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +322,7 @@ func (c *Client) StatusAPIGet(ctx context.Context, reqEditors ...RequestEditorFn
 }
 
 // NewDeployementAPIListRequest generates requests for DeployementAPIList
-func NewDeployementAPIListRequest(server string) (*http.Request, error) {
+func NewDeployementAPIListRequest(server string, params *DeployementAPIListParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -326,6 +338,38 @@ func NewDeployementAPIListRequest(server string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "limit", runtime.ParamLocationQuery, params.Limit); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if params.Offset != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -529,7 +573,7 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// DeployementAPIListWithResponse request
-	DeployementAPIListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error)
+	DeployementAPIListWithResponse(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error)
 
 	// DeployementAPISyncWithResponse request
 	DeployementAPISyncWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeployementAPISyncResponse, error)
@@ -550,8 +594,11 @@ type ClientWithResponsesInterface interface {
 type DeployementAPIListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]Deployment
-	JSONDefault  *Error
+	JSON200      *struct {
+		Data     []Deployment `json:"data"`
+		PageInfo PageInfo     `json:"pageInfo"`
+	}
+	JSONDefault *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -686,8 +733,8 @@ func (r StatusAPIGetResponse) StatusCode() int {
 }
 
 // DeployementAPIListWithResponse request returning *DeployementAPIListResponse
-func (c *ClientWithResponses) DeployementAPIListWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error) {
-	rsp, err := c.DeployementAPIList(ctx, reqEditors...)
+func (c *ClientWithResponses) DeployementAPIListWithResponse(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error) {
+	rsp, err := c.DeployementAPIList(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +801,10 @@ func ParseDeployementAPIListResponse(rsp *http.Response) (*DeployementAPIListRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Deployment
+		var dest struct {
+			Data     []Deployment `json:"data"`
+			PageInfo PageInfo     `json:"pageInfo"`
+		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -940,7 +990,7 @@ func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// (GET /api/deployment)
-	DeployementAPIList(w http.ResponseWriter, r *http.Request)
+	DeployementAPIList(w http.ResponseWriter, r *http.Request, params DeployementAPIListParams)
 
 	// (POST /api/deployment)
 	DeployementAPISync(w http.ResponseWriter, r *http.Request)
@@ -969,8 +1019,35 @@ type MiddlewareFunc func(http.Handler) http.Handler
 
 // DeployementAPIList operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeployementAPIListParams
+
+	// ------------- Required query parameter "limit" -------------
+
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", false, true, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "offset", r.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeployementAPIList(w, r)
+		siw.Handler.DeployementAPIList(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1197,13 +1274,18 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	return m
 }
 
-type DeployementAPIListRequestObject struct{}
+type DeployementAPIListRequestObject struct {
+	Params DeployementAPIListParams
+}
 
 type DeployementAPIListResponseObject interface {
 	VisitDeployementAPIListResponse(w http.ResponseWriter) error
 }
 
-type DeployementAPIList200JSONResponse []Deployment
+type DeployementAPIList200JSONResponse struct {
+	Data     []Deployment `json:"data"`
+	PageInfo PageInfo     `json:"pageInfo"`
+}
 
 func (response DeployementAPIList200JSONResponse) VisitDeployementAPIListResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1416,8 +1498,10 @@ type strictHandler struct {
 }
 
 // DeployementAPIList operation middleware
-func (sh *strictHandler) DeployementAPIList(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) DeployementAPIList(w http.ResponseWriter, r *http.Request, params DeployementAPIListParams) {
 	var request DeployementAPIListRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeployementAPIList(ctx, request.(DeployementAPIListRequestObject))

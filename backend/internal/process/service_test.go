@@ -278,6 +278,7 @@ func TestGetCurrentStats_NoDeployments(t *testing.T) {
 
 	next := time.Now().Add(1 * time.Hour)
 	mocker.On("GetNext").Return(next)
+	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
 
 	stats, err := service.GetCurrentStats(7)
 	assert.NoError(t, err)
@@ -294,6 +295,7 @@ func TestGetCurrentStats_WithDeployments(t *testing.T) {
 
 	next := time.Now().Add(30 * time.Minute)
 	mocker.On("GetNext").Return(next)
+	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
 
 	// create a successful deployment
 	dep1, err := service.store.InitDeployment("first", "alice", "diff1", nil)
