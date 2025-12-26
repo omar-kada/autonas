@@ -40,28 +40,28 @@ func NewHandler(store storage.DeploymentStorage, service process.Service) *Handl
 
 // DeployementAPIList implements the StrictServerInterface interface
 func (h *Handler) DeployementAPIList(_ context.Context, request api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
-	offset, err := validateCursorOffset(request)
+	offset, err := validateCursorOffset(request.Params.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("invalid after value")
 	}
 
-	if request.Params.Page.Limit <= 0 {
+	if request.Params.Limit <= 0 {
 		return nil, fmt.Errorf("invalid first value")
 	}
 
-	deps, err := h.processSvc.GetDeployments(int(request.Params.Page.Limit), offset)
+	deps, err := h.processSvc.GetDeployments(int(request.Params.Limit), offset)
 
 	return api.DeployementAPIList200JSONResponse{
 		Data:     models.ListMapper(h.depMapper.Map)(deps),
-		PageInfo: h.depMapper.MapToPageInfo(deps, int(request.Params.Page.Limit)),
+		PageInfo: h.depMapper.MapToPageInfo(deps, int(request.Params.Limit)),
 	}, err
 }
 
-func validateCursorOffset(request api.DeployementAPIListRequestObject) (uint64, error) {
+func validateCursorOffset(offsetStr *string) (uint64, error) {
 	offset := uint64(0)
 	var err error
-	if request.Params.Page.Offset != nil && *request.Params.Page.Offset != "" {
-		offset, err = strconv.ParseUint(*request.Params.Page.Offset, 10, 64)
+	if offsetStr != nil && *offsetStr != "" {
+		offset, err = strconv.ParseUint(*offsetStr, 10, 64)
 	}
 	return offset, err
 }

@@ -155,10 +155,8 @@ export const Versions = {
 } as const;
 
 export type DeployementAPIListParams = {
-page: {
-  offset?: string;
-  limit: number;
-};
+limit: number;
+offset?: string;
 };
 
 export type DeployementAPIList200 = {
