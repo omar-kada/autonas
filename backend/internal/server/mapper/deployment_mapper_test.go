@@ -2,10 +2,11 @@ package mapper
 
 import (
 	"log/slog"
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/models"
 	"testing"
 	"time"
+
+	"omar-kada/autonas/api"
+	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/assert"
 )

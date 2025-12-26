@@ -195,7 +195,6 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 }
 
 func getGlobalHealth(stacks map[string][]models.ContainerSummary) container.HealthStatus {
-
 	for _, containers := range stacks {
 		for _, ctnr := range containers {
 			if container.Unhealthy == ctnr.Health {

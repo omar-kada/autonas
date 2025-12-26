@@ -36,7 +36,7 @@ func (s *MemoryStorage) GetDeployments(c Cursor[uint64]) ([]models.Deployment, e
 			startIndex = int(i)
 		}
 	}
-	limit := min(startIndex + c.Limit, len(deployments))
+	limit := min(startIndex+c.Limit, len(deployments))
 
 	return deployments[startIndex:limit], nil
 }
