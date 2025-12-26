@@ -30,11 +30,11 @@ export function DeploymentsPage() {
     return <div>Loading deployments...</div>;
   }
 
-  if (error) {
+  if (error || !deployments) {
     return <div>Error fetching deployments: {error?.message}</div>;
   }
   // Check if data exists and is an object
-  if (!deployments || typeof deployments !== 'object' || !deployments.length) {
+  if (!deployments || typeof deployments !== 'object' || !deployments.data.length) {
     return (
       <>
         <div>No deployments data available</div>;
@@ -43,7 +43,7 @@ export function DeploymentsPage() {
   }
 
   if (id == null) {
-    return <Navigate to={deployments[0].id}></Navigate>;
+    return <Navigate to={deployments.data[0].id}></Navigate>;
   }
   return (
     <div className="flex flex-1 overflow-hidden">

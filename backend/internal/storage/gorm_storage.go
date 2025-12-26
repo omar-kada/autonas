@@ -24,9 +24,11 @@ func NewGormStorage(db *gorm.DB) (Storage, error) {
 }
 
 // GetDeployments retrieves all deployments with their associated files and events
-func (s *gormStorage) GetDeployments() ([]models.Deployment, error) {
+func (s *gormStorage) GetDeployments(c Cursor[uint64]) ([]models.Deployment, error) {
 	var deps []models.Deployment
-	if err := s.db.Preload("Files").Preload("Events").Order("Time desc").Limit(20).Find(&deps).Error; err != nil {
+	if err := s.db.
+		Preload("Files").Preload("Events").Order("Time desc").
+		Scopes(Paginate(c)).Find(&deps).Error; err != nil {
 		return nil, err
 	}
 	return deps, nil

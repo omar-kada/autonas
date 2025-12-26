@@ -3,6 +3,8 @@ package models
 import (
 	"log/slog"
 	"time"
+
+	"github.com/moby/moby/api/types/container"
 )
 
 // DeploymentStatus defines model for Deployment.Status.
@@ -27,6 +29,16 @@ type Deployment struct {
 	Title   string
 	Files   []FileDiff `gorm:"foreignKey:DeploymentID;constraint:OnDelete:CASCADE;"`
 	Events  []Event    `gorm:"foreignKey:ObjectID;constraint:OnDelete:CASCADE;"`
+}
+
+// Compare compares two deployments by their ID.
+func (d Deployment) Compare(other Deployment) int {
+	if d.ID < other.ID {
+		return -1
+	} else if d.ID > other.ID {
+		return 1
+	}
+	return 0
 }
 
 // FileDiff defines model for FileDiff.
@@ -55,4 +67,5 @@ type Stats struct {
 	LastStatus DeploymentStatus
 	NextDeploy time.Time
 	Success    int32
+	Health     container.HealthStatus
 }

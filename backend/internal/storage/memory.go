@@ -24,16 +24,21 @@ func NewMemoryStorage() *MemoryStorage {
 }
 
 // GetDeployments returns stored deployments
-func (s *MemoryStorage) GetDeployments() ([]models.Deployment, error) {
+func (s *MemoryStorage) GetDeployments(c Cursor[uint64]) ([]models.Deployment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// transform map to slice
 	var deployments []models.Deployment
-	for _, deployment := range s.deployments.AllFromBack() {
+	startIndex := 0
+	for i, deployment := range s.deployments.AllFromBack() {
 		deployments = append(deployments, deployment)
+		if deployment.ID == c.Offset {
+			startIndex = int(i)
+		}
 	}
+	limit := min(startIndex + c.Limit, len(deployments))
 
-	return deployments, nil
+	return deployments[startIndex:limit], nil
 }
 
 // GetDeployment returns deployment by id

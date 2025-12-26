@@ -13,7 +13,7 @@ type Storage interface {
 
 // DeploymentStorage is an abstraction of all deployment database operations
 type DeploymentStorage interface {
-	GetDeployments() ([]models.Deployment, error)
+	GetDeployments(c Cursor[uint64]) ([]models.Deployment, error)
 	GetDeployment(id uint64) (models.Deployment, error)
 	InitDeployment(title string, author string, diff string, files []models.FileDiff) (models.Deployment, error)
 	EndDeployment(deploymentID uint64, status models.DeploymentStatus) error

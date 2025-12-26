@@ -125,6 +125,11 @@ export interface FileDiff {
   diff: string;
 }
 
+export interface PageInfo {
+  hasNextPage: boolean;
+  endCursor: string;
+}
+
 export interface StackStatus {
   stackId: string;
   name: string;
@@ -149,39 +154,51 @@ export const Versions = {
   '10': '1.0',
 } as const;
 
+export type DeployementAPIListParams = {
+first: number;
+after?: string;
+};
+
+export type DeployementAPIList200 = {
+  data: Deployment[];
+  pageInfo: PageInfo;
+};
+
 /**
  * List deployments
  */
 export const deployementAPIList = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Deployment[]>> => {
+    params: DeployementAPIListParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<DeployementAPIList200>> => {
     
     
     return axios.default.get(
-      `/api/deployment`,options
+      `/api/deployment`,{
+    ...options,
+        params: {...params, ...options?.params},}
     );
   }
 
 
 
 
-export const getDeployementAPIListQueryKey = () => {
+export const getDeployementAPIListQueryKey = (params?: DeployementAPIListParams,) => {
     return [
-    `/api/deployment`
+    `/api/deployment`, ...(params ? [params]: [])
     ] as const;
     }
 
     
-export const getDeployementAPIListQueryOptions = <TData = Awaited<ReturnType<typeof deployementAPIList>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getDeployementAPIListQueryOptions = <TData = Awaited<ReturnType<typeof deployementAPIList>>, TError = AxiosError<Error>>(params: DeployementAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getDeployementAPIListQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getDeployementAPIListQueryKey(params);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof deployementAPIList>>> = ({ signal }) => deployementAPIList({ signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof deployementAPIList>>> = ({ signal }) => deployementAPIList(params, { signal, ...axiosOptions });
 
       
 
@@ -195,7 +212,7 @@ export type DeployementAPIListQueryError = AxiosError<Error>
 
 
 export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployementAPIList>>, TError = AxiosError<Error>>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>> & Pick<
+ params: DeployementAPIListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof deployementAPIList>>,
           TError,
@@ -205,7 +222,7 @@ export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployem
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployementAPIList>>, TError = AxiosError<Error>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>> & Pick<
+ params: DeployementAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof deployementAPIList>>,
           TError,
@@ -215,16 +232,16 @@ export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployem
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployementAPIList>>, TError = AxiosError<Error>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
+ params: DeployementAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployementAPIList>>, TError = AxiosError<Error>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
+ params: DeployementAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof deployementAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getDeployementAPIListQueryOptions(options)
+  const queryOptions = getDeployementAPIListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
