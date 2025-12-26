@@ -26,7 +26,7 @@ type Service interface {
 	GetCurrentStats(days int) (models.Stats, error)
 	GetDiff() ([]models.FileDiff, error)
 	GetManagedStacks() (map[string][]models.ContainerSummary, error)
-	GetDeployments(first int, after uint64) ([]models.Deployment, error)
+	GetDeployments(limit int, offset uint64) ([]models.Deployment, error)
 }
 
 // NewService creates a new process Service instance
@@ -226,6 +226,6 @@ func (s *service) getConfig() (models.Config, error) {
 }
 
 // GetDeployments returns a paginated list of deployments.
-func (s *service) GetDeployments(first int, after uint64) ([]models.Deployment, error) {
-	return s.store.GetDeployments(storage.NewIDCursor(first, after))
+func (s *service) GetDeployments(limit int, offset uint64) ([]models.Deployment, error) {
+	return s.store.GetDeployments(storage.NewIDCursor(limit, offset))
 }

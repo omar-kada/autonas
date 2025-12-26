@@ -4,8 +4,10 @@ import type { QueryClient } from '@tanstack/react-query';
 export const useDeployments = () => {
   const { data, isLoading, error } = useDeployementAPIList(
     {
-      after: '',
-      first: 15,
+      page: {
+        offset: '',
+        limit: 15,
+      },
     },
     {
       query: {
@@ -24,8 +26,10 @@ export const useDeployments = () => {
 export function refetchDeployments(queryClient: QueryClient) {
   queryClient.refetchQueries(
     getDeployementAPIListQueryOptions({
-      after: '',
-      first: 15,
+      page: {
+        offset: '',
+        limit: 15,
+      },
     }),
   );
 }

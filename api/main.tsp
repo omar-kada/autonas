@@ -91,6 +91,11 @@ model PageInfo {
   endCursor: string;
 }
 
+model PageRequest<T> {
+  offset?: T;
+  limit: int32;
+}
+
 @error
 model Error {
   code: int32;
@@ -101,10 +106,7 @@ model Error {
 @tag("Deployment")
 interface DeployementAPI {
   /** List deployments */
-  @get list(
-    @query first: int32,
-    @query after?: string,
-  ): Page<Deployment> | Error;
+  @get list(@query page: PageRequest<Deployment.id>): Page<Deployment> | Error;
   /** Read deployments */
   @get read(@path id: string): Deployment | Error;
   /** Sync and deploy if changes */
