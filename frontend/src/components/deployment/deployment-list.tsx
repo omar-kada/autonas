@@ -10,12 +10,11 @@ import { ScrollArea } from '../ui/scroll-area';
 
 export function DeploymentList({
   selectedDeployment,
-  OnSelect,
+  onSelect,
   className,
 }: {
-  deployments: Array<Deployment>;
   selectedDeployment?: string;
-  OnSelect: (item: Deployment) => void;
+  onSelect: (item: Deployment) => void;
   className?: string;
 }) {
   const { ref, inView } = useInView();
@@ -54,7 +53,7 @@ export function DeploymentList({
             key={deployment.id}
             deployment={deployment}
             isSelected={deployment.id === selectedDeployment}
-            onSelect={OnSelect}
+            onSelect={onSelect}
           ></DeploymentListItem>
         ))}
         <div ref={ref} className="flex justify-around">

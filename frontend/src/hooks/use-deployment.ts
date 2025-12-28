@@ -2,15 +2,12 @@ import { useDeployementAPIRead, type Deployment, type Error } from '@/api/api';
 import type { AxiosError } from 'axios';
 
 export const useDeployment = (
-  id?: string,
+  id: string,
 ): {
   deployment?: Deployment;
   isPending?: boolean;
   error?: AxiosError<Error, unknown> | null;
 } => {
-  if (id == null) {
-    return {};
-  }
   const { data, isPending, error } = useDeployementAPIRead(id);
 
   return {

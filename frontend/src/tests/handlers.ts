@@ -14,6 +14,17 @@ const mockState: StackStatus = {
     },
   ],
 };
+
+const mockStats: Stats = {
+  error: 5,
+  success: 15,
+  nextDeploy: new Date().toString(),
+  lastDeploy: new Date().toString(),
+  status: DeploymentStatus.success,
+  health: ContainerHealth.healthy,
+  author: 'Test',
+};
+
 export const handlers = [
   http.get('/api/status', () => {
     return new Response(JSON.stringify(mockState), {
@@ -26,13 +37,3 @@ export const handlers = [
     });
   }),
 ];
-
-const mockStats: Stats = {
-  error: 5,
-  success: 15,
-  nextDeploy: new Date().toString(),
-  lastDeploy: new Date().toString(),
-  status: DeploymentStatus.success,
-  health: ContainerHealth.healthy,
-  author: 'Test',
-};
