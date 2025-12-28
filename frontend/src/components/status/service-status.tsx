@@ -1,7 +1,7 @@
 import type { ContainerStatus } from '@/api/api';
 import dockerLogo from '@/assets/docker.svg';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '../ui/item';
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '../ui/item';
 import { HumanTime } from '../view/human-time';
 import { ContainerStatusBadge } from './container-status-badge';
 
@@ -25,16 +25,18 @@ export function ServiceStatus(props: {
         <ItemTitle>{props.serviceName}</ItemTitle>
         <ItemDescription className="line-clamp-none">
           <HumanTime time={time} />
-          {props.serviceContainers.map((item) => (
-            <ContainerStatusBadge
-              status={item.health}
-              label={item.name}
-              className="mx-1"
-              key={`${props.serviceName}-${item.name}`}
-            />
-          ))}
         </ItemDescription>
       </ItemContent>
+      <ItemActions className="flex-wrap">
+        {props.serviceContainers.map((item) => (
+          <ContainerStatusBadge
+            status={item.health}
+            label={item.name}
+            className="mx-1"
+            key={`${props.serviceName}-${item.name}`}
+          />
+        ))}
+      </ItemActions>
     </Item>
   );
 }

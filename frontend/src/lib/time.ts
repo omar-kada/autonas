@@ -51,9 +51,16 @@ export function formatElapsedMs(diffMs: number): string {
   return `${Math.round(duration)}${shortUnit}`;
 }
 
-export function formatElapsed(startDate: string | Date, endDate: string | Date): string {
+export function formatElapsed(startDate?: string | Date, endDate?: string | Date): string {
+  if (!isDateValid(startDate) || !isDateValid(endDate)) {
+    return '-';
+  }
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffMs = end.getTime() - start.getTime();
   return formatElapsedMs(diffMs);
+}
+
+export function isDateValid(date?: string | Date): date is string | Date {
+  return !!(date && new Date(date).getFullYear() > 1970);
 }

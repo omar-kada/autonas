@@ -10,33 +10,31 @@ import {
   LoaderCircle,
   X,
 } from 'lucide-react';
-import { textColorForStatus } from './colors';
 
 export function iconForStatus(status: DeploymentStatus) {
   switch (status) {
     case 'success':
-      return <Check className="h-4 w-4" />;
+      return Check;
     case 'error':
-      return <X className="h-4 w-4" />;
+      return X;
     case 'running':
-      return <LoaderCircle className="h-4 w-4 animate-spin" />;
+      return LoaderCircle;
     case 'planned':
-      return <Clock className="h-4 w-4" />;
+      return Clock;
     default:
-      return <CircleQuestionMark className="h-4 w-4"></CircleQuestionMark>;
+      return CircleQuestionMark;
   }
 }
 
 export function iconForHealth(health: ContainerStatusHealth) {
-  const color = textColorForStatus(health);
   switch (health) {
     case 'healthy':
-      return <Heart className={color} />;
+      return Heart;
     case 'unhealthy':
-      return <HeartCrack className={color} />;
+      return HeartCrack;
     case 'starting':
-      return <HeartPulse className={color} />;
+      return HeartPulse;
     default:
-      return <HeartOff className={color} />;
+      return HeartOff;
   }
 }

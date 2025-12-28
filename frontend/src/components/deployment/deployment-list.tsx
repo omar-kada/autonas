@@ -1,52 +1,61 @@
 import type { Deployment } from '@/api/api';
-import { useDeployments } from '@/hooks';
-import { colorForStatus, iconForStatus } from '@/lib';
 import { ChevronRight } from 'lucide-react';
 import { useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { Badge } from '../ui/badge';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '../ui/item';
 import { HumanTime } from '../view';
+import { DeploymentStatusBadge } from './deployment-status-badge';
 
-export function DeploymentList({ OnSelect }: { OnSelect: (item: Deployment) => void }) {
-  const { deployments } = useDeployments();
-  const { id: selectedDeployment } = useParams();
-
+export function DeploymentList({
+  deployments,
+  selectedDeployment,
+  OnSelect,
+}: {
+  deployments: Array<Deployment>;
+  selectedDeployment?: string;
+  OnSelect: (item: Deployment) => void;
+}) {
   const onDeploymentClick = useCallback(
     (deployment: Deployment) => () => OnSelect(deployment),
     [OnSelect],
   );
 
   return (
-    <div className="space-y-2">
-      {deployments.data.map((deployment) =>
-        DeploymentItem(deployment, deployment.id === selectedDeployment, onDeploymentClick),
-      )}
+    <div className="space-y-2 p-3">
+      {deployments.map((deployment) => (
+        <DeploymentItem
+          key={deployment.id}
+          deployment={deployment}
+          isSelected={deployment.id === selectedDeployment}
+          onSelect={onDeploymentClick}
+        ></DeploymentItem>
+      ))}
     </div>
   );
 }
 
-function DeploymentItem(
-  deployment: Deployment,
-  isSelected: boolean,
-  onDeploymentClick: (deployment: Deployment) => () => void,
-) {
+function DeploymentItem({
+  deployment,
+  isSelected,
+  onSelect,
+}: {
+  deployment: Deployment;
+  isSelected: boolean;
+  onSelect: (deployment: Deployment) => () => void;
+}) {
   return (
     <Item
       key={deployment.id}
       className={`cursor-pointer ${isSelected ? 'bg-accent' : ''}`}
-      onClick={onDeploymentClick(deployment)}
+      onClick={onSelect(deployment)}
       variant="outline"
     >
       <ItemContent>
         <ItemTitle>
-          <Badge className={colorForStatus(deployment.status)}>
-            {iconForStatus(deployment.status)}
-          </Badge>
+          <DeploymentStatusBadge status={deployment.status} iconOnly />
           {deployment.title}
         </ItemTitle>
         <ItemDescription className="text-xs">
-          <HumanTime time={deployment.time} />
+          #{deployment.id} - <HumanTime time={deployment.time} />
         </ItemDescription>
       </ItemContent>
       <ItemActions className="flex-col justify-between h-full">

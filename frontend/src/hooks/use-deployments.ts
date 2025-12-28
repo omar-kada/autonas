@@ -1,31 +1,33 @@
-import { getDeployementAPIListQueryOptions, useDeployementAPIList } from '@/api/api';
-import type { QueryClient } from '@tanstack/react-query';
+import {
+  deployementAPIList,
+  getDeployementAPIListQueryKey,
+  type DeployementAPIList200,
+  type DeployementAPIListParams,
+  type Deployment,
+} from '@/api/api';
+import { type InfiniteData, type QueryClient } from '@tanstack/react-query';
+import type { AxiosResponse } from 'axios';
 
-export const useDeployments = () => {
-  const { data, isLoading, error } = useDeployementAPIList(
-    {
-      offset: '',
-      limit: 15,
-    },
-    {
-      query: {
-        refetchInterval: 50000,
-      },
-    },
-  );
+const initialParams = { limit: 10, offset: '' } as DeployementAPIListParams;
 
+export function getDeploymentsQueryOptions() {
   return {
-    deployments: data?.data ?? { data: [], pageInfo: { hasNextPage: false, endCursor: '' } },
-    isLoading,
-    error,
+    queryKey: getDeployementAPIListQueryKey(initialParams),
+    queryFn: ({ pageParam = initialParams }: { pageParam: DeployementAPIListParams }) =>
+      deployementAPIList(pageParam),
+    initialPageParam: initialParams,
+    select: (data: InfiniteData<AxiosResponse<DeployementAPIList200>, any>): Deployment[] => {
+      return data.pages.flatMap((page) => page.data.items ?? []);
+    },
+    getNextPageParam: (lastPage: AxiosResponse<DeployementAPIList200>) => {
+      if (lastPage.data.pageInfo.endCursor === '') {
+        return undefined;
+      }
+      return { limit: initialParams.limit, offset: lastPage.data.pageInfo.endCursor };
+    },
   };
-};
+}
 
 export function refetchDeployments(queryClient: QueryClient) {
-  queryClient.refetchQueries(
-    getDeployementAPIListQueryOptions({
-      offset: '',
-      limit: 15,
-    }),
-  );
+  queryClient.refetchQueries(getDeploymentsQueryOptions());
 }
