@@ -12,7 +12,7 @@ export function DeploymentStatusBadge(props: {
   const Icon = iconForStatus(props.status);
   return (
     <Badge className={cn(colorForStatus(props.status), props.className)}>
-      <Icon className={`${props.status == 'running' ? 'animate-spin' : ''}`} />
+      <Icon className={`${props.status === 'running' ? 'animate-spin' : ''}`} />
       {!props.iconOnly && (props.label ?? props.status ?? 'unknown')}
     </Badge>
   );

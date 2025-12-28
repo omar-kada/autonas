@@ -10,7 +10,6 @@ import { useDeploymentNavigate } from '@/lib';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { DeploymentDetail, DeploymentList, DeploymentToolbar } from './deployment';
 import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 
 export function DeploymentsPage() {
@@ -28,7 +27,7 @@ export function DeploymentsPage() {
   } = useInfiniteQuery(getDeploymentsQueryOptions());
   const { id } = useParams();
 
-  const [showItem, setShowItem] = useState(!!id);
+  const [showItem, setShowItem] = useState(id != null);
   const handleSelect = useCallback(
     (item: Deployment) => {
       deploymentNavigate(item.id);
@@ -76,16 +75,15 @@ export function DeploymentsPage() {
           className={`w-full h-full max-h-full flex flex-col sm:w-75 sm:shrink-0 m-2 pb-4 ${showItem ? 'hidden sm:flex' : ''}`}
         >
           <div className="flex-1 h-1">
-            <ScrollArea className="mb-5 border h-full rounded-lg max-h-full bg-muted/30">
-              <DeploymentList
-                deployments={deployments ?? []}
-                selectedDeployment={id}
-                OnSelect={handleSelect}
-              />
-              <div ref={ref} className="flex justify-around">
-                {(isFetchingNextPage || hasNextPage) && <Loader className="animate-spin my-2" />}
-              </div>
-            </ScrollArea>
+            <DeploymentList
+              deployments={deployments ?? []}
+              selectedDeployment={id}
+              OnSelect={handleSelect}
+              className="border rounded-lg h-full max-h-full bg-muted/30"
+            />
+            <div ref={ref} className="flex justify-around">
+              {(isFetchingNextPage || hasNextPage) && <Loader className="animate-spin my-2" />}
+            </div>
           </div>
         </aside>
 

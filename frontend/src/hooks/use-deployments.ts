@@ -16,7 +16,9 @@ export function getDeploymentsQueryOptions() {
     queryFn: ({ pageParam = initialParams }: { pageParam: DeployementAPIListParams }) =>
       deployementAPIList(pageParam),
     initialPageParam: initialParams,
-    select: (data: InfiniteData<AxiosResponse<DeployementAPIList200>, any>): Deployment[] => {
+    select: (
+      data: InfiniteData<AxiosResponse<DeployementAPIList200>, DeployementAPIListParams>,
+    ): Deployment[] => {
       return data.pages.flatMap((page) => page.data.items ?? []);
     },
     getNextPageParam: (lastPage: AxiosResponse<DeployementAPIList200>) => {

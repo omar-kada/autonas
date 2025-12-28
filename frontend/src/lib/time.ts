@@ -62,5 +62,5 @@ export function formatElapsed(startDate?: string | Date, endDate?: string | Date
 }
 
 export function isDateValid(date?: string | Date): date is string | Date {
-  return !!(date && new Date(date).getFullYear() > 1970);
+  return date != null && new Date(date).getFullYear() > 1970;
 }

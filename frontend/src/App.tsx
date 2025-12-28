@@ -8,15 +8,15 @@ function App() {
       <div className="flex flex-col h-screen pb-15 sm:pb-0">
         <Topbar>
           {/* Top navigation bar, on big screens */}
-          <div className="flex-1 justify-around flex ml-10">
-            <div className="flex-1 flex ">
-              <NavBar className="hidden sm:flex bg-sidebar items-center" />
-            </div>
-            <EnvironementHealth></EnvironementHealth>
+          <div className="flex">
+            <NavBar className="hidden md:flex bg-sidebar items-center flex-1" />
           </div>
+          <EnvironementHealth></EnvironementHealth>
+          {/* <div className="flex justify-before flex-row-reverse ml-10">
+          </div> */}
         </Topbar>
         {/* Bottom navigation bar, on small screens */}
-        <NavBar className="flex sm:hidden bg-sidebar h-14 border-t w-full fixed items-center justify-around bottom-0 left-0 right-0 z-50" />
+        <NavBar className="flex md:hidden bg-sidebar h-12 border-t w-full fixed items-center justify-around bottom-0 left-0 right-0 z-50" />
 
         <Routes>
           <Route path="/" element={<Navigate to={ROUTES.DEPLOYMENTS}></Navigate>} />

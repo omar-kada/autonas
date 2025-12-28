@@ -1,66 +1,66 @@
 import type { Deployment } from '@/api/api';
-import { ChevronRight } from 'lucide-react';
-import { useCallback } from 'react';
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '../ui/item';
-import { HumanTime } from '../view';
-import { DeploymentStatusBadge } from './deployment-status-badge';
+import { getDeploymentsQueryOptions } from '@/hooks';
+import { cn } from '@/lib';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Loader } from 'lucide-react';
+import { useEffect } from 'react';
+import { useInView } from 'react-intersection-observer';
+import { DeploymentListItem } from '.';
+import { ScrollArea } from '../ui/scroll-area';
 
 export function DeploymentList({
-  deployments,
   selectedDeployment,
   OnSelect,
+  className,
 }: {
   deployments: Array<Deployment>;
   selectedDeployment?: string;
   OnSelect: (item: Deployment) => void;
+  className?: string;
 }) {
-  const onDeploymentClick = useCallback(
-    (deployment: Deployment) => () => OnSelect(deployment),
-    [OnSelect],
-  );
+  const { ref, inView } = useInView();
+  const {
+    data: deployments,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useInfiniteQuery(getDeploymentsQueryOptions());
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  if (isLoading) {
+    return <div>Loading deployments...</div>;
+  }
+
+  if (error || !deployments) {
+    return <div>Error fetching deployments: {error?.message}</div>;
+  }
+  // Check if data exists and is an object
+  if (!deployments || typeof deployments !== 'object' || !deployments.length) {
+    return <div>No deployments data available</div>;
+  }
 
   return (
-    <div className="space-y-2 p-3">
-      {deployments.map((deployment) => (
-        <DeploymentItem
-          key={deployment.id}
-          deployment={deployment}
-          isSelected={deployment.id === selectedDeployment}
-          onSelect={onDeploymentClick}
-        ></DeploymentItem>
-      ))}
-    </div>
-  );
-}
-
-function DeploymentItem({
-  deployment,
-  isSelected,
-  onSelect,
-}: {
-  deployment: Deployment;
-  isSelected: boolean;
-  onSelect: (deployment: Deployment) => () => void;
-}) {
-  return (
-    <Item
-      key={deployment.id}
-      className={`cursor-pointer ${isSelected ? 'bg-accent' : ''}`}
-      onClick={onSelect(deployment)}
-      variant="outline"
-    >
-      <ItemContent>
-        <ItemTitle>
-          <DeploymentStatusBadge status={deployment.status} iconOnly />
-          {deployment.title}
-        </ItemTitle>
-        <ItemDescription className="text-xs">
-          #{deployment.id} - <HumanTime time={deployment.time} />
-        </ItemDescription>
-      </ItemContent>
-      <ItemActions className="flex-col justify-between h-full">
-        <ChevronRight />
-      </ItemActions>
-    </Item>
+    <ScrollArea className={cn('p-3', className)}>
+      <div className="flex flex-col gap-2">
+        {deployments.map((deployment) => (
+          <DeploymentListItem
+            key={deployment.id}
+            deployment={deployment}
+            isSelected={deployment.id === selectedDeployment}
+            onSelect={OnSelect}
+          ></DeploymentListItem>
+        ))}
+        <div ref={ref} className="flex justify-around">
+          {(isFetchingNextPage || hasNextPage) && <Loader className="animate-spin my-2" />}
+        </div>
+      </div>
+    </ScrollArea>
   );
 }

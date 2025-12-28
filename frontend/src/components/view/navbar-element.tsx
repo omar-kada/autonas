@@ -23,13 +23,13 @@ export function NavbarElement({ label, path, Icon, className }: NavbarElementPro
   return (
     <Link
       className={cn(
-        `flex text-sm font-medium gap-2 h-full justify-around items-center px-4 ${matched ? `${isMobile ? 'border-t-2' : 'border-b-2'} border-primary box-border` : 'opacity-75'}`,
+        `flex flex-col md:flex-row text-sm font-medium md:gap-2 h-full justify-around items-center px-2 ${isMobile ? 'border-t-2' : 'border-b-2'} ${matched ? 'border-primary box-border' : 'opacity-75 border-accent'}`,
         className,
       )}
       to={path}
     >
-      <Icon className="size-5" />
-      {!isMobile && <span className="hidden md:inline-flex">{t(label)}</span>}
+      <Icon className="size-5 mt-1 md:size-4 md:mt-0" />
+      <span className="inline-flex text-xs font-light md:text-sm md:font-bold">{t(label)}</span>
     </Link>
   );
 }
