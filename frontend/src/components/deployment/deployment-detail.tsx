@@ -9,9 +9,8 @@ import { Item, ItemContent, ItemMedia, ItemTitle } from '../ui/item';
 import { ScrollArea } from '../ui/scroll-area';
 import { HumanTime } from '../view';
 
-export function DeploymentDetail({ id }: { id?: string }) {
+export function DeploymentDetail({ id }: { id: string }) {
   const { t } = useTranslation();
-  console.log({ id });
   const { deployment, error, isPending } = useDeployment(id);
 
   if (error != null) {

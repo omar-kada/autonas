@@ -83,6 +83,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
         <DeploymentDiffDialog>
           <Button variant="outline">
             <FileDiff />
+            {!isMobile && t('DIFF')}
             {diffs && (
               <Badge
                 className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
@@ -95,6 +96,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
         </DeploymentDiffDialog>
         <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
           <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
+          {!isMobile && t('SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
         </Button>
       </div>
