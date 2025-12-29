@@ -52,7 +52,7 @@ func (h *Handler) DeployementAPIList(_ context.Context, request api.DeployementA
 	deps, err := h.processSvc.GetDeployments(int(request.Params.Limit), offset)
 
 	return api.DeployementAPIList200JSONResponse{
-		Data:     models.ListMapper(h.depMapper.Map)(deps),
+		Items:    models.ListMapper(h.depMapper.Map)(deps),
 		PageInfo: h.depMapper.MapToPageInfo(deps, int(request.Params.Limit)),
 	}, err
 }

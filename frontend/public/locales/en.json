@@ -1,6 +1,7 @@
 {
   "TITLE": "AutoNAS",
   "STATUS": "Status",
+  "DISABLED": "Disabled",
   "DEPLOYMENTS": "Deployments",
   "SETTINGS": "Settings",
   "CONFIG": "Configuration",
@@ -9,6 +10,7 @@
   "TOGGLE_THEME": "Toggle Theme",
   "JUST_NOW": "Just now",
   "IN_FEW_SECONDS": "In a few seconds",
+  "NEVER": "Never",
   "AUTO_SYNC": "Auto sync",
   "SYNC_NOW": "Sync now",
   "DIFF": "Diff",

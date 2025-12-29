@@ -595,7 +595,7 @@ type DeployementAPIListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *struct {
-		Data     []Deployment `json:"data"`
+		Items    []Deployment `json:"items"`
 		PageInfo PageInfo     `json:"pageInfo"`
 	}
 	JSONDefault *Error
@@ -802,7 +802,7 @@ func ParseDeployementAPIListResponse(rsp *http.Response) (*DeployementAPIListRes
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest struct {
-			Data     []Deployment `json:"data"`
+			Items    []Deployment `json:"items"`
 			PageInfo PageInfo     `json:"pageInfo"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1283,7 +1283,7 @@ type DeployementAPIListResponseObject interface {
 }
 
 type DeployementAPIList200JSONResponse struct {
-	Data     []Deployment `json:"data"`
+	Items    []Deployment `json:"items"`
 	PageInfo PageInfo     `json:"pageInfo"`
 }
 

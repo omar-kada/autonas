@@ -82,7 +82,7 @@ model Stats {
 }
 
 model Page<T> {
-  data: T[];
+  items: T[];
   pageInfo: PageInfo;
 }
 

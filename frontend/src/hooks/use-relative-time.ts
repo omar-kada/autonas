@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export function humanizeFromNow(
-  date: Date | number,
+  date: Date | string,
   t: TFunction<'translation', undefined>,
   locale = 'en',
-): string {
-  const target = typeof date === 'number' ? date : date.getTime();
+): string | null {
+  const target = new Date(date).getTime();
   const diffMs = target - Date.now();
-
+  if (target < Date.UTC(1970, 1, 1)) {
+    return null;
+  }
   if (Math.abs(diffMs) < 60_000) {
     if (diffMs < 0) {
       return t('JUST_NOW');
@@ -24,14 +26,14 @@ export function humanizeFromNow(
 
 // ---- REACT HOOK -----------------------------------------------
 
-export function useRelativeTime(target: Date | number, locale = 'en'): string {
+export function useRelativeTime(target: Date | string, locale = 'en'): string | null {
   const { t } = useTranslation();
   const [formatted, setFormatted] = useState(() => humanizeFromNow(target, t, locale));
   useEffect(() => {
-    const targetMs = typeof target === 'number' ? target : target.getTime();
+    const targetMs = new Date(target).getTime();
 
     function update() {
-      setFormatted(humanizeFromNow(targetMs, t, locale));
+      setFormatted(humanizeFromNow(target, t, locale));
     }
 
     update(); // run immediately

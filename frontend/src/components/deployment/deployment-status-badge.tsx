@@ -9,9 +9,11 @@ export function DeploymentStatusBadge(props: {
   label?: string;
   className?: string;
 }) {
+  const Icon = iconForStatus(props.status);
   return (
     <Badge className={cn(colorForStatus(props.status), props.className)}>
-      {iconForStatus(props.status)} {!props.iconOnly && (props.label ?? props.status ?? 'unknown')}
+      <Icon className={`${props.status === 'running' ? 'animate-spin' : ''}`} />
+      {!props.iconOnly && (props.label ?? props.status ?? 'unknown')}
     </Badge>
   );
 }

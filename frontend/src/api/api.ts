@@ -160,7 +160,7 @@ offset?: string;
 };
 
 export type DeployementAPIList200 = {
-  data: Deployment[];
+  items: Deployment[];
   pageInfo: PageInfo;
 };
 

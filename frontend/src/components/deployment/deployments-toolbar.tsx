@@ -1,24 +1,26 @@
 import { useDeployementAPISync } from '@/api/api';
-import { refetchDeployments, useDiff, useStats } from '@/hooks';
+import { refetchDeployments, useDiff, useIsMobile, useStats } from '@/hooks';
 import { cn, useDeploymentNavigate } from '@/lib';
 import { useQueryClient } from '@tanstack/react-query';
-import { FileDiff, RefreshCcw, TriangleAlert } from 'lucide-react';
+import { FileDiff, History, RefreshCcw, TriangleAlert } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { DeploymentDiffDialog } from './deployment/deployment-diff-dialog';
-import { DeploymentStatusBadge } from './deployment/deployment-status-badge';
-import { ContainerStatusBadge } from './status';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { HumanTime } from './view';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { HumanTime } from '../view';
+import { DeploymentDiffDialog } from './deployment-diff-dialog';
+import { DeploymentStatusBadge } from './deployment-status-badge';
 
-export function EnvironementStats({ className }: { className?: string }) {
+export function DeploymentToolbar({ className }: { className?: string }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const depNavigate = useDeploymentNavigate();
-  const { data: stats, isLoading, error } = useStats(30);
+  const days = 30;
+
+  const { data: stats, isLoading, error } = useStats(days);
   const { data: diffs } = useDiff();
 
   const { mutateAsync: sync, isPending: isSyncLoading, error: syncError } = useDeployementAPISync();
@@ -52,27 +54,36 @@ export function EnvironementStats({ className }: { className?: string }) {
   }
 
   return (
-    <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-4', className)}>
-      <span>
-        {t('Deployment')} : <DeploymentStatusBadge status={stats.status}></DeploymentStatusBadge>
-      </span>
-      <span>
-        {t('Containers')} : <ContainerStatusBadge status={stats.health}></ContainerStatusBadge>
-      </span>
+    <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-2', className)}>
+      <div className="flex items-center p-2 gap-2">
+        <span className="text-sm font-light mx-1 flex-1 flex gap-1 items-center">
+          <History className="size-4"></History>
+          {t('LAST_X_DAYS', { days })} :
+        </span>
+        <DeploymentStatusBadge
+          status="success"
+          label={String(stats.success)}
+        ></DeploymentStatusBadge>
+        {stats.error ? (
+          <DeploymentStatusBadge status="error" label={String(stats.error)}></DeploymentStatusBadge>
+        ) : null}
+      </div>
+
       <div className="flex flex-row items-center gap-1 justify-end-safe flex-1">
-        <span className="text-sm font-light text-muted-foreground">
-          {syncError ? (
-            syncError.message
-          ) : (
-            <>
-              {t('AUTO_SYNC')} : <HumanTime time={stats.nextDeploy}></HumanTime>
-            </>
-          )}
+        <span className="text-sm font-light text-muted-foreground mr-2">
+          {syncError
+            ? syncError.message
+            : !isMobile && (
+                <>
+                  {t('AUTO_SYNC')} :&nbsp;
+                  <HumanTime time={stats.nextDeploy} defaultValue={t('DISABLED')}></HumanTime>
+                </>
+              )}
         </span>
         <DeploymentDiffDialog>
           <Button variant="outline">
             <FileDiff />
-            {t('DIFF')}
+            {!isMobile && t('DIFF')}
             {diffs && (
               <Badge
                 className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
@@ -85,7 +96,7 @@ export function EnvironementStats({ className }: { className?: string }) {
         </DeploymentDiffDialog>
         <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
           <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
-          {t('SYNC_NOW')}
+          {!isMobile && t('SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
         </Button>
       </div>
