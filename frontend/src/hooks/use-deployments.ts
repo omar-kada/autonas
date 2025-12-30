@@ -27,6 +27,7 @@ export function getDeploymentsQueryOptions() {
       }
       return { limit: initialParams.limit, offset: lastPage.data.pageInfo.endCursor };
     },
+    gcTime: 10 * 60 * 1000,
   };
 }
 

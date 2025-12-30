@@ -1,7 +1,7 @@
 import { type Deployment } from '@/api/api';
 import { getDeploymentsQueryOptions, useIsMobile } from '@/hooks';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
@@ -16,33 +16,29 @@ export function DeploymentsPage() {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const deploymentNavigate = useDeploymentNavigate();
-  const { id } = useParams();
+  const { id: deploymentId } = useParams();
   const { data: deployments } = useInfiniteQuery(getDeploymentsQueryOptions());
 
-  const [selectedItem, setSelectedItem] = useState(id);
   const handleSelect = useCallback(
     (item: Deployment) => {
       deploymentNavigate(item.id);
-      setSelectedItem(item.id);
     },
-    [deploymentNavigate, setSelectedItem],
+    [deploymentNavigate],
   );
 
   const handleBack = useCallback(() => {
     deploymentNavigate();
-
-    setSelectedItem(undefined);
-  }, [deploymentNavigate, setSelectedItem]);
+  }, [deploymentNavigate]);
   // Check if data exists and is an object
   if (!deployments || typeof deployments !== 'object' || !deployments.length) {
     return <div>No deployments data available</div>;
   }
 
-  const selectedItemOrDefault = selectedItem ?? deployments[0].id;
+  const selectedItemOrDefault = deploymentId ?? deployments[0].id;
   return (
     <AsideLayout
-      focusMain={selectedItem != null}
-      header={(!selectedItem || !isMobile) && <DeploymentToolbar />}
+      focusMain={deploymentId != null}
+      header={(!deploymentId || !isMobile) && <DeploymentToolbar />}
       aside={
         <DeploymentList
           selectedDeployment={isMobile ? undefined : selectedItemOrDefault}

@@ -1,7 +1,6 @@
-import { useDeployementAPISync } from '@/api/api';
-import { refetchDeployments, useDiff, useIsMobile, useStats } from '@/hooks';
+import { getDiffQueryOptions, getStatsQueryOptions, getSyncOptions, useIsMobile } from '@/hooks';
 import { cn, useDeploymentNavigate } from '@/lib';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { FileDiff, History, RefreshCcw, TriangleAlert } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,22 +14,22 @@ import { DeploymentStatusBadge } from './deployment-status-badge';
 export function DeploymentToolbar({ className }: { className?: string }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const queryClient = useQueryClient();
-
   const depNavigate = useDeploymentNavigate();
-  const days = 30;
 
-  const { data: stats, isLoading, error } = useStats(days);
-  const { data: diffs } = useDiff();
+  const { data: stats, isLoading, error } = useQuery(getStatsQueryOptions());
+  const { data: diffs } = useQuery(getDiffQueryOptions());
 
-  const { mutateAsync: sync, isPending: isSyncLoading, error: syncError } = useDeployementAPISync();
+  const {
+    mutateAsync: sync,
+    isPending: isSyncLoading,
+    error: syncError,
+  } = useMutation(getSyncOptions());
 
   const handleSync = useCallback(() => {
     toast.promise(
       () =>
         sync().then((res) => {
           if (res.data?.id && res.data.id !== '0') {
-            refetchDeployments(queryClient);
             depNavigate(res.data.id);
             return true;
           } else {
@@ -43,7 +42,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
         error: t('SYNC_ERROR'),
       },
     );
-  }, [sync, t, queryClient, depNavigate]);
+  }, [sync, t, depNavigate]);
 
   if (isLoading) {
     return <div>Loading stats...</div>;
@@ -58,7 +57,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
       <div className="flex items-center p-2 gap-2">
         <span className="text-sm font-light mx-1 flex-1 flex gap-1 items-center">
           <History className="size-4"></History>
-          {t('LAST_X_DAYS', { days })} :
+          {t('LAST_X_DAYS', { days: 30 })} :
         </span>
         <DeploymentStatusBadge
           status="success"

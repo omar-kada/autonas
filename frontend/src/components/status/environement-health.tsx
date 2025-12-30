@@ -1,10 +1,11 @@
-import { useStats } from '@/hooks';
+import { getStatsQueryOptions } from '@/hooks';
 import { cn, ROUTES } from '@/lib';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ContainerStatusBadge } from '.';
 
 export function EnvironementHealth({ className }: { className?: string }) {
-  const { data: stats, isLoading, error } = useStats(30);
+  const { data: stats, isLoading, error } = useQuery(getStatsQueryOptions());
 
   if (isLoading) {
     return <div>Loading stats...</div>;

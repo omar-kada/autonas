@@ -1,5 +1,7 @@
-import { useDeployment } from '@/hooks';
+import { DeploymentStatus } from '@/api/api';
+import { getDeploymentOptions, getDeploymentsQueryOptions } from '@/hooks';
 import { formatElapsed, ROUTES } from '@/lib';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader, Timer, User } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,8 +13,8 @@ import { HumanTime } from '../view';
 
 export function DeploymentDetail({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { deployment, error, isPending } = useDeployment(id);
-
+  const { data: deployment, error, isPending, refetch } = useQuery(getDeploymentOptions(id));
+  const queryClient = useQueryClient();
   if (error != null) {
     return <div>{t('ERROR_WHILE_LOADING_DEPLOYMENT')}</div>;
   }
@@ -23,6 +25,13 @@ export function DeploymentDetail({ id }: { id: string }) {
 
   if (deployment == null) {
     return <div>{t('SELECT_DEPLOYMENT_FOR_DETAILS')}</div>;
+  }
+
+  if (deployment.status === DeploymentStatus.running) {
+    setTimeout(() => {
+      refetch();
+      queryClient.refetchQueries(getDeploymentsQueryOptions());
+    }, 1000);
   }
 
   return (

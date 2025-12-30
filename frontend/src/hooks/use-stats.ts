@@ -1,15 +1,12 @@
-import { useStatsAPIGet } from '@/api/api';
+import { getStatsAPIGetQueryOptions } from '@/api/api';
 
-export const useStats = (days: number) => {
-  const { data, isLoading, error } = useStatsAPIGet(days, {
+export const getStatsQueryOptions = (days = 30) => {
+  return getStatsAPIGetQueryOptions(days, {
     query: {
-      refetchInterval: 10000,
+      select: (data) => data?.data,
+      refetchInterval: 20 * 1000,
+      staleTime: 0,
+      gcTime: 10 * 60 * 1000,
     },
   });
-
-  return {
-    data: data?.data,
-    isLoading,
-    error,
-  };
 };

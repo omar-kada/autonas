@@ -1,10 +1,11 @@
-import { useStatus } from '@/hooks';
+import { getStatusQueryOptions } from '@/hooks';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ServiceStatus } from './status';
 
 export function StatusPage() {
   const { t } = useTranslation();
-  const { data, isLoading, error } = useStatus();
+  const { data, isLoading, error } = useQuery(getStatusQueryOptions());
 
   if (isLoading) {
     return <div>Loading status...</div>;

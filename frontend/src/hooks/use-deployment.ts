@@ -1,18 +1,21 @@
-import { useDeployementAPIRead, type Deployment, type Error } from '@/api/api';
-import type { AxiosError } from 'axios';
+import { DeploymentStatus, getDeployementAPIReadQueryOptions } from '@/api/api';
 
-export const useDeployment = (
-  id: string,
-): {
-  deployment?: Deployment;
-  isPending?: boolean;
-  error?: AxiosError<Error, unknown> | null;
-} => {
-  const { data, isPending, error } = useDeployementAPIRead(id);
-
-  return {
-    deployment: data?.data,
-    isPending,
-    error,
-  };
+export const getDeploymentOptions = (id: string) => {
+  return getDeployementAPIReadQueryOptions(id, {
+    query: {
+      select: (data) => data?.data,
+      staleTime: (query) => {
+        switch (query.state?.data?.data?.status) {
+          case DeploymentStatus.running:
+            return 500;
+          case DeploymentStatus.error:
+          case DeploymentStatus.success:
+            return Infinity;
+          default:
+            return 10 * 1000;
+        }
+      },
+      gcTime: 10 * 60 * 1000,
+    },
+  });
 };
