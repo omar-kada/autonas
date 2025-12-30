@@ -1,11 +1,10 @@
-import { useDiffAPIGet } from '@/api/api';
+import { getDiffAPIGetQueryOptions } from '@/api/api';
 
-export const useDiff = () => {
-  const { data, isLoading, error } = useDiffAPIGet();
-
-  return {
-    data: data?.data,
-    isLoading,
-    error,
-  };
+export const getDiffQueryOptions = () => {
+  return getDiffAPIGetQueryOptions({
+    query: {
+      select: (data) => data?.data,
+      gcTime: 10 * 60 * 1000,
+    },
+  });
 };

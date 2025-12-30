@@ -16,7 +16,7 @@ export function useDeploymentNavigate() {
   return (id?: string | null) => {
     if (id != null && id !== '0') {
       queryClient.prefetchQuery(getDeployementAPIReadQueryOptions(id));
-      navigate(ROUTES.DEPLOYMENT(id))?.then();
+      navigate(ROUTES.DEPLOYMENT(id));
     } else {
       navigate(ROUTES.DEPLOYMENTS);
     }
