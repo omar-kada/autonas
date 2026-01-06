@@ -2,27 +2,34 @@ import { DeploymentStatus } from '@/api/api';
 import { getDeploymentOptions, getDeploymentsQueryOptions } from '@/hooks';
 import { formatElapsed, ROUTES } from '@/lib';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader, Timer, User } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { Timer, User } from 'lucide-react';
+import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { DeploymentDiff, DeploymentEventLog, DeploymentStatusBadge } from '.';
 import { Item, ItemContent, ItemMedia, ItemTitle } from '../ui/item';
 import { ScrollArea } from '../ui/scroll-area';
+import { Skeleton } from '../ui/skeleton';
+import { Spinner } from '../ui/spinner';
 import { HumanTime } from '../view';
 
 export function DeploymentDetail({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { data: deployment, error, isPending, refetch } = useQuery(getDeploymentOptions(id));
+  const {
+    data: deployment,
+    error,
+    isPending,
+    isFetching,
+    refetch,
+  } = useQuery(getDeploymentOptions(id));
   const queryClient = useQueryClient();
   if (error != null) {
     return <div>{t('ERROR_WHILE_LOADING_DEPLOYMENT')}</div>;
   }
 
   if (isPending) {
-    return <Loader></Loader>;
+    return <DeploymentDetailSkeleton />;
   }
-
   if (deployment == null) {
     return <div>{t('SELECT_DEPLOYMENT_FOR_DETAILS')}</div>;
   }
@@ -36,11 +43,17 @@ export function DeploymentDetail({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-2xl font-semibold m-4">
-        <Link to={ROUTES.DEPLOYMENT(id)}>#{id} - </Link>
-        {deployment.title}
-        <DeploymentStatusBadge status={deployment.status} className="mx-3"></DeploymentStatusBadge>
-        <HumanTime className="text-sm" time={deployment.time}></HumanTime>
+      <div className="flex justify-between items-center-safe m-4">
+        <div className="text-2xl font-semibold ">
+          <Link to={ROUTES.DEPLOYMENT(id)}>#{id} - </Link>
+          {deployment.title}
+          <DeploymentStatusBadge
+            status={deployment.status}
+            className="mx-3"
+          ></DeploymentStatusBadge>
+          <HumanTime className="text-sm" time={deployment.time}></HumanTime>
+        </div>
+        {isFetching && <Spinner className="size-6" />}
       </div>
       <ScrollArea className="gap-4 h-1 flex-1">
         <div className="flex flex-col gap-4 m-4">
@@ -70,5 +83,20 @@ function InfoItem({ icon, label }: { icon: ReactElement; label: string }) {
         <ItemTitle>{label}</ItemTitle>
       </ItemContent>
     </Item>
+  );
+}
+
+export function DeploymentDetailSkeleton() {
+  return (
+    <div className="flex flex-col space-y-3 m-4">
+      <Skeleton className="h-6 mt-2 mb-4 w-2/3" />
+      <div className="flex gap-2 mt-4">
+        <Skeleton className="h-11 w-35" />
+        <Skeleton className="h-11 w-35" />
+      </div>
+
+      <Skeleton className="h-30 w-full rounded-lg" />
+      <Skeleton className="h-30 w-full rounded-lg" />
+    </div>
   );
 }

@@ -1,7 +1,8 @@
-import { useDiffAPIGet } from '@/api/api';
+import { getDiffQueryOptions } from '@/hooks';
+import { useQuery } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DeploymentDiff } from '.';
+import { DeploymentDiff, DeploymentDiffSkeleton } from '.';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -9,13 +10,9 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   const {
     data: diffs,
-    isLoading,
+    isPending,
     error,
-  } = useDiffAPIGet({
-    query: {
-      refetchOnMount: true,
-    },
-  });
+  } = useQuery({ ...getDiffQueryOptions(), refetchOnMount: true });
 
   return (
     <Dialog>
@@ -26,10 +23,10 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
         <ScrollArea className="max-h-[80vh] max-w-[90vw] spa">
           {error ? (
             error.message
-          ) : isLoading ? (
-            'Loading '
+          ) : isPending ? (
+            <DeploymentDiffSkeleton />
           ) : (
-            <DeploymentDiff fileDiffs={diffs?.data ?? []} autoOpen></DeploymentDiff>
+            <DeploymentDiff fileDiffs={diffs ?? []} autoOpen></DeploymentDiff>
           )}
         </ScrollArea>
       </DialogContent>

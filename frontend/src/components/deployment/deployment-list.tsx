@@ -5,7 +5,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Loader } from 'lucide-react';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { DeploymentListItem } from '.';
+import { DeploymentItemSkeleton, DeploymentListItem } from '.';
 import { ScrollArea } from '../ui/scroll-area';
 
 export function DeploymentList({
@@ -23,7 +23,7 @@ export function DeploymentList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
+    isPending,
     error,
   } = useInfiniteQuery(getDeploymentsQueryOptions());
 
@@ -33,11 +33,11 @@ export function DeploymentList({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
-    return <div>Loading deployments...</div>;
+  if (isPending) {
+    return DeploymentListSkeleton(className);
   }
 
-  if (error || !deployments) {
+  if (error) {
     return <div>Error fetching deployments: {error?.message}</div>;
   }
   // Check if data exists and is an object
@@ -59,6 +59,17 @@ export function DeploymentList({
         <div ref={ref} className="flex justify-around">
           {(isFetchingNextPage || hasNextPage) && <Loader className="animate-spin my-2" />}
         </div>
+      </div>
+    </ScrollArea>
+  );
+}
+function DeploymentListSkeleton(className?: string) {
+  return (
+    <ScrollArea className={cn('p-3', className)}>
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 5 }, (_, index) => (
+          <DeploymentItemSkeleton key={index} />
+        ))}
       </div>
     </ScrollArea>
   );

@@ -16,6 +16,7 @@
   "DIFF": "Diff",
   "LAST_X_DAYS": "Last {{days}} days",
   "UPDATED_FILES": "Updated files",
+  "X_UPDATED_FILES": "{{count}} updated files",
   "EVENTS_LOG": "Events log",
   "DIFF_BETWEEN_DEPLOYED_AND_REMOTE": "New changes from git repo",
   "DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION": "Showing differences between what's currently deployed and the latest version from the repository.",
