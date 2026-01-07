@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { DeploymentItemSkeleton, DeploymentListItem } from '.';
 import { ScrollArea } from '../ui/scroll-area';
+import { ErrorAlert } from '../view';
 
 export function DeploymentList({
   selectedDeployment,
@@ -33,10 +34,6 @@ export function DeploymentList({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (error) {
-    return <div>Error fetching deployments: {error?.message}</div>;
-  }
-
   if (isPending) {
     return DeploymentListSkeleton(className);
   }
@@ -49,6 +46,7 @@ export function DeploymentList({
   return (
     <ScrollArea className={cn('p-3', className)}>
       <div className="flex flex-col gap-2">
+        <ErrorAlert title={error && 'ALERT.LOAD_DEPLOYMENTS_ERROR'} details={error?.message} />
         {deployments.map((deployment) => (
           <DeploymentListItem
             key={deployment.id}

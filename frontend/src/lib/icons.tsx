@@ -5,13 +5,12 @@ import {
   Clock,
   Heart,
   HeartCrack,
-  HeartOff,
   HeartPulse,
   LoaderCircle,
   X,
 } from 'lucide-react';
 
-export function iconForStatus(status: DeploymentStatus) {
+export function iconForStatus(status?: DeploymentStatus) {
   switch (status) {
     case 'success':
       return Check;
@@ -26,7 +25,7 @@ export function iconForStatus(status: DeploymentStatus) {
   }
 }
 
-export function iconForHealth(health: ContainerStatusHealth) {
+export function iconForHealth(health?: ContainerStatusHealth) {
   switch (health) {
     case 'healthy':
       return Heart;
@@ -35,6 +34,6 @@ export function iconForHealth(health: ContainerStatusHealth) {
     case 'starting':
       return HeartPulse;
     default:
-      return HeartOff;
+      return CircleQuestionMark;
   }
 }

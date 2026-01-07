@@ -18,9 +18,9 @@ export function humanizeFromNow(
   }
   if (Math.abs(diffMs) < 60_000) {
     if (diffMs < 0) {
-      return t('JUST_NOW');
+      return t('TIME.JUST_NOW');
     } else {
-      return t('IN_FEW_SECONDS');
+      return t('TIME.IN_FEW_SECONDS');
     }
   }
 
