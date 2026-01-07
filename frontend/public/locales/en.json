@@ -1,8 +1,19 @@
 {
   "TITLE": "AirCompose",
-  "STATUS": "Status",
   "DISABLED": "Disabled",
-  "DEPLOYMENTS": "Deployments",
+  "STATUS": {
+    "STATUS": "Status",
+    "NO_STACKS_FOUND": "No stacks found",
+    "NO_STACKS_FOUND_DESCRIPTION": "Check the deployment page for more information"
+  },
+  "DEPLOYMENTS": {
+    "DEPLOYMENTS": "Deployments",
+    "EVENTS_LOG": "Events log",
+    "AUTO_SYNC": "Auto sync",
+    "NO_DEPLOYMENTS": "No deployments found",
+    "NO_DEPLOYMENTS_DESCRIPTION": "Get started by pushing a configuration and synchronizing.",
+    "SELECT_DEPLOYMENT_FOR_DETAILS": "Select deployment for details"
+  },
   "SETTINGS": "Settings",
   "CONFIG": "Configuration",
   "LOGS": "Logs",
@@ -33,7 +44,5 @@
     "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
     "LOAD_STATS_ERROR": "Error while loading stats",
     "LOAD_STATUS_ERROR": "Error while loading status"
-  },
-  "AUTO_SYNC": "Auto sync",
-  "EVENTS_LOG": "Events log"
+  }
 }

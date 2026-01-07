@@ -27,11 +27,8 @@ export function DeploymentDetail({ id }: { id: string }) {
   if (isPending) {
     return <DeploymentDetailSkeleton />;
   }
-  if (deployment == null) {
-    return <div>{t('SELECT_DEPLOYMENT_FOR_DETAILS')}</div>;
-  }
 
-  if (deployment.status === DeploymentStatus.running) {
+  if (deployment?.status === DeploymentStatus.running) {
     setTimeout(() => {
       refetch();
       queryClient.refetchQueries(getDeploymentsQueryOptions());
@@ -45,34 +42,38 @@ export function DeploymentDetail({ id }: { id: string }) {
         title={error && 'ALERT.LOAD_DEPLOYMENT_ERROR'}
         details={error?.message}
       />
-      <div className="flex justify-between items-center-safe m-4">
-        <div className="text-2xl font-semibold ">
-          <Link to={ROUTES.DEPLOYMENT(id)}>#{id} - </Link>
-          {deployment.title}
-          <DeploymentStatusBadge
-            status={deployment.status}
-            className="mx-3"
-          ></DeploymentStatusBadge>
-          <HumanTime className="text-sm" time={deployment.time}></HumanTime>
-        </div>
-        {isFetching && <Spinner className="size-6" />}
-      </div>
-      <ScrollArea className="gap-4 h-1 flex-1">
-        <div className="flex flex-col gap-4 m-4">
-          <div className="grid grid-cols-2 gap-4 self-start">
-            <InfoItem
-              icon={<User className="size-5" />}
-              label={deployment.author !== '' ? deployment.author : t('AUTOMATIC')}
-            />
-            <InfoItem
-              icon={<Timer className="size-5" />}
-              label={formatElapsed(deployment.time, deployment.endTime)}
-            />
+      {deployment && (
+        <>
+          <div className="flex justify-between items-center-safe m-4">
+            <div className="text-2xl font-semibold ">
+              <Link to={ROUTES.DEPLOYMENT(id)}>#{id} - </Link>
+              {deployment.title}
+              <DeploymentStatusBadge
+                status={deployment.status}
+                className="mx-3"
+              ></DeploymentStatusBadge>
+              <HumanTime className="text-sm" time={deployment.time}></HumanTime>
+            </div>
+            {isFetching && <Spinner className="size-6" />}
           </div>
-          <DeploymentDiff fileDiffs={deployment.files ?? []} />
-          <DeploymentEventLog events={deployment.events ?? []} />
-        </div>
-      </ScrollArea>
+          <ScrollArea className="gap-4 h-1 flex-1">
+            <div className="flex flex-col gap-4 m-4">
+              <div className="grid grid-cols-2 gap-4 self-start">
+                <InfoItem
+                  icon={<User className="size-5" />}
+                  label={deployment.author !== '' ? deployment.author : t('AUTOMATIC')}
+                />
+                <InfoItem
+                  icon={<Timer className="size-5" />}
+                  label={formatElapsed(deployment.time, deployment.endTime)}
+                />
+              </div>
+              <DeploymentDiff fileDiffs={deployment.files ?? []} />
+              <DeploymentEventLog events={deployment.events ?? []} />
+            </div>
+          </ScrollArea>
+        </>
+      )}
     </div>
   );
 }

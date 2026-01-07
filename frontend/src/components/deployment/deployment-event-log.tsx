@@ -8,7 +8,7 @@ export function DeploymentEventLog({ events }: { events: Event[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('EVENTS_LOG')}</CardTitle>
+        <CardTitle>{t('DEPLOYMENTS.EVENTS_LOG')}</CardTitle>
         <CardDescription></CardDescription>
       </CardHeader>
       <CardContent>

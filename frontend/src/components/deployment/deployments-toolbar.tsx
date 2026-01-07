@@ -1,10 +1,8 @@
-import { getDiffQueryOptions, getStatsQueryOptions, getSyncOptions, useIsMobile } from '@/hooks';
-import { cn, useDeploymentNavigate } from '@/lib';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { getDiffQueryOptions, getStatsQueryOptions, useIsMobile, useSync } from '@/hooks';
+import { cn } from '@/lib';
+import { useQuery } from '@tanstack/react-query';
 import { AlertCircleIcon, FileDiff, History, RefreshCcw, TriangleAlert } from 'lucide-react';
-import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -16,7 +14,7 @@ import { DeploymentStatusBadge } from './deployment-status-badge';
 export function DeploymentToolbar({ className }: { className?: string }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const depNavigate = useDeploymentNavigate();
+  const { sync, error: syncError, isPending: isSyncLoading } = useSync();
 
   const { data: stats, isPending, error } = useQuery(getStatsQueryOptions());
   const {
@@ -24,31 +22,6 @@ export function DeploymentToolbar({ className }: { className?: string }) {
     isFetching: isDiffsLoading,
     error: diffError,
   } = useQuery(getDiffQueryOptions());
-
-  const {
-    mutateAsync: sync,
-    isPending: isSyncLoading,
-    error: syncError,
-  } = useMutation(getSyncOptions());
-
-  const handleSync = useCallback(() => {
-    toast.promise(
-      () =>
-        sync().then((res) => {
-          if (res.data?.id && res.data.id !== '0') {
-            depNavigate(res.data.id);
-            return true;
-          } else {
-            return false;
-          }
-        }),
-      {
-        loading: t('ALERT.SYNCHRONIZING'),
-        success: (synced) => t(synced ? 'ALERT.SYNC_SUCCESS' : 'ALERT.SYNC_NO_CHANGES'),
-        error: t('ALERT.SYNC_ERROR'),
-      },
-    );
-  }, [sync, t, depNavigate]);
 
   return (
     <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-2', className)}>
@@ -89,7 +62,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
             ? syncError.message
             : !isMobile && (
                 <>
-                  {t('AUTO_SYNC')} :&nbsp;
+                  {t('DEPLOYMENTS.AUTO_SYNC')} :&nbsp;
                   {error ? (
                     <AlertCircleIcon className="size-4 text-destructive inline" />
                   ) : isPending ? (
@@ -120,7 +93,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
             )}
           </Button>
         </DeploymentDiffDialog>
-        <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
+        <Button variant="outline" onClick={sync} disabled={isSyncLoading}>
           <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
           {!isMobile && t('ACTION.SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
