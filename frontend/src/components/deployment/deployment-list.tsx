@@ -33,13 +33,14 @@ export function DeploymentList({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  if (error) {
+    return <div>Error fetching deployments: {error?.message}</div>;
+  }
+
   if (isPending) {
     return DeploymentListSkeleton(className);
   }
 
-  if (error) {
-    return <div>Error fetching deployments: {error?.message}</div>;
-  }
   // Check if data exists and is an object
   if (!deployments || typeof deployments !== 'object' || !deployments.length) {
     return <div>No deployments data available</div>;

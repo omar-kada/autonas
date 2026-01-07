@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export function humanizeFromNow(
-  date: Date | string = '',
+  date: Date | string,
   t: TFunction<'translation', undefined>,
   locale = 'en',
 ): string | null {
