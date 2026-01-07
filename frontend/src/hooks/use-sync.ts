@@ -18,7 +18,7 @@ export const getSyncOptions = () => {
   });
 };
 
-export const useSync = (navigateOnSuccess: boolean = true) => {
+export const useSync = (navigateOnSuccess = true) => {
   const depNavigate = useDeploymentNavigate();
   const { t } = useTranslation();
 

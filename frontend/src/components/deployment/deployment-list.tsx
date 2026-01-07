@@ -41,15 +41,14 @@ export function DeploymentList({
   return (
     <DeploymentListContainer className={className}>
       <ErrorAlert title={error && 'ALERT.LOAD_DEPLOYMENTS_ERROR'} details={error?.message} />
-      {deployments &&
-        deployments.map((deployment) => (
-          <DeploymentListItem
-            key={deployment.id}
-            deployment={deployment}
-            isSelected={deployment.id === selectedDeployment}
-            onSelect={onSelect}
-          ></DeploymentListItem>
-        ))}
+      {deployments?.map((deployment) => (
+        <DeploymentListItem
+          key={deployment.id}
+          deployment={deployment}
+          isSelected={deployment.id === selectedDeployment}
+          onSelect={onSelect}
+        ></DeploymentListItem>
+      ))}
       <div ref={ref} className="flex justify-around">
         {isFetchingNextPage && <Loader className="animate-spin my-2" />}
       </div>
