@@ -1,6 +1,6 @@
 import { type Deployment } from '@/api/api';
-import { getDeploymentsQueryOptions, useIsMobile } from '@/hooks';
-import { ArrowLeft } from 'lucide-react';
+import { getDeploymentsQueryOptions, useIsMobile, useSync } from '@/hooks';
+import { ArrowLeft, RefreshCcw } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -15,6 +15,7 @@ import {
 } from './deployment';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
+import { InfoEmpty } from './view';
 import { AsideLayout } from './view/aside-layout';
 
 export function DeploymentsPage() {
@@ -22,7 +23,7 @@ export function DeploymentsPage() {
   const isMobile = useIsMobile();
   const deploymentNavigate = useDeploymentNavigate();
   const { id: deploymentId } = useParams();
-  const { data: deployments, isPending } = useInfiniteQuery(getDeploymentsQueryOptions());
+  const { data: deployments, isPending, error } = useInfiniteQuery(getDeploymentsQueryOptions());
   const handleSelect = useCallback(
     (item: Deployment) => {
       deploymentNavigate(item.id);
@@ -33,6 +34,22 @@ export function DeploymentsPage() {
   const handleBack = useCallback(() => {
     deploymentNavigate();
   }, [deploymentNavigate]);
+
+  const { sync } = useSync();
+
+  if (!isPending && !error && !deployments?.length) {
+    return (
+      <InfoEmpty
+        title="DEPLOYMENTS.NO_DEPLOYMENTS"
+        details="DEPLOYMENTS.NO_DEPLOYMENTS_DESCRIPTION"
+      >
+        <Button variant="outline" size="sm" onClick={sync}>
+          <RefreshCcw />
+          {t('ACTION.SYNC_NOW')}
+        </Button>
+      </InfoEmpty>
+    );
+  }
 
   const selectedItemOrDefault = deploymentId ?? deployments?.[0]?.id;
   return (
@@ -56,7 +73,7 @@ export function DeploymentsPage() {
       {isPending ? (
         <DeploymentDetailSkeleton />
       ) : !selectedItemOrDefault ? (
-        t('NO_DEPLOYMENT_SELECTED')
+        <InfoEmpty title="DEPLOYMENTS.SELECT_DEPLOYMENT_FOR_DETAILS"></InfoEmpty>
       ) : (
         <DeploymentDetail id={selectedItemOrDefault} />
       )}

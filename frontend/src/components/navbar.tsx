@@ -4,12 +4,12 @@ import { NavbarElement, type NavbarElementProps } from './view';
 
 const LINKS: Array<NavbarElementProps> = [
   {
-    label: 'DEPLOYMENTS',
+    label: 'DEPLOYMENTS.DEPLOYMENTS',
     Icon: ServerCog,
     path: ROUTES.DEPLOYMENTS,
   },
   {
-    label: 'STATUS',
+    label: 'STATUS.STATUS',
     Icon: Layers,
     path: ROUTES.STATUS,
   },
