@@ -7,13 +7,13 @@ export function HumanTime({
   className,
   defaultValue,
 }: {
-  time: Date | string;
+  time?: Date | string;
   className?: string;
   defaultValue?: string;
 }) {
-  const relativeTime = useRelativeTime(new Date(time), defaultValue);
+  const relativeTime = useRelativeTime(time);
 
-  if (!relativeTime) {
+  if (!time || !relativeTime) {
     return <span className={cn('font-light text-nowrap', className)}>{defaultValue}</span>;
   }
 

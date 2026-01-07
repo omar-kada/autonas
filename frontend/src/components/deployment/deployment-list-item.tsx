@@ -2,6 +2,7 @@ import type { Deployment } from '@/api/api';
 import { ChevronRight } from 'lucide-react';
 import { useCallback } from 'react';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '../ui/item';
+import { Skeleton } from '../ui/skeleton';
 import { HumanTime } from '../view';
 import { DeploymentStatusBadge } from './deployment-status-badge';
 
@@ -21,7 +22,6 @@ export function DeploymentListItem({
 
   return (
     <Item
-      key={deployment.id}
       className={`cursor-pointer ${isSelected ? 'bg-accent' : ''}`}
       onClick={onDeploymentClick(deployment)}
       variant="outline"
@@ -39,5 +39,14 @@ export function DeploymentListItem({
         <ChevronRight />
       </ItemActions>
     </Item>
+  );
+}
+
+export function DeploymentItemSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 w-full border rounded-lg p-4">
+      <Skeleton className="h-4 " />
+      <Skeleton className="h-4 w-2/3" />
+    </div>
   );
 }

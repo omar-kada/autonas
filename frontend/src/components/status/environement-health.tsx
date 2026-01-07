@@ -3,15 +3,16 @@ import { cn, ROUTES } from '@/lib';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ContainerStatusBadge } from '.';
+import { Skeleton } from '../ui/skeleton';
 
 export function EnvironementHealth({ className }: { className?: string }) {
-  const { data: stats, isLoading, error } = useQuery(getStatsQueryOptions());
+  const { data: stats, isPending, error } = useQuery(getStatsQueryOptions());
 
-  if (isLoading) {
-    return <div>Loading stats...</div>;
+  if (isPending) {
+    return <Skeleton className="h-4 w-20 my-auto" />;
   }
 
-  if (error || stats == null) {
+  if (error) {
     return <div>Error fetching stats: {error?.message}</div>;
   }
 

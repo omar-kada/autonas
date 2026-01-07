@@ -1,4 +1,3 @@
-import { useIsMobile } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { LucideProps } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -14,7 +13,6 @@ export type NavbarElementProps = {
 
 export function NavbarElement({ label, path, Icon, className }: NavbarElementProps) {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
   const matched = useMatch({
     path,
     end: path === '/',
@@ -23,13 +21,13 @@ export function NavbarElement({ label, path, Icon, className }: NavbarElementPro
   return (
     <Link
       className={cn(
-        `flex flex-col md:flex-row text-sm font-medium md:gap-2 h-full justify-around items-center px-2 ${isMobile ? 'border-t-2' : 'border-b-2'} ${matched ? 'border-primary box-border' : 'opacity-75 border-accent'}`,
+        `flex flex-col md:flex-row text-sm font-medium md:gap-2 h-full justify-around items-center px-4 ${matched ? '' : 'opacity-50'}`,
         className,
       )}
       to={path}
     >
-      <Icon className="size-5 mt-1 md:size-4 md:mt-0" />
-      <span className="inline-flex text-xs font-light md:text-sm md:font-bold">{t(label)}</span>
+      <Icon className="size-5 mt-1 md:size-4 md:mt-0 md:hidden" />
+      <span className="inline-flex text-xs font-normal md:text-sm">{t(label)}</span>
     </Link>
   );
 }

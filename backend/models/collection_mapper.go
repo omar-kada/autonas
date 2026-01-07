@@ -9,7 +9,7 @@ package models
 //   - A function that takes a slice of type []T and returns a slice of type []V.
 func ListMapper[T any, V any](fn func(T) V) func([]T) []V {
 	return func(inputs []T) []V {
-		var output []V
+		output := make([]V, 0)
 		for _, input := range inputs {
 			output = append(output, fn(input))
 		}

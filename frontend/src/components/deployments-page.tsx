@@ -7,7 +7,12 @@ import { useParams } from 'react-router-dom';
 
 import { useDeploymentNavigate } from '@/lib';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { DeploymentDetail, DeploymentList, DeploymentToolbar } from './deployment';
+import {
+  DeploymentDetail,
+  DeploymentDetailSkeleton,
+  DeploymentList,
+  DeploymentToolbar,
+} from './deployment';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { AsideLayout } from './view/aside-layout';
@@ -17,8 +22,7 @@ export function DeploymentsPage() {
   const isMobile = useIsMobile();
   const deploymentNavigate = useDeploymentNavigate();
   const { id: deploymentId } = useParams();
-  const { data: deployments } = useInfiniteQuery(getDeploymentsQueryOptions());
-
+  const { data: deployments, isPending } = useInfiniteQuery(getDeploymentsQueryOptions());
   const handleSelect = useCallback(
     (item: Deployment) => {
       deploymentNavigate(item.id);
@@ -29,12 +33,8 @@ export function DeploymentsPage() {
   const handleBack = useCallback(() => {
     deploymentNavigate();
   }, [deploymentNavigate]);
-  // Check if data exists and is an object
-  if (!deployments || typeof deployments !== 'object' || !deployments.length) {
-    return <div>No deployments data available</div>;
-  }
 
-  const selectedItemOrDefault = deploymentId ?? deployments[0].id;
+  const selectedItemOrDefault = deploymentId ?? deployments?.[0]?.id;
   return (
     <AsideLayout
       focusMain={deploymentId != null}
@@ -53,7 +53,13 @@ export function DeploymentsPage() {
       </Button>
       <Separator className="sm:hidden"></Separator>
 
-      <DeploymentDetail id={selectedItemOrDefault} />
+      {isPending ? (
+        <DeploymentDetailSkeleton />
+      ) : !selectedItemOrDefault ? (
+        t('NO_DEPLOYMENT_SELECTED')
+      ) : (
+        <DeploymentDetail id={selectedItemOrDefault} />
+      )}
     </AsideLayout>
   );
 }

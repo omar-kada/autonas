@@ -15,8 +15,8 @@ export function useDeploymentNavigate() {
   const queryClient = useQueryClient();
   return (id?: string | null) => {
     if (id != null && id !== '0') {
-      queryClient.prefetchQuery(getDeployementAPIReadQueryOptions(id));
       navigate(ROUTES.DEPLOYMENT(id));
+      queryClient.prefetchQuery(getDeployementAPIReadQueryOptions(id));
     } else {
       navigate(ROUTES.DEPLOYMENTS);
     }

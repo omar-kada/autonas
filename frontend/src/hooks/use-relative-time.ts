@@ -8,6 +8,9 @@ export function humanizeFromNow(
   t: TFunction<'translation', undefined>,
   locale = 'en',
 ): string | null {
+  if (!date) {
+    return null;
+  }
   const target = new Date(date).getTime();
   const diffMs = target - Date.now();
   if (target < Date.UTC(1970, 1, 1)) {
@@ -26,7 +29,7 @@ export function humanizeFromNow(
 
 // ---- REACT HOOK -----------------------------------------------
 
-export function useRelativeTime(target: Date | string, locale = 'en'): string | null {
+export function useRelativeTime(target: Date | string = '', locale = 'en'): string | null {
   const { t } = useTranslation();
   const [formatted, setFormatted] = useState(() => humanizeFromNow(target, t, locale));
   useEffect(() => {

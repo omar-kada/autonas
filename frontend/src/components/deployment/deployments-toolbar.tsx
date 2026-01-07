@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
+import { Spinner } from '../ui/spinner';
 import { HumanTime } from '../view';
 import { DeploymentDiffDialog } from './deployment-diff-dialog';
 import { DeploymentStatusBadge } from './deployment-status-badge';
@@ -16,8 +18,8 @@ export function DeploymentToolbar({ className }: { className?: string }) {
   const isMobile = useIsMobile();
   const depNavigate = useDeploymentNavigate();
 
-  const { data: stats, isLoading, error } = useQuery(getStatsQueryOptions());
-  const { data: diffs } = useQuery(getDiffQueryOptions());
+  const { data: stats, isPending, error } = useQuery(getStatsQueryOptions());
+  const { data: diffs, isFetching: isDiffsLoading } = useQuery(getDiffQueryOptions());
 
   const {
     mutateAsync: sync,
@@ -44,11 +46,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
     );
   }, [sync, t, depNavigate]);
 
-  if (isLoading) {
-    return <div>Loading stats...</div>;
-  }
-
-  if (error || stats == null) {
+  if (error) {
     return <div>Error fetching stats: {error?.message}</div>;
   }
 
@@ -59,13 +57,22 @@ export function DeploymentToolbar({ className }: { className?: string }) {
           <History className="size-4"></History>
           {t('LAST_X_DAYS', { days: 30 })} :
         </span>
-        <DeploymentStatusBadge
-          status="success"
-          label={String(stats.success)}
-        ></DeploymentStatusBadge>
-        {stats.error ? (
-          <DeploymentStatusBadge status="error" label={String(stats.error)}></DeploymentStatusBadge>
-        ) : null}
+        {isPending ? (
+          <StatsSkeleton />
+        ) : (
+          <>
+            <DeploymentStatusBadge
+              status="success"
+              label={String(stats?.success ?? 0)}
+            ></DeploymentStatusBadge>
+            {stats?.error ? (
+              <DeploymentStatusBadge
+                status="error"
+                label={String(stats.error)}
+              ></DeploymentStatusBadge>
+            ) : null}
+          </>
+        )}
       </div>
 
       <div className="flex flex-row items-center gap-1 justify-end-safe flex-1">
@@ -75,7 +82,11 @@ export function DeploymentToolbar({ className }: { className?: string }) {
             : !isMobile && (
                 <>
                   {t('AUTO_SYNC')} :&nbsp;
-                  <HumanTime time={stats.nextDeploy} defaultValue={t('DISABLED')}></HumanTime>
+                  {isPending ? (
+                    <Spinner className="inline"></Spinner>
+                  ) : (
+                    <HumanTime time={stats?.nextDeploy} defaultValue={t('DISABLED')}></HumanTime>
+                  )}
                 </>
               )}
         </span>
@@ -83,7 +94,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
           <Button variant="outline">
             <FileDiff />
             {!isMobile && t('DIFF')}
-            {diffs && (
+            {diffs != null && (
               <Badge
                 className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
                 variant={diffs.length > 0 ? 'default' : 'outline'}
@@ -91,6 +102,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
                 {diffs.length}
               </Badge>
             )}
+            {isDiffsLoading ? <Spinner></Spinner> : null}
           </Button>
         </DeploymentDiffDialog>
         <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
@@ -101,4 +113,8 @@ export function DeploymentToolbar({ className }: { className?: string }) {
       </div>
     </div>
   );
+}
+
+function StatsSkeleton() {
+  return <Skeleton className="h-4 w-20"></Skeleton>;
 }
