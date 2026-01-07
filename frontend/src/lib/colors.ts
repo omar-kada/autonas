@@ -18,7 +18,7 @@ export function colorForStatus(status: ContainerStatusHealth | DeploymentStatus)
   }
 }
 
-export function borderForStatus(status: ContainerStatusHealth | DeploymentStatus): string {
+export function borderForStatus(status?: ContainerStatusHealth | DeploymentStatus): string {
   switch (status) {
     case 'healthy':
     case 'success':
@@ -35,7 +35,7 @@ export function borderForStatus(status: ContainerStatusHealth | DeploymentStatus
       return '';
   }
 }
-export function textColorForStatus(status: ContainerStatusHealth | DeploymentStatus): string {
+export function textColorForStatus(status?: ContainerStatusHealth | DeploymentStatus): string {
   switch (status) {
     case 'healthy':
     case 'success':

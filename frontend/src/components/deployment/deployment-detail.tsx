@@ -11,7 +11,7 @@ import { Item, ItemContent, ItemMedia, ItemTitle } from '../ui/item';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { Spinner } from '../ui/spinner';
-import { HumanTime } from '../view';
+import { ErrorAlert, HumanTime } from '../view';
 
 export function DeploymentDetail({ id }: { id: string }) {
   const { t } = useTranslation();
@@ -23,9 +23,6 @@ export function DeploymentDetail({ id }: { id: string }) {
     refetch,
   } = useQuery(getDeploymentOptions(id));
   const queryClient = useQueryClient();
-  if (error != null) {
-    return <div>{t('ERROR_WHILE_LOADING_DEPLOYMENT')}</div>;
-  }
 
   if (isPending) {
     return <DeploymentDetailSkeleton />;
@@ -43,6 +40,11 @@ export function DeploymentDetail({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col h-full">
+      <ErrorAlert
+        className="mx-4 mt-4"
+        title={error && 'ALERT.LOAD_DEPLOYMENT_ERROR'}
+        details={error?.message}
+      />
       <div className="flex justify-between items-center-safe m-4">
         <div className="text-2xl font-semibold ">
           <Link to={ROUTES.DEPLOYMENT(id)}>#{id} - </Link>

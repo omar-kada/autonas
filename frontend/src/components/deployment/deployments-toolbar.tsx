@@ -1,7 +1,7 @@
 import { getDiffQueryOptions, getStatsQueryOptions, getSyncOptions, useIsMobile } from '@/hooks';
 import { cn, useDeploymentNavigate } from '@/lib';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { FileDiff, History, RefreshCcw, TriangleAlert } from 'lucide-react';
+import { AlertCircleIcon, FileDiff, History, RefreshCcw, TriangleAlert } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -19,7 +19,11 @@ export function DeploymentToolbar({ className }: { className?: string }) {
   const depNavigate = useDeploymentNavigate();
 
   const { data: stats, isPending, error } = useQuery(getStatsQueryOptions());
-  const { data: diffs, isFetching: isDiffsLoading } = useQuery(getDiffQueryOptions());
+  const {
+    data: diffs,
+    isFetching: isDiffsLoading,
+    error: diffError,
+  } = useQuery(getDiffQueryOptions());
 
   const {
     mutateAsync: sync,
@@ -39,39 +43,43 @@ export function DeploymentToolbar({ className }: { className?: string }) {
           }
         }),
       {
-        loading: t('SYNCHRONIZING'),
-        success: (synced) => t(synced ? 'SYNC_SUCCESS' : 'SYNC_NO_CHANGES'),
-        error: t('SYNC_ERROR'),
+        loading: t('ALERT.SYNCHRONIZING'),
+        success: (synced) => t(synced ? 'ALERT.SYNC_SUCCESS' : 'ALERT.SYNC_NO_CHANGES'),
+        error: t('ALERT.SYNC_ERROR'),
       },
     );
   }, [sync, t, depNavigate]);
-
-  if (error) {
-    return <div>Error fetching stats: {error?.message}</div>;
-  }
 
   return (
     <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-2', className)}>
       <div className="flex items-center p-2 gap-2">
         <span className="text-sm font-light mx-1 flex-1 flex gap-1 items-center">
           <History className="size-4"></History>
-          {t('LAST_X_DAYS', { days: 30 })} :
+          {t('TIME.LAST_X_DAYS', { days: 30 })} :
         </span>
+        {error && (
+          <>
+            <AlertCircleIcon className="size-4 text-destructive" />
+            <span className="text-sm text-destructive">{t('ALERT.LOAD_STATS_ERROR')}</span>
+          </>
+        )}
         {isPending ? (
           <StatsSkeleton />
         ) : (
-          <>
-            <DeploymentStatusBadge
-              status="success"
-              label={String(stats?.success ?? 0)}
-            ></DeploymentStatusBadge>
-            {stats?.error ? (
+          stats && (
+            <>
               <DeploymentStatusBadge
-                status="error"
-                label={String(stats.error)}
+                status="success"
+                label={String(stats.success)}
               ></DeploymentStatusBadge>
-            ) : null}
-          </>
+              {stats.error ? (
+                <DeploymentStatusBadge
+                  status="error"
+                  label={String(stats.error)}
+                ></DeploymentStatusBadge>
+              ) : null}
+            </>
+          )
         )}
       </div>
 
@@ -82,7 +90,9 @@ export function DeploymentToolbar({ className }: { className?: string }) {
             : !isMobile && (
                 <>
                   {t('AUTO_SYNC')} :&nbsp;
-                  {isPending ? (
+                  {error ? (
+                    <AlertCircleIcon className="size-4 text-destructive inline" />
+                  ) : isPending ? (
                     <Spinner className="inline"></Spinner>
                   ) : (
                     <HumanTime time={stats?.nextDeploy} defaultValue={t('DISABLED')}></HumanTime>
@@ -93,21 +103,26 @@ export function DeploymentToolbar({ className }: { className?: string }) {
         <DeploymentDiffDialog>
           <Button variant="outline">
             <FileDiff />
-            {!isMobile && t('DIFF')}
-            {diffs != null && (
-              <Badge
-                className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
-                variant={diffs.length > 0 ? 'default' : 'outline'}
-              >
-                {diffs.length}
-              </Badge>
+            {!isMobile && t('DIFF.DIFF')}
+            {diffError ? (
+              <AlertCircleIcon className="size-4 text-destructive inline" />
+            ) : isDiffsLoading ? (
+              <Spinner></Spinner>
+            ) : (
+              diffs != null && (
+                <Badge
+                  className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums"
+                  variant={diffs.length > 0 ? 'default' : 'outline'}
+                >
+                  {diffs.length}
+                </Badge>
+              )
             )}
-            {isDiffsLoading ? <Spinner></Spinner> : null}
           </Button>
         </DeploymentDiffDialog>
         <Button variant="outline" onClick={handleSync} disabled={isSyncLoading}>
           <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
-          {!isMobile && t('SYNC_NOW')}
+          {!isMobile && t('ACTION.SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
         </Button>
       </div>

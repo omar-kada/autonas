@@ -18,9 +18,9 @@ export function DeploymentDiff({
       <CardHeader>
         <CardTitle className="flex">
           <GitCompare className="size-5 mx-1" />
-          {t('UPDATED_FILES')}
+          {t('DIFF.UPDATED_FILES')}
         </CardTitle>
-        <CardDescription>{t('X_UPDATED_FILES', { count: fileDiffs.length })}</CardDescription>
+        <CardDescription>{t('DIFF.X_UPDATED_FILES', { count: fileDiffs.length })}</CardDescription>
       </CardHeader>
       <CardContent>
         {fileDiffs.map((fileDiff) => (

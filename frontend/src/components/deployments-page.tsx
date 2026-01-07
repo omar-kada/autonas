@@ -49,7 +49,7 @@ export function DeploymentsPage() {
     >
       {/* Mobile back button (only shows when content is open) */}
       <Button variant="ghost" className="sm:hidden mx-4 my-2" onClick={handleBack}>
-        <ArrowLeft className="h-5 w-5" /> {t('BACK')}
+        <ArrowLeft className="h-5 w-5" /> {t('ACTION.BACK')}
       </Button>
       <Separator className="sm:hidden"></Separator>
 

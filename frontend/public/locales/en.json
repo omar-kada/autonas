@@ -1,27 +1,39 @@
 {
-  "TITLE": "AutoNAS",
+  "TITLE": "AirCompose",
   "STATUS": "Status",
   "DISABLED": "Disabled",
   "DEPLOYMENTS": "Deployments",
   "SETTINGS": "Settings",
   "CONFIG": "Configuration",
   "LOGS": "Logs",
-  "BACK": "Back",
-  "TOGGLE_THEME": "Toggle Theme",
-  "JUST_NOW": "Just now",
-  "IN_FEW_SECONDS": "In a few seconds",
-  "NEVER": "Never",
+  "ACTION": {
+    "BACK": "Back",
+    "TOGGLE_THEME": "Toggle Theme",
+    "SYNC_NOW": "Sync now"
+  },
+  "TIME": {
+    "JUST_NOW": "Just now",
+    "IN_FEW_SECONDS": "In a few seconds",
+    "LAST_X_DAYS": "Last {{days}} days"
+  },
+  "DIFF": {
+    "DIFF": "Diff",
+    "UPDATED_FILES": "Updated files",
+    "X_UPDATED_FILES": "{{count}} updated files",
+    "DIFF_BETWEEN_DEPLOYED_AND_REMOTE": "New changes from git repo",
+    "DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION": "Showing differences between what's currently deployed and the latest version from the repository."
+  },
+  "ALERT": {
+    "SYNCHRONIZING": "Synchronizing",
+    "SYNC_SUCCESS": "Success, Deployment is running",
+    "SYNC_NO_CHANGES": "No changes to synchronize",
+    "SYNC_ERROR": "Error while Synchronizing",
+    "DIFF_ERROR": "Error while loading diff",
+    "LOAD_DEPLOYMENT_ERROR": "Error while loading deployment",
+    "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
+    "LOAD_STATS_ERROR": "Error while loading stats",
+    "LOAD_STATUS_ERROR": "Error while loading status"
+  },
   "AUTO_SYNC": "Auto sync",
-  "SYNC_NOW": "Sync now",
-  "DIFF": "Diff",
-  "LAST_X_DAYS": "Last {{days}} days",
-  "UPDATED_FILES": "Updated files",
-  "X_UPDATED_FILES": "{{count}} updated files",
-  "EVENTS_LOG": "Events log",
-  "DIFF_BETWEEN_DEPLOYED_AND_REMOTE": "New changes from git repo",
-  "DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION": "Showing differences between what's currently deployed and the latest version from the repository.",
-  "SYNCHRONIZING": "Synchronizing",
-  "SYNC_SUCCESS": "Success, Deployment is running",
-  "SYNC_NO_CHANGES": "No changes to synchronize",
-  "SYNC_ERROR": "Error while Synchronizing"
+  "EVENTS_LOG": "Events log"
 }
