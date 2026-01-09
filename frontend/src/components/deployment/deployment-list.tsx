@@ -32,7 +32,7 @@ export function DeploymentList({
     if (inView && hasNextPage && !isFetchingNextPage && deployments?.length) {
       fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, deployments]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, deployments?.length]);
 
   if (isPending) {
     return DeploymentListSkeleton(className);
@@ -49,8 +49,10 @@ export function DeploymentList({
           onSelect={onSelect}
         ></DeploymentListItem>
       ))}
-      <div ref={ref} className="flex justify-around">
-        {isFetchingNextPage && <Loader className="animate-spin my-2" />}
+      <div ref={ref} className="flex justify-around w-full min-h-1">
+        {(isFetchingNextPage || (hasNextPage && deployments?.length)) && (
+          <Loader className="animate-spin my-2" />
+        )}
       </div>
     </DeploymentListContainer>
   );

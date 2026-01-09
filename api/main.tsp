@@ -40,13 +40,16 @@ model FileDiff {
 
 model Deployment {
   id: string;
-  title: string; // Commit message
-  author: string; // Commit message
+  title: string;
+  author: string;
   time: utcDateTime;
   endTime: utcDateTime;
   diff: string;
-  files: FileDiff[];
   status: DeploymentStatus;
+}
+
+model DeploymentWithDetails is Deployment {
+  files: FileDiff[];
   events: Event[];
 }
 
@@ -76,10 +79,21 @@ model Stats {
   success: int32;
   nextDeploy: utcDateTime;
   lastDeploy: utcDateTime;
+  author: string;
   status: DeploymentStatus;
   health: ContainerHealth;
-  author: string;
 }
+
+// model Settings {
+//   repo: string;
+//   branch: string;
+//   cron: string;
+// }
+
+// model Config {
+//   globalVariables: Record<string>;
+//   services: Record<Record<string>>;
+// }
 
 model Page<T> {
   items: T[];
@@ -105,29 +119,40 @@ interface DeployementAPI {
     @query limit: int32,
     @query offset?: string,
   ): Page<Deployment> | Error;
-  /** Read deployments */
-  @get read(@path id: string): Deployment | Error;
+  /** Read deployment */
+  @get read(@path id: string): DeploymentWithDetails | Error;
   /** Sync and deploy if changes */
-  @post sync(): Deployment | Error;
+  @post sync(): DeploymentWithDetails | Error;
 }
+
+// @route("/settings")
+// @tag("Settings")
+// interface SettingsAPI {
+//   @get get(): Settings | Error;
+//   @post set(@body settings: Settings): Settings | Error;
+// }
+
+// @route("/config")
+// @tag("Config")
+// interface ConfigAPI {
+//   @get get(): Config | Error;
+//   @post set(@body config: Config): Config | Error;
+// }
 
 @route("/diff")
 @tag("Diff")
 interface DiffAPI {
-  /** Get diff with repo */
   @get get(): FileDiff[] | Error;
 }
 
 @route("/stats")
 @tag("Stats")
 interface StatsAPI {
-  /** Get deployment statistics */
   @get get(@path days: int32): Stats | Error;
 }
 
 @route("/status")
 @tag("Status")
 interface StatusAPI {
-  /** Get current status */
   @get get(): StackStatus[] | Error;
 }

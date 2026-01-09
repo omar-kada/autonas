@@ -173,18 +173,23 @@ func (f *fetcher) checkoutOrCreate(repo *git.Repository, branch string) error {
 	shouldCreate := !branchExists(repo, branch)
 	var targetHash plumbing.Hash
 	if shouldCreate {
-		remoteCommit, err := f.getRemoteCommit(repo)
-		if err != nil {
-			return fmt.Errorf("error while getting remote commit : %w", err)
+		remoteCommit, getCommitErr := f.getRemoteCommit(repo)
+		if getCommitErr != nil {
+			return fmt.Errorf("error while getting remote commit : %w", getCommitErr)
 		}
 		targetHash = remoteCommit.Hash
+		err = wt.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.NewBranchReferenceName(branch),
+			Force:  true,
+			Create: true,
+			Hash:   targetHash,
+		})
+	} else {
+		err = wt.Checkout(&git.CheckoutOptions{
+			Branch: plumbing.NewBranchReferenceName(branch),
+			Force:  true,
+		})
 	}
-	err = wt.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch),
-		Force:  true,
-		Create: shouldCreate,
-		Hash:   targetHash,
-	})
 	if err != nil {
 		return fmt.Errorf("failed to checkout branch '%v' (%v, %v) : %w", branch, shouldCreate, targetHash, err)
 	}

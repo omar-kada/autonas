@@ -178,8 +178,8 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 			stats.Error++
 		}
 	}
-	last, err := s.store.GetLastDeployment()
-	if err == nil {
+	if len(deps) > 0 {
+		last := deps[0]
 		stats.Author = last.Author
 		stats.LastDeploy = last.Time
 		stats.LastStatus = last.Status

@@ -62,4 +62,4 @@ ENV AUTONAS_WORKING_DIR="/data"
 EXPOSE 8080
 
 # Start the application
-CMD ["sh", "-c", "/app/autonas run -d ${AUTONAS_WORKING_DIR} --add-write-perm ${AUTONAS_ADD_WRITE_PERM}"]
+CMD ["sh", "-c", "/app/autonas run"]
