@@ -27,8 +27,7 @@ func NewGormStorage(db *gorm.DB) (Storage, error) {
 func (s *gormStorage) GetDeployments(c Cursor[uint64]) ([]models.Deployment, error) {
 	var deps []models.Deployment
 	if err := s.db.
-		Preload("Files").Preload("Events").Order("Time desc").
-		Scopes(Paginate(c)).Find(&deps).Error; err != nil {
+		Scopes(Paginate(c)).Order("Time desc").Find(&deps).Error; err != nil {
 		return nil, err
 	}
 	return deps, nil
@@ -77,7 +76,8 @@ func (s *gormStorage) EndDeployment(deploymentID uint64, status models.Deploymen
 // GetLastDeployment returns the most recent deployment based on Time (or ID) descending
 func (s *gormStorage) GetLastDeployment() (models.Deployment, error) {
 	var dep models.Deployment
-	if err := s.db.Preload("Files").Preload("Events").Order("time DESC").First(&dep).Error; err != nil {
+	req := s.db.Preload("Files").Preload("Events").Order("time DESC")
+	if err := req.First(&dep).Error; err != nil {
 		return models.Deployment{}, err
 	}
 	return dep, nil

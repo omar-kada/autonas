@@ -90,8 +90,6 @@ type Deployment struct {
 	Author  string           `json:"author"`
 	Diff    string           `json:"diff"`
 	EndTime time.Time        `json:"endTime"`
-	Events  []Event          `json:"events"`
-	Files   []FileDiff       `json:"files"`
 	Id      string           `json:"id"`
 	Status  DeploymentStatus `json:"status"`
 	Time    time.Time        `json:"time"`
@@ -100,6 +98,19 @@ type Deployment struct {
 
 // DeploymentStatus defines model for DeploymentStatus.
 type DeploymentStatus string
+
+// DeploymentWithDetails defines model for DeploymentWithDetails.
+type DeploymentWithDetails struct {
+	Author  string           `json:"author"`
+	Diff    string           `json:"diff"`
+	EndTime time.Time        `json:"endTime"`
+	Events  []Event          `json:"events"`
+	Files   []FileDiff       `json:"files"`
+	Id      string           `json:"id"`
+	Status  DeploymentStatus `json:"status"`
+	Time    time.Time        `json:"time"`
+	Title   string           `json:"title"`
+}
 
 // Error defines model for Error.
 type Error struct {
@@ -620,7 +631,7 @@ func (r DeployementAPIListResponse) StatusCode() int {
 type DeployementAPISyncResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Deployment
+	JSON200      *DeploymentWithDetails
 	JSONDefault  *Error
 }
 
@@ -643,7 +654,7 @@ func (r DeployementAPISyncResponse) StatusCode() int {
 type DeployementAPIReadResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Deployment
+	JSON200      *DeploymentWithDetails
 	JSONDefault  *Error
 }
 
@@ -837,7 +848,7 @@ func ParseDeployementAPISyncResponse(rsp *http.Response) (*DeployementAPISyncRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Deployment
+		var dest DeploymentWithDetails
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -870,7 +881,7 @@ func ParseDeployementAPIReadResponse(rsp *http.Response) (*DeployementAPIReadRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Deployment
+		var dest DeploymentWithDetails
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1312,7 +1323,7 @@ type DeployementAPISyncResponseObject interface {
 	VisitDeployementAPISyncResponse(w http.ResponseWriter) error
 }
 
-type DeployementAPISync200JSONResponse Deployment
+type DeployementAPISync200JSONResponse DeploymentWithDetails
 
 func (response DeployementAPISync200JSONResponse) VisitDeployementAPISyncResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1341,7 +1352,7 @@ type DeployementAPIReadResponseObject interface {
 	VisitDeployementAPIReadResponse(w http.ResponseWriter) error
 }
 
-type DeployementAPIRead200JSONResponse Deployment
+type DeployementAPIRead200JSONResponse DeploymentWithDetails
 
 func (response DeployementAPIRead200JSONResponse) VisitDeployementAPIReadResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

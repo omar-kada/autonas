@@ -3,9 +3,10 @@ package main
 
 import (
 	"log/slog"
-	"omar-kada/autonas/internal/cli"
 	"os"
 	"strings"
+
+	"omar-kada/autonas/internal/cli"
 )
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 	} else {
 		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	}
+	slog.Error("init 444444444")
 
 	// Add subcommands
 	rootCmd := cli.NewRootCmd()

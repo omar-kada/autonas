@@ -13,9 +13,7 @@ import (
 
 func TestDeploymentMapper_Map(t *testing.T) {
 	// Setup
-	diffMapper := DiffMapper{}
-	eventMapper := EventMapper{}
-	deploymentMapper := NewDeploymentMapper(diffMapper, eventMapper)
+	deploymentMapper := NewDeploymentMapper()
 
 	// Test data
 	deployment := models.Deployment{
@@ -39,8 +37,6 @@ func TestDeploymentMapper_Map(t *testing.T) {
 		Time:    deployment.Time,
 		EndTime: deployment.EndTime,
 		Title:   "testTitle",
-		Events:  []api.Event{{Level: api.EventLevelINFO, Msg: "testEvent", Time: deployment.Events[0].Time}},
-		Files:   []api.FileDiff{{Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
 	}
 
 	// Execute
@@ -52,9 +48,7 @@ func TestDeploymentMapper_Map(t *testing.T) {
 
 func TestDeploymentMapper_MapToPageInfo(t *testing.T) {
 	// Setup
-	diffMapper := DiffMapper{}
-	eventMapper := EventMapper{}
-	deploymentMapper := NewDeploymentMapper(diffMapper, eventMapper)
+	deploymentMapper := NewDeploymentMapper()
 
 	// Test data
 	deployments := []models.Deployment{

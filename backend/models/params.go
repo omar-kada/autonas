@@ -1,23 +1,30 @@
 package models
 
 import (
+	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // DeploymentParams groups parameters related to the deployment process
 type DeploymentParams struct {
 	WorkingDir   string
 	ServicesDir  string
-	AddWritePerm bool
+	AddWritePerm string
 }
 
 // GetAddWritePerm returns the permissions to add based on the AddWritePerm boolean
 func (p DeploymentParams) GetAddWritePerm() os.FileMode {
-	if p.AddWritePerm {
-		return os.FileMode(0666)
+	addPermBool, err := strconv.ParseBool(p.AddWritePerm)
+	if err != nil {
+		slog.Debug(fmt.Sprintf("invalid param AddWritePerm = %v", p.AddWritePerm))
 	}
-	return os.FileMode(0000)
+	if addPermBool {
+		return os.FileMode(0o666)
+	}
+	return os.FileMode(0o000)
 }
 
 // GetRepoDir returns the path of the repo directory

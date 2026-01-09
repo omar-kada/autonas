@@ -14,21 +14,15 @@ type DeploymentMapper interface {
 	MapToPageInfo(deps []models.Deployment, limit int) api.PageInfo
 }
 
-type depMapper struct {
-	diffMapper  Mapper[models.FileDiff, api.FileDiff]
-	eventMapper Mapper[models.Event, api.Event]
-}
+type depMapper struct{}
 
 // NewDeploymentMapper creates a new DeploymentMapper with the given DiffMapper and EventMapper.
-func NewDeploymentMapper(diffMapper Mapper[models.FileDiff, api.FileDiff], eventMapper Mapper[models.Event, api.Event]) DeploymentMapper {
-	return depMapper{
-		diffMapper:  diffMapper,
-		eventMapper: eventMapper,
-	}
+func NewDeploymentMapper() DeploymentMapper {
+	return depMapper{}
 }
 
 // Map maps a models.Deployment to an api.Deployment.
-func (m depMapper) Map(dep models.Deployment) api.Deployment {
+func (depMapper) Map(dep models.Deployment) api.Deployment {
 	return api.Deployment{
 		Author:  dep.Author,
 		Diff:    dep.Diff,
@@ -37,8 +31,6 @@ func (m depMapper) Map(dep models.Deployment) api.Deployment {
 		Time:    dep.Time,
 		EndTime: dep.EndTime,
 		Title:   dep.Title,
-		Events:  models.ListMapper(m.eventMapper.Map)(dep.Events),
-		Files:   models.ListMapper(m.diffMapper.Map)(dep.Files),
 	}
 }
 

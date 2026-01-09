@@ -81,9 +81,7 @@ export interface Deployment {
   time: string;
   endTime: string;
   diff: string;
-  files: FileDiff[];
   status: DeploymentStatus;
-  events: Event[];
 }
 
 export type DeploymentStatus = typeof DeploymentStatus[keyof typeof DeploymentStatus];
@@ -96,6 +94,18 @@ export const DeploymentStatus = {
   success: 'success',
   error: 'error',
 } as const;
+
+export interface DeploymentWithDetails {
+  id: string;
+  title: string;
+  author: string;
+  time: string;
+  endTime: string;
+  diff: string;
+  status: DeploymentStatus;
+  files: FileDiff[];
+  events: Event[];
+}
 
 export interface Error {
   code: number;
@@ -141,9 +151,9 @@ export interface Stats {
   success: number;
   nextDeploy: string;
   lastDeploy: string;
+  author: string;
   status: DeploymentStatus;
   health: ContainerHealth;
-  author: string;
 }
 
 export type Versions = typeof Versions[keyof typeof Versions];
@@ -259,7 +269,7 @@ export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployem
  */
 export const deployementAPISync = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Deployment>> => {
+ ): Promise<AxiosResponse<DeploymentWithDetails>> => {
     
     
     return axios.default.post(
@@ -313,11 +323,11 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     }
     
 /**
- * Read deployments
+ * Read deployment
  */
 export const deployementAPIRead = (
     id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Deployment>> => {
+ ): Promise<AxiosResponse<DeploymentWithDetails>> => {
     
     
     return axios.default.get(
@@ -400,9 +410,6 @@ export function useDeployementAPIRead<TData = Awaited<ReturnType<typeof deployem
 
 
 
-/**
- * Get diff with repo
- */
 export const diffAPIGet = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<FileDiff[]>> => {
@@ -488,9 +495,6 @@ export function useDiffAPIGet<TData = Awaited<ReturnType<typeof diffAPIGet>>, TE
 
 
 
-/**
- * Get deployment statistics
- */
 export const statsAPIGet = (
     days: number, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<Stats>> => {
@@ -576,9 +580,6 @@ export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, 
 
 
 
-/**
- * Get current status
- */
 export const statusAPIGet = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<StackStatus[]>> => {
