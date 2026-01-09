@@ -32,7 +32,7 @@ func NewHandler(store storage.DeploymentStorage, service process.Service) *Handl
 	return &Handler{
 		store:            store,
 		processSvc:       service,
-		depMapper:        mapper.NewDeploymentMapper(diffMapper, eventMapper),
+		depMapper:        mapper.NewDeploymentMapper(),
 		depDetailsMapper: mapper.NewDeploymentDetailsMapper(diffMapper, eventMapper),
 		diffMapper:       diffMapper,
 		statusMapper:     mapper.StatusMapper{},

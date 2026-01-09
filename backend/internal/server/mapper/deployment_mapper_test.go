@@ -13,9 +13,7 @@ import (
 
 func TestDeploymentMapper_Map(t *testing.T) {
 	// Setup
-	diffMapper := DiffMapper{}
-	eventMapper := EventMapper{}
-	deploymentMapper := NewDeploymentMapper(diffMapper, eventMapper)
+	deploymentMapper := NewDeploymentMapper()
 
 	// Test data
 	deployment := models.Deployment{
@@ -50,9 +48,7 @@ func TestDeploymentMapper_Map(t *testing.T) {
 
 func TestDeploymentMapper_MapToPageInfo(t *testing.T) {
 	// Setup
-	diffMapper := DiffMapper{}
-	eventMapper := EventMapper{}
-	deploymentMapper := NewDeploymentMapper(diffMapper, eventMapper)
+	deploymentMapper := NewDeploymentMapper()
 
 	// Test data
 	deployments := []models.Deployment{
