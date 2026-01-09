@@ -15,12 +15,13 @@ import (
 
 // Handler implements the generated strict server interface
 type Handler struct {
-	store        storage.DeploymentStorage
-	processSvc   process.Service
-	depMapper    mapper.DeploymentMapper
-	diffMapper   mapper.DiffMapper
-	statusMapper mapper.StatusMapper
-	statsMapper  mapper.StatsMapper
+	store            storage.DeploymentStorage
+	processSvc       process.Service
+	depMapper        mapper.DeploymentMapper
+	depDetailsMapper mapper.DeploymentDetailsMapper
+	diffMapper       mapper.DiffMapper
+	statusMapper     mapper.StatusMapper
+	statsMapper      mapper.StatsMapper
 }
 
 // NewHandler creates a new Handler
@@ -29,12 +30,13 @@ func NewHandler(store storage.DeploymentStorage, service process.Service) *Handl
 	eventMapper := mapper.EventMapper{}
 
 	return &Handler{
-		store:        store,
-		processSvc:   service,
-		depMapper:    mapper.NewDeploymentMapper(diffMapper, eventMapper),
-		diffMapper:   diffMapper,
-		statusMapper: mapper.StatusMapper{},
-		statsMapper:  mapper.StatsMapper{},
+		store:            store,
+		processSvc:       service,
+		depMapper:        mapper.NewDeploymentMapper(diffMapper, eventMapper),
+		depDetailsMapper: mapper.NewDeploymentDetailsMapper(diffMapper, eventMapper),
+		diffMapper:       diffMapper,
+		statusMapper:     mapper.StatusMapper{},
+		statsMapper:      mapper.StatsMapper{},
 	}
 }
 
@@ -74,7 +76,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	}
 	dep, err := h.store.GetDeployment(id)
 
-	return api.DeployementAPIRead200JSONResponse(h.depMapper.Map(dep)), err
+	return api.DeployementAPIRead200JSONResponse(h.depDetailsMapper.Map(dep)), err
 }
 
 // DeployementAPISync implements the StrictServerInterface interface
@@ -83,7 +85,7 @@ func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISync
 	if err != nil {
 		slog.Error(err.Error())
 	}
-	return api.DeployementAPISync200JSONResponse(h.depMapper.Map(dep)), err
+	return api.DeployementAPISync200JSONResponse(h.depDetailsMapper.Map(dep)), err
 }
 
 // StatusAPIGet implements the StrictServerInterface interface

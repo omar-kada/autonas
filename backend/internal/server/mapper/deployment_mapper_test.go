@@ -39,8 +39,6 @@ func TestDeploymentMapper_Map(t *testing.T) {
 		Time:    deployment.Time,
 		EndTime: deployment.EndTime,
 		Title:   "testTitle",
-		Events:  []api.Event{{Level: api.EventLevelINFO, Msg: "testEvent", Time: deployment.Events[0].Time}},
-		Files:   []api.FileDiff{{Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
 	}
 
 	// Execute
