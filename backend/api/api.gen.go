@@ -367,7 +367,6 @@ func NewDeployementAPIListRequest(server string, params *DeployementAPIListParam
 		}
 
 		if params.Offset != nil {
-
 			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
@@ -379,7 +378,6 @@ func NewDeployementAPIListRequest(server string, params *DeployementAPIListParam
 					}
 				}
 			}
-
 		}
 
 		queryURL.RawQuery = queryValues.Encode()
@@ -1002,7 +1000,6 @@ func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-
 	// (GET /api/deployment)
 	DeployementAPIList(w http.ResponseWriter, r *http.Request, params DeployementAPIListParams)
 
@@ -1033,7 +1030,6 @@ type MiddlewareFunc func(http.Handler) http.Handler
 
 // DeployementAPIList operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *http.Request) {
-
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -1042,7 +1038,6 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 	// ------------- Required query parameter "limit" -------------
 
 	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
-
 	} else {
 		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
 		return
@@ -1075,7 +1070,6 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 
 // DeployementAPISync operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPISync(w http.ResponseWriter, r *http.Request) {
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployementAPISync(w, r)
 	}))
@@ -1089,7 +1083,6 @@ func (siw *ServerInterfaceWrapper) DeployementAPISync(w http.ResponseWriter, r *
 
 // DeployementAPIRead operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *http.Request) {
-
 	var err error
 
 	// ------------- Path parameter "id" -------------
@@ -1114,7 +1107,6 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 
 // DiffAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) DiffAPIGet(w http.ResponseWriter, r *http.Request) {
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DiffAPIGet(w, r)
 	}))
@@ -1128,7 +1120,6 @@ func (siw *ServerInterfaceWrapper) DiffAPIGet(w http.ResponseWriter, r *http.Req
 
 // StatsAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Request) {
-
 	var err error
 
 	// ------------- Path parameter "days" -------------
@@ -1153,7 +1144,6 @@ func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Re
 
 // StatusAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) StatusAPIGet(w http.ResponseWriter, r *http.Request) {
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.StatusAPIGet(w, r)
 	}))
@@ -1327,8 +1317,7 @@ func (response DeployementAPIListdefaultJSONResponse) VisitDeployementAPIListRes
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type DeployementAPISyncRequestObject struct {
-}
+type DeployementAPISyncRequestObject struct{}
 
 type DeployementAPISyncResponseObject interface {
 	VisitDeployementAPISyncResponse(w http.ResponseWriter) error
@@ -1384,8 +1373,7 @@ func (response DeployementAPIReaddefaultJSONResponse) VisitDeployementAPIReadRes
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type DiffAPIGetRequestObject struct {
-}
+type DiffAPIGetRequestObject struct{}
 
 type DiffAPIGetResponseObject interface {
 	VisitDiffAPIGetResponse(w http.ResponseWriter) error
@@ -1441,8 +1429,7 @@ func (response StatsAPIGetdefaultJSONResponse) VisitStatsAPIGetResponse(w http.R
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type StatusAPIGetRequestObject struct {
-}
+type StatusAPIGetRequestObject struct{}
 
 type StatusAPIGetResponseObject interface {
 	VisitStatusAPIGetResponse(w http.ResponseWriter) error
@@ -1471,7 +1458,6 @@ func (response StatusAPIGetdefaultJSONResponse) VisitStatusAPIGetResponse(w http
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-
 	// (GET /api/deployment)
 	DeployementAPIList(ctx context.Context, request DeployementAPIListRequestObject) (DeployementAPIListResponseObject, error)
 
@@ -1491,8 +1477,10 @@ type StrictServerInterface interface {
 	StatusAPIGet(ctx context.Context, request StatusAPIGetRequestObject) (StatusAPIGetResponseObject, error)
 }
 
-type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
-type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+type (
+	StrictHandlerFunc    = strictnethttp.StrictHTTPHandlerFunc
+	StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+)
 
 type StrictHTTPServerOptions struct {
 	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
