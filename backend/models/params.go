@@ -22,9 +22,9 @@ func (p DeploymentParams) GetAddWritePerm() os.FileMode {
 		slog.Debug(fmt.Sprintf("invalid param AddWritePerm = %v", p.AddWritePerm))
 	}
 	if addPermBool {
-		return os.FileMode(0666)
+		return os.FileMode(0o666)
 	}
-	return os.FileMode(0000)
+	return os.FileMode(0o000)
 }
 
 // GetRepoDir returns the path of the repo directory

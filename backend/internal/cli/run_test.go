@@ -1,8 +1,9 @@
 package cli
 
 import (
-	"omar-kada/autonas/models"
 	"testing"
+
+	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -3,15 +3,16 @@ package main
 
 import (
 	"log/slog"
-	"omar-kada/autonas/internal/cli"
 	"os"
 	"strings"
+
+	"omar-kada/autonas/internal/cli"
 )
 
 func main() {
 	retcode := 0
 	defer func() { os.Exit(retcode) }()
-	
+
 	isDev := strings.ToUpper(os.Getenv("ENV")) == "DEV"
 	if isDev {
 		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
