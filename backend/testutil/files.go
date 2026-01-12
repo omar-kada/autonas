@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"golang.org/x/tools/txtar"
 	"gopkg.in/yaml.v3"
@@ -78,4 +79,14 @@ func ReadFile(t *testing.T, path string) []byte {
 		t.Fatalf("failed to read want file: %v", err)
 	}
 	return bs
+}
+
+// WaitForFile waits for a file to exist at the given path within the specified timeout.
+// It returns true if the file exists before the timeout expires, false otherwise.
+func WaitForFile(path string, timeout time.Duration) bool {
+	res, _ := WaitFor(timeout, func() (bool, bool) {
+		_, err := os.Stat(path)
+		return err == nil, err == nil
+	})
+	return res
 }

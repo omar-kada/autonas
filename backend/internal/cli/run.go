@@ -8,14 +8,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"omar-kada/autonas/internal/cli/defaults"
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/server"
+	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/models"
 
 	"github.com/spf13/cobra"
 	"gorm.io/driver/sqlite"
@@ -23,76 +22,55 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-const (
-	_file         defaults.VarKey = "file"
-	_workingDir   defaults.VarKey = "working-dir"
-	_servicesDir  defaults.VarKey = "services-dir"
-	_addWritePerm defaults.VarKey = "add-write-perm"
-	_port         defaults.VarKey = "port"
-)
+type runCommand struct {
+	executor shell.Executor
 
-var varInfoMap = defaults.VariableInfoMap{
-	_file:         {EnvKey: "AUTONAS_CONFIG_FILE", DefaultValue: "/data/config.yaml"},
-	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
-	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
-	_addWritePerm: {EnvKey: "AUTONAS_ADD_WRITE_PERM", DefaultValue: "false"},
-	_port:         {EnvKey: "AUTONAS_PORT", DefaultValue: 5005},
+	cmd    *cobra.Command
+	params RunParams
 }
 
-// RunParams contain parameters of the run command
-type RunParams struct {
-	models.DeploymentParams
-	models.ServerParams
-	ConfigFile string
-}
+// NewRunCommand creates a new run
+func NewRunCommand(executor shell.Executor) *cobra.Command {
 
-func getParamsWithDefaults(p RunParams, addWritePerm string) RunParams {
-	return RunParams{
-		ConfigFile: varInfoMap.EnvOrDefault(p.ConfigFile, _file),
-		DeploymentParams: models.DeploymentParams{
-			WorkingDir:   varInfoMap.EnvOrDefault(p.WorkingDir, _workingDir),
-			ServicesDir:  varInfoMap.EnvOrDefault(p.ServicesDir, _servicesDir),
-			AddWritePerm: varInfoMap.EnvOrDefault(addWritePerm, _addWritePerm),
-		},
-		ServerParams: models.ServerParams{
-			Port: varInfoMap.EnvOrDefaultInt(p.Port, _port),
-		},
+	run := runCommand{
+		params:   RunParams{},
+		executor: executor,
 	}
-}
 
-// newRunCommand creates a new run
-func newRunCommand() *cobra.Command {
-	params := RunParams{}
-	addWritePerm := ""
-	runCmd := &cobra.Command{
+	run.cmd = &cobra.Command{
 		Use:   "run",
 		Short: "Run with optional config files",
-		Run: func(_ *cobra.Command, _ []string) {
-			if err := doRun(getParamsWithDefaults(params, addWritePerm)); err != nil {
+		RunE: func(_ *cobra.Command, _ []string) error {
+			if err := run.doRun(); err != nil {
 				slog.Error(err.Error())
+				return err
 			}
+			return nil
 		},
 	}
-	runCmd.Flags().StringVarP(&params.ConfigFile, string(_file), "f", "",
+	run.cmd.Flags().StringVarP(&run.params.ConfigFile, string(_file), "f", "",
 		varInfoMap.GetDefaultString("YAML config file", _file))
-	runCmd.Flags().StringVarP(&params.WorkingDir, string(_workingDir), "d", "",
+	run.cmd.Flags().StringVarP(&run.params.WorkingDir, string(_workingDir), "d", "",
 		varInfoMap.GetDefaultString("directory where autonas data will be stored", _workingDir))
-	runCmd.Flags().StringVarP(&params.ServicesDir, string(_servicesDir), "s", "",
+	run.cmd.Flags().StringVarP(&run.params.ServicesDir, string(_servicesDir), "s", "",
 		varInfoMap.GetDefaultString("directory where services compose stacks will be stored", _servicesDir))
-	runCmd.Flags().StringVar(&params.AddWritePerm, string(_addWritePerm), "",
+	run.cmd.Flags().StringVarP(&run.params.AddWritePerm, string(_addWritePerm), "w", "",
 		varInfoMap.GetDefaultString("when true, the tool adds write permission to config files", _addWritePerm))
-	runCmd.Flags().IntVarP(&params.Port, string(_port), "p", 5005,
+	run.cmd.Flags().IntVarP(&run.params.Port, string(_port), "p", 0,
 		varInfoMap.GetDefaultString("port that will be used for exposing the API", _port))
 
-	return runCmd
+	return run.cmd
 }
 
-func initGorm(dbFile string, addPerm os.FileMode) (*gorm.DB, error) {
+func (*runCommand) initGorm(dbFile string, addPerm os.FileMode) (*gorm.DB, error) {
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(dbFile), 0o600|addPerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dbFile), 0o700|addPerm); err != nil {
 			return nil, err
 		}
+	} else if err != nil {
+		return nil, err
 	}
+	fmt.Printf("dbFile = %v\n", dbFile)
 
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -120,11 +98,12 @@ func initGorm(dbFile string, addPerm os.FileMode) (*gorm.DB, error) {
 	return db, err
 }
 
-func doRun(params RunParams) error {
+func (run *runCommand) doRun() error {
+	params := getParamsWithDefaults(run.params)
 	// create a configStore from the config file,
 	// laod the config from there, and use it for the rest of the settings
 	dbFile := filepath.Join(params.GetDBDir(), "autonas.db")
-	db, err := initGorm(dbFile, params.GetAddWritePerm())
+	db, err := run.initGorm(dbFile, params.GetAddWritePerm())
 	if err != nil {
 		return fmt.Errorf("couldn't init sqlite db %w", err)
 	}
@@ -142,7 +121,7 @@ func doRun(params RunParams) error {
 	}
 	service := process.NewService(
 		params.DeploymentParams,
-		docker.NewDeployer(dispatcher),
+		docker.NewDeployer(dispatcher, run.executor),
 		inspector,
 		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir()),
 		store,

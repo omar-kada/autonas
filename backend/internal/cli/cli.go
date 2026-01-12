@@ -2,15 +2,17 @@
 package cli
 
 import (
+	"omar-kada/autonas/internal/shell"
+
 	"github.com/spf13/cobra"
 )
 
 // NewRootCmd creates a new command with default dependencies
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(executor shell.Executor) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "autonas",
 		Short: "AutoNAS CLI",
 	}
-	rootCmd.AddCommand(newRunCommand())
+	rootCmd.AddCommand(NewRunCommand(executor))
 	return rootCmd
 }
