@@ -23,7 +23,6 @@ func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
 }
 
 func TestRunCommand_CmdParams(t *testing.T) {
-	t.Parallel()
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
 	cmd := NewRunCommand(mocker)
@@ -32,9 +31,9 @@ func TestRunCommand_CmdParams(t *testing.T) {
 	dataDir := filepath.Join(baseDir, "data")
 	workingDir := filepath.Join(baseDir, "work")
 	configFile := filepath.Join(workingDir, "config.yaml")
-	os.MkdirAll(servicesDir, 0o777)
-	os.MkdirAll(dataDir, 0o777)
-	os.MkdirAll(workingDir, 0o777)
+	os.MkdirAll(servicesDir, 0o750)
+	os.MkdirAll(dataDir, 0o750)
+	os.MkdirAll(workingDir, 0o750)
 
 	mocker.On(
 		"Exec", "docker",
@@ -74,7 +73,6 @@ func TestRunCommand_CmdParams(t *testing.T) {
 
 }
 func TestRunCommand_EnvParams(t *testing.T) {
-	t.Parallel()
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
 	cmd := NewRunCommand(mocker)
@@ -83,9 +81,9 @@ func TestRunCommand_EnvParams(t *testing.T) {
 	customDataDir := filepath.Join(baseDir, "custom_data")
 	customWorkingDir := filepath.Join(baseDir, "custom_work")
 	customConfigFile := filepath.Join(customWorkingDir, "custom_config.yaml")
-	os.MkdirAll(customServicesDir, 0o777)
-	os.MkdirAll(customDataDir, 0o777)
-	os.MkdirAll(customWorkingDir, 0o777)
+	os.MkdirAll(customServicesDir, 0o750)
+	os.MkdirAll(customDataDir, 0o750)
+	os.MkdirAll(customWorkingDir, 0o750)
 
 	mocker.On(
 		"Exec", "docker",
@@ -121,7 +119,6 @@ func TestRunCommand_EnvParams(t *testing.T) {
 }
 
 func TestRunCommand_WithInvalidConfig(t *testing.T) {
-	t.Parallel()
 	mocker := &Mocker{}
 	cmd := NewRunCommand(mocker)
 
