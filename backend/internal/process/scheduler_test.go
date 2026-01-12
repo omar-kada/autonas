@@ -136,3 +136,33 @@ func TestScheduleWhileRunning(t *testing.T) {
 	// Stop both crons
 	c2.Stop()
 }
+
+func TestScheduleImmediateExecution(t *testing.T) {
+	configStore := createTestConfigStore(t)
+	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
+
+	// Set up test config with "1" cron period
+	testConfig := models.Config{CronPeriod: "1"}
+	err := configStore.Update(testConfig)
+	assert.NoError(t, err)
+
+	// Create a channel to signal when the function is called
+	fnCalled := make(chan bool, 1)
+
+	// Schedule the function
+	c, err := scheduler.Schedule(func() {
+		fnCalled <- true
+	})
+
+	// Verify the function was called immediately
+	select {
+	case <-fnCalled:
+		// Function was called immediately
+	case <-time.After(1 * time.Second):
+		t.Error("Function was not called immediately")
+	}
+
+	// Verify no cron was created
+	assert.Nil(t, c, "Expected nil cron for immediate execution")
+	assert.NoError(t, err)
+}

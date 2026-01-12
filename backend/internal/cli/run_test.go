@@ -33,8 +33,8 @@ func initConfigRepo(t *testing.T) string {
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	homepageComposeFile, err := os.ReadFile("test_data/homepage/compose.yaml")
 	assert.NoError(t, err, "error while reading homepage compose file")
-	homepageEnvFile, err := os.ReadFile("test_data/homepage/.env")
-	assert.NoError(t, err, "error while reading homepage .env file")
+	homepageEnvFile, err := os.ReadFile("test_data/homepage/env")
+	assert.NoError(t, err, "error while reading homepage env file")
 	testutil.AddCommitToRepo(t, remoteRepoPath, "services/homepage/compose.yaml", homepageComposeFile)
 	testutil.AddCommitToRepo(t, remoteRepoPath, "services/homepage/.env", homepageEnvFile)
 	if err != nil {
@@ -68,6 +68,7 @@ func TestRunCommand_CmdParams(t *testing.T) {
 			"SERVICES_PATH: " + servicesDir,
 			"DATA_PATH: " + dataDir,
 			fmt.Sprintf("repo: \"%v\"", remoteRepoPath),
+			"cron : 1",
 			"services:",
 			"  homepage:",
 			"    port : 12345",
@@ -119,6 +120,7 @@ func TestRunCommand_EnvParams(t *testing.T) {
 			"SERVICES_PATH: " + servicesDir,
 			"DATA_PATH: " + dataDir,
 			fmt.Sprintf("repo: \"%v\"", remoteRepoPath),
+			"cron : 1",
 			"services:",
 			"  homepage:",
 			"    port : 12345",

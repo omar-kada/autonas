@@ -46,7 +46,10 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg.CronPeriod != "" {
+	if cfg.CronPeriod == "1" {
+		fn()
+		return nil, nil
+	} else if cfg.CronPeriod != "" && cfg.CronPeriod != "0" {
 
 		_, err := c.AddFunc(cfg.CronPeriod, fn)
 		if err != nil {
@@ -57,7 +60,6 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 		return c, nil
 	}
 
-	fn()
 	return nil, fmt.Errorf("couldn't schedule job, no cron period is defined")
 }
 
