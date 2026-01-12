@@ -76,7 +76,7 @@ func TestPullBranch(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(mockConfig)
 
-	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", "dummy readme")
+	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", []byte("dummy readme"))
 
 	// Use the fetcher methods directly
 	err := fetcher.PullBranch("main", "")
@@ -96,7 +96,7 @@ func TestDiffWithRemote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Add a commit to the remote repo
-	testutil.AddCommitToRepo(t, remoteRepoPath, "NEWFILE.txt", "new file content")
+	testutil.AddCommitToRepo(t, remoteRepoPath, "NEWFILE.txt", []byte("new file content"))
 
 	// Get the diff with remote
 	patch, err := fetcher.DiffWithRemote()
@@ -159,7 +159,7 @@ func TestFetch_WithAddPermissions(t *testing.T) {
 	mockConfig.Repo = remoteRepoPath
 	fetcher := NewFetcher(os.FileMode(0o755), clonePath).WithConfig(mockConfig)
 
-	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", "dummy readme")
+	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", []byte("dummy readme"))
 
 	err := fetcher.PullBranch("main", "")
 	assert.NoError(t, err)

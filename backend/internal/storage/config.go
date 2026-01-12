@@ -87,5 +87,8 @@ func decodeConfig(configMap map[string]any) (models.Config, error) {
 	if err := decoder.Decode(configMap); err != nil {
 		return models.Config{}, fmt.Errorf("error decoding merged config: %w", err)
 	}
+	if cfg.Branch == "" {
+		cfg.Branch = "main"
+	}
 	return cfg, nil
 }

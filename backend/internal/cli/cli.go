@@ -13,6 +13,6 @@ func NewRootCmd(executor shell.Executor) *cobra.Command {
 		Use:   "autonas",
 		Short: "AutoNAS CLI",
 	}
-	rootCmd.AddCommand(NewRunCommand(executor))
+	rootCmd.AddCommand(NewRunCommand(executor, InitGormStorage))
 	return rootCmd
 }

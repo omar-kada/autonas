@@ -57,6 +57,7 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 		return c, nil
 	}
 
+	fn()
 	return nil, fmt.Errorf("couldn't schedule job, no cron period is defined")
 }
 

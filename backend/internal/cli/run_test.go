@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
@@ -22,10 +25,28 @@ func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
 	return args.Error(0)
 }
 
+func initMemoryStorage(_ RunParams) (storage.Storage, error) {
+	return storage.NewMemoryStorage(), nil
+}
+
+func initConfigRepo(t *testing.T) string {
+	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	homepageComposeFile, err := os.ReadFile("test_data/homepage/compose.yaml")
+	assert.NoError(t, err, "error while reading homepage compose file")
+	homepageEnvFile, err := os.ReadFile("test_data/homepage/.env")
+	assert.NoError(t, err, "error while reading homepage .env file")
+	testutil.AddCommitToRepo(t, remoteRepoPath, "services/homepage/compose.yaml", homepageComposeFile)
+	testutil.AddCommitToRepo(t, remoteRepoPath, "services/homepage/.env", homepageEnvFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return remoteRepoPath
+}
+
 func TestRunCommand_CmdParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
-	cmd := NewRunCommand(mocker)
+	cmd := NewRunCommand(mocker, initMemoryStorage)
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
@@ -40,12 +61,13 @@ func TestRunCommand_CmdParams(t *testing.T) {
 		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
 	).Return(nil)
 
+	remoteRepoPath := initConfigRepo(t)
+
 	err := os.WriteFile(configFile,
 		[]byte(strings.Join([]string{
 			"SERVICES_PATH: " + servicesDir,
 			"DATA_PATH: " + dataDir,
-			"repo: \"https://github.com/omar-kada/autonas-config\"",
-			"cron: \"* * * * *\"",
+			fmt.Sprintf("repo: \"%v\"", remoteRepoPath),
 			"services:",
 			"  homepage:",
 			"    port : 12345",
@@ -68,61 +90,63 @@ func TestRunCommand_CmdParams(t *testing.T) {
 
 	targetFile := filepath.Join(servicesDir, "homepage", ".env")
 
-	ok := testutil.WaitForFile(targetFile, 1*time.Minute)
+	ok := testutil.WaitForFile(targetFile, 10*time.Second)
 	assert.True(t, ok, "homepage files should be created")
 }
 
 func TestRunCommand_EnvParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
-	cmd := NewRunCommand(mocker)
+	cmd := NewRunCommand(mocker, initMemoryStorage)
 
-	customServicesDir := filepath.Join(baseDir, "custom_services")
-	customDataDir := filepath.Join(baseDir, "custom_data")
-	customWorkingDir := filepath.Join(baseDir, "custom_work")
-	customConfigFile := filepath.Join(customWorkingDir, "custom_config.yaml")
-	os.MkdirAll(customServicesDir, 0o750)
-	os.MkdirAll(customDataDir, 0o750)
-	os.MkdirAll(customWorkingDir, 0o750)
+	servicesDir := filepath.Join(baseDir, "services")
+	dataDir := filepath.Join(baseDir, "data")
+	workingDir := filepath.Join(baseDir, "work")
+	configFile := filepath.Join(workingDir, "config.yaml")
+	os.MkdirAll(servicesDir, 0o750)
+	os.MkdirAll(dataDir, 0o750)
+	os.MkdirAll(workingDir, 0o750)
 
 	mocker.On(
 		"Exec", "docker",
-		[]string{"compose", "--project-directory", filepath.Join(customServicesDir, "homepage"), "up", "-d"},
+		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
 	).Return(nil)
 
-	err := os.WriteFile(customConfigFile,
+	remoteRepoPath := initConfigRepo(t)
+
+	err := os.WriteFile(configFile,
 		[]byte(strings.Join([]string{
-			"SERVICES_PATH: " + customServicesDir,
-			"DATA_PATH: " + customDataDir,
-			"repo: \"https://github.com/omar-kada/autonas-config\"",
-			"cron: \"* * * * *\"",
+			"SERVICES_PATH: " + servicesDir,
+			"DATA_PATH: " + dataDir,
+			fmt.Sprintf("repo: \"%v\"", remoteRepoPath),
 			"services:",
 			"  homepage:",
-			"    port : 54321",
+			"    port : 12345",
 		}, "\n")), 0o750)
-	assert.NoError(t, err, "error while creating custom config file")
+	assert.NoError(t, err, "error while creating config file")
 
-	t.Setenv("AUTONAS_CONFIG_FILE", customConfigFile)
-	t.Setenv("AUTONAS_WORKING_DIR", customWorkingDir)
-	t.Setenv("AUTONAS_SERVICES_DIR", customServicesDir)
+	t.Setenv("AUTONAS_CONFIG_FILE", configFile)
+	t.Setenv("AUTONAS_WORKING_DIR", workingDir)
+	t.Setenv("AUTONAS_SERVICES_DIR", servicesDir)
 	t.Setenv("AUTONAS_ADD_WRITE_PERM", "true")
-	t.Setenv("AUTONAS_PORT", "0")
+	t.Setenv("AUTONAS_PORT", "5009")
 
 	go func() {
+
 		cmd.Execute()
 	}()
 
-	targetFile := filepath.Join(customServicesDir, "homepage", ".env")
+	targetFile := filepath.Join(servicesDir, "homepage", ".env")
 
-	ok := testutil.WaitForFile(targetFile, 1*time.Minute)
-	assert.True(t, ok, "custom homepage files should be created")
+	ok := testutil.WaitForFile(targetFile, 10*time.Second)
+	assert.True(t, ok, "homepage files should be created")
 }
 
 func TestRunCommand_WithInvalidConfig(t *testing.T) {
 	mocker := &Mocker{}
-	cmd := NewRunCommand(mocker)
-
-	t.Setenv("AUTONAS_WORKING_DIR", "/invalid")
+	cmd := NewRunCommand(mocker, func(_ RunParams) (storage.Storage, error) {
+		return nil, errors.New("mock error")
+	})
 
 	// Create a channel to capture the command's exit status
 	done := make(chan error, 1)
@@ -135,7 +159,7 @@ func TestRunCommand_WithInvalidConfig(t *testing.T) {
 	select {
 
 	case cmdErr := <-done:
-		assert.ErrorContains(t, cmdErr, "couldn't init sqlite db")
+		assert.ErrorContains(t, cmdErr, "mock error")
 	case <-time.After(1 * time.Second):
 		assert.Fail(t, "timeout while waiting for command error")
 	}

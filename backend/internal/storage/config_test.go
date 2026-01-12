@@ -28,6 +28,7 @@ func TestDecodeConfig(t *testing.T) {
 		},
 	}
 	want := models.Config{
+		Branch: "main",
 		Extra: map[string]any{
 			"AUTONAS_HOST": "localhost",
 			"DATA_PATH":    "/data",
@@ -63,6 +64,7 @@ func TestUpdateConfig(t *testing.T) {
 		store := NewConfigStore(filePath)
 
 		input := models.Config{
+			Branch: "main",
 			Extra: map[string]any{
 				"AUTONAS_HOST": "localhost",
 				"DATA_PATH":    "/data",
