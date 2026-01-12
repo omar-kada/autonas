@@ -106,7 +106,6 @@ func InitGormStorage(params RunParams) (storage.Storage, error) {
 func (run *runCommand) doRun() error {
 	params := getParamsWithDefaults(run.params)
 	store, err := run.storeCreator(params)
-
 	if err != nil {
 		return fmt.Errorf("couldn't init storage %w", err)
 	}

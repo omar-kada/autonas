@@ -132,7 +132,6 @@ func TestRunCommand_EnvParams(t *testing.T) {
 	t.Setenv("AUTONAS_PORT", "5009")
 
 	go func() {
-
 		cmd.Execute()
 	}()
 
