@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"omar-kada/autonas/internal/events"
+	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -70,7 +71,7 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 
 	baseDir := t.TempDir()
 	envFilePath := filepath.Join(baseDir, "svc1", ".env")
-	err := os.Mkdir(filepath.Join(baseDir, "svc1"), 0750)
+	err := os.Mkdir(filepath.Join(baseDir, "svc1"), 0o750)
 	assert.NoError(t, err)
 
 	err = files.NewWriter().WriteToFile(

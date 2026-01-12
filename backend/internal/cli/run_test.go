@@ -1,12 +1,13 @@
 package cli
 
 import (
-	"omar-kada/autonas/testutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,8 +53,8 @@ func TestRunCommand_CmdParams(t *testing.T) {
 		}, "\n")), 0o750)
 	assert.NoError(t, err, "error while creating config file")
 
-	os.Setenv("AUTONAS_CONFIG_FILE", "")
-	os.Setenv("AUTONAS_WORKING_DIR", "")
+	t.Setenv("AUTONAS_CONFIG_FILE", "")
+	t.Setenv("AUTONAS_WORKING_DIR", "")
 
 	go func() {
 		cmd.SetArgs([]string{
@@ -70,14 +71,8 @@ func TestRunCommand_CmdParams(t *testing.T) {
 
 	ok := testutil.WaitForFile(targetFile, 1*time.Minute)
 	assert.True(t, ok, "homepage files should be created")
-	// Clean up
-	os.Unsetenv("AUTONAS_CONFIG_FILE")
-	os.Unsetenv("AUTONAS_WORKING_DIR")
-	os.Unsetenv("AUTONAS_SERVICES_DIR")
-	os.Unsetenv("AUTONAS_ADD_WRITE_PERM")
-	os.Unsetenv("AUTONAS_PORT")
-}
 
+}
 func TestRunCommand_EnvParams(t *testing.T) {
 	t.Parallel()
 	baseDir := t.TempDir()
@@ -109,11 +104,11 @@ func TestRunCommand_EnvParams(t *testing.T) {
 		}, "\n")), 0o750)
 	assert.NoError(t, err, "error while creating custom config file")
 
-	os.Setenv("AUTONAS_CONFIG_FILE", customConfigFile)
-	os.Setenv("AUTONAS_WORKING_DIR", customWorkingDir)
-	os.Setenv("AUTONAS_SERVICES_DIR", customServicesDir)
-	os.Setenv("AUTONAS_ADD_WRITE_PERM", "true")
-	os.Setenv("AUTONAS_PORT", "0")
+	t.Setenv("AUTONAS_CONFIG_FILE", customConfigFile)
+	t.Setenv("AUTONAS_WORKING_DIR", customWorkingDir)
+	t.Setenv("AUTONAS_SERVICES_DIR", customServicesDir)
+	t.Setenv("AUTONAS_ADD_WRITE_PERM", "true")
+	t.Setenv("AUTONAS_PORT", "0")
 
 	go func() {
 		cmd.Execute()
@@ -123,12 +118,6 @@ func TestRunCommand_EnvParams(t *testing.T) {
 
 	ok := testutil.WaitForFile(targetFile, 1*time.Minute)
 	assert.True(t, ok, "custom homepage files should be created")
-	// Clean up
-	os.Unsetenv("AUTONAS_CONFIG_FILE")
-	os.Unsetenv("AUTONAS_WORKING_DIR")
-	os.Unsetenv("AUTONAS_SERVICES_DIR")
-	os.Unsetenv("AUTONAS_ADD_WRITE_PERM")
-	os.Unsetenv("AUTONAS_PORT")
 }
 
 func TestRunCommand_WithInvalidConfig(t *testing.T) {
@@ -136,7 +125,7 @@ func TestRunCommand_WithInvalidConfig(t *testing.T) {
 	mocker := &Mocker{}
 	cmd := NewRunCommand(mocker)
 
-	os.Setenv("AUTONAS_WORKING_DIR", "/invalid")
+	t.Setenv("AUTONAS_WORKING_DIR", "/invalid")
 
 	// Create a channel to capture the command's exit status
 	done := make(chan error, 1)
@@ -153,11 +142,4 @@ func TestRunCommand_WithInvalidConfig(t *testing.T) {
 	case <-time.After(1 * time.Second):
 		assert.Fail(t, "timeout while waiting for command error")
 	}
-
-	// Clean up
-	os.Unsetenv("AUTONAS_CONFIG_FILE")
-	os.Unsetenv("AUTONAS_WORKING_DIR")
-	os.Unsetenv("AUTONAS_SERVICES_DIR")
-	os.Unsetenv("AUTONAS_ADD_WRITE_PERM")
-	os.Unsetenv("AUTONAS_PORT")
 }

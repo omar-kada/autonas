@@ -31,7 +31,6 @@ type runCommand struct {
 
 // NewRunCommand creates a new run
 func NewRunCommand(executor shell.Executor) *cobra.Command {
-
 	run := runCommand{
 		params:   RunParams{},
 		executor: executor,

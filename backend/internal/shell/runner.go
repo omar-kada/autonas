@@ -4,8 +4,9 @@ package shell
 import (
 	"fmt"
 	"log/slog"
-	"omar-kada/autonas/internal/events"
 	"os/exec"
+
+	"omar-kada/autonas/internal/events"
 )
 
 // Executor abstracts writing content to a file
