@@ -70,8 +70,8 @@ func TestRunCommand_CmdParams(t *testing.T) {
 
 	ok := testutil.WaitForFile(targetFile, 1*time.Minute)
 	assert.True(t, ok, "homepage files should be created")
-
 }
+
 func TestRunCommand_EnvParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
