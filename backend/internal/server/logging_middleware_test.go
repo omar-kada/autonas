@@ -2,12 +2,11 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"log/slog"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +16,7 @@ type memHandler struct {
 	entries []map[string]any
 }
 
-func (h *memHandler) Enabled(_ context.Context, _ slog.Level) bool { return true }
+func (*memHandler) Enabled(_ context.Context, _ slog.Level) bool { return true }
 
 func (h *memHandler) Handle(_ context.Context, rec slog.Record) error {
 	m := map[string]any{"msg": rec.Message}
@@ -44,7 +43,7 @@ func TestLoggingMiddleware_RecordsStatusAndBytes(t *testing.T) {
 	})
 
 	h := loggingMiddleware(inner)
-	r := httptest.NewRequest("GET", "/testpath", nil)
+	r := httptest.NewRequest("GET", "/testpath", http.NoBody)
 	r.RemoteAddr = "1.2.3.4:1234"
 	rw := httptest.NewRecorder()
 
@@ -74,7 +73,7 @@ func TestLoggingMiddleware_DefaultStatus(t *testing.T) {
 	})
 
 	h := loggingMiddleware(inner)
-	r := httptest.NewRequest("POST", "/d", nil)
+	r := httptest.NewRequest("POST", "/d", http.NoBody)
 	r.RemoteAddr = "4.3.2.1:4321"
 	rw := httptest.NewRecorder()
 

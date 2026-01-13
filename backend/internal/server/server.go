@@ -5,11 +5,12 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
+
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
-	"strconv"
-	"time"
 )
 
 // Server will listen to requests on a port

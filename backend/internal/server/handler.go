@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strconv"
 
 	"omar-kada/autonas/api"
@@ -80,10 +81,10 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	} else if dep.ID == 0 {
 		return api.DeployementAPIReaddefaultJSONResponse{
 			Body: api.Error{
-				Code:    404,
+				Code:    http.StatusNotFound,
 				Message: err.Error(),
 			},
-			StatusCode: 404,
+			StatusCode: http.StatusNotFound,
 		}, err
 	}
 
