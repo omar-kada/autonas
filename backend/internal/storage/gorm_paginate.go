@@ -12,8 +12,8 @@ func Paginate[T any](c Cursor[T]) func(db *gorm.DB) *gorm.DB {
 
 		pageSize := c.Limit
 		switch {
-		case pageSize > 100:
-			pageSize = 100
+		case pageSize > 50:
+			pageSize = 50
 		case pageSize <= 0:
 			pageSize = 10
 		}
