@@ -4,24 +4,25 @@ package shell
 import (
 	"fmt"
 	"log/slog"
-	"omar-kada/autonas/internal/events"
 	"os/exec"
+
+	"omar-kada/autonas/internal/events"
 )
 
-// Runner abstracts writing content to a file
-type Runner interface {
-	Run(cmd string, args ...string) error
+// Executor abstracts writing content to a file
+type Executor interface {
+	Exec(cmd string, args ...string) error
 }
 
-type cmdRunner struct{}
+type cmdExecuter struct{}
 
-// NewRunner creates and new Writer and returns it
-func NewRunner() Runner {
-	return cmdRunner{}
+// NewExecutor creates and new Writer and returns it
+func NewExecutor() Executor {
+	return cmdExecuter{}
 }
 
 // Run runs a shell command and returns error if any
-func (cmdRunner) Run(cmd string, args ...string) error {
+func (cmdExecuter) Exec(cmd string, args ...string) error {
 	path, err := exec.LookPath(cmd)
 	if err != nil {
 		return fmt.Errorf("executable not found: %w", err)

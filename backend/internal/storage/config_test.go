@@ -1,11 +1,12 @@
 package storage
 
 import (
-	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -28,6 +29,7 @@ func TestDecodeConfig(t *testing.T) {
 		},
 	}
 	want := models.Config{
+		Branch: "main",
 		Extra: map[string]any{
 			"AUTONAS_HOST": "localhost",
 			"DATA_PATH":    "/data",
@@ -63,6 +65,7 @@ func TestUpdateConfig(t *testing.T) {
 		store := NewConfigStore(filePath)
 
 		input := models.Config{
+			Branch: "main",
 			Extra: map[string]any{
 				"AUTONAS_HOST": "localhost",
 				"DATA_PATH":    "/data",
@@ -95,7 +98,7 @@ func TestUpdateConfig(t *testing.T) {
 		// Create a directory that we can't write to
 		tmpDir := t.TempDir()
 		readOnlyDir := filepath.Join(tmpDir, "readonly")
-		err := os.Mkdir(readOnlyDir, 0540)
+		err := os.Mkdir(readOnlyDir, 0o540)
 		assert.NoError(t, err)
 
 		filePath := filepath.Join(readOnlyDir, "config.yaml")

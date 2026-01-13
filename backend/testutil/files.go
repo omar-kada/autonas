@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"golang.org/x/tools/txtar"
 	"gopkg.in/yaml.v3"
@@ -42,10 +43,10 @@ func ExtractTxtar(t *testing.T, testDataFS embed.FS, archivePath string) []File 
 	tempDir := t.TempDir()
 	for _, file := range ar.Files {
 		outPath := filepath.Join(tempDir, file.Name)
-		if err := os.MkdirAll(filepath.Dir(outPath), 0750); err != nil {
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o750); err != nil {
 			t.Fatalf("failed to create tmp directory: %v", err)
 		}
-		if err := os.WriteFile(outPath, file.Data, 0600); err != nil {
+		if err := os.WriteFile(outPath, file.Data, 0o600); err != nil {
 			t.Fatalf("failed to create tmp file: %v", err)
 		}
 		result = append(result, File{
@@ -78,4 +79,14 @@ func ReadFile(t *testing.T, path string) []byte {
 		t.Fatalf("failed to read want file: %v", err)
 	}
 	return bs
+}
+
+// WaitForFile waits for a file to exist at the given path within the specified timeout.
+// It returns true if the file exists before the timeout expires, false otherwise.
+func WaitForFile(path string, timeout time.Duration) bool {
+	res, _ := WaitFor(timeout, func() (bool, bool) {
+		_, err := os.Stat(path)
+		return err == nil, err == nil
+	})
+	return res
 }

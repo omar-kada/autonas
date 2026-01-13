@@ -1,117 +1,167 @@
 package cli
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
-	"omar-kada/autonas/models"
+	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestGetParamsWithDefaults_AllCliValuesProvided(t *testing.T) {
-	// When all CLI values are provided, they should be returned as-is
-	params := RunParams{
-		ConfigFile: "custom.yaml",
-		DeploymentParams: models.DeploymentParams{
-			WorkingDir:  "/custom/work",
-			ServicesDir: "/custom/services",
-		},
-		ServerParams: models.ServerParams{
-			Port: 9090,
-		},
+type Mocker struct {
+	mock.Mock
+}
+
+func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
+	args := m.Called(cmd, cmdArgs)
+	return args.Error(0)
+}
+
+func initMemoryStorage(_ RunParams) (storage.Storage, error) {
+	return storage.NewMemoryStorage(), nil
+}
+
+func initConfigRepo(t *testing.T) string {
+	remoteRepoPath := testutil.SetupRemoteRepo(t)
+	homepageComposeFile, err := os.ReadFile("test_data/homepage/compose.yaml")
+	assert.NoError(t, err, "error while reading homepage compose file")
+	homepageEnvFile, err := os.ReadFile("test_data/homepage/env")
+	assert.NoError(t, err, "error while reading homepage env file")
+	testutil.AddCommitToRepo(t, remoteRepoPath, "services/homepage/compose.yaml", homepageComposeFile)
+	testutil.AddCommitToRepo(t, remoteRepoPath, "services/homepage/.env", homepageEnvFile)
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	result := getParamsWithDefaults(params, "1")
-
-	assert.Equal(t, "custom.yaml", result.ConfigFile)
-	assert.Equal(t, "/custom/work", result.WorkingDir)
-	assert.Equal(t, "/custom/services", result.ServicesDir)
-	assert.Equal(t, "1", result.AddWritePerm)
-	assert.Equal(t, 9090, result.Port)
+	return remoteRepoPath
 }
 
-func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
-	t.Setenv("AUTONAS_WORKING_DIR", "/env/work")
-	t.Setenv("AUTONAS_SERVICES_DIR", "/env/services")
-	t.Setenv("AUTONAS_CONFIG_FILE", "env1.yaml")
-	t.Setenv("AUTONAS_PORT", "8080")
+func TestRunCommand_CmdParams(t *testing.T) {
+	baseDir := t.TempDir()
+	mocker := &Mocker{}
+	cmd := NewRunCommand(mocker, initMemoryStorage)
 
-	params := RunParams{}
+	servicesDir := filepath.Join(baseDir, "services")
+	dataDir := filepath.Join(baseDir, "data")
+	workingDir := filepath.Join(baseDir, "work")
+	configFile := filepath.Join(workingDir, "config.yaml")
+	os.MkdirAll(servicesDir, 0o750)
+	os.MkdirAll(dataDir, 0o750)
+	os.MkdirAll(workingDir, 0o750)
 
-	result := getParamsWithDefaults(params, "")
+	mocker.On(
+		"Exec", "docker",
+		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
+	).Return(nil)
 
-	assert.Equal(t, "env1.yaml", result.ConfigFile)
-	assert.Equal(t, "/env/work", result.WorkingDir)
-	assert.Equal(t, "/env/services", result.ServicesDir)
-	assert.Equal(t, "false", result.AddWritePerm) // default Value
-	assert.Equal(t, 8080, result.Port)            // Value from env
-}
+	remoteRepoPath := initConfigRepo(t)
 
-func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
-	// Clear environment variables
-	t.Setenv("AUTONAS_WORKING_DIR", "")
-	t.Setenv("AUTONAS_SERVICES_DIR", "")
+	err := os.WriteFile(configFile,
+		[]byte(strings.Join([]string{
+			"SERVICES_PATH: " + servicesDir,
+			"DATA_PATH: " + dataDir,
+			fmt.Sprintf("repo: \"%v\"", remoteRepoPath),
+			"cron : 1",
+			"services:",
+			"  homepage:",
+			"    port : 12345",
+		}, "\n")), 0o750)
+	assert.NoError(t, err, "error while creating config file")
+
 	t.Setenv("AUTONAS_CONFIG_FILE", "")
-	t.Setenv("AUTONAS_PORT", "")
-
-	params := RunParams{}
-
-	result := getParamsWithDefaults(params, "")
-
-	// Check defaults are applied
-	assert.Equal(t, "/data/config.yaml", result.ConfigFile)
-	assert.Equal(t, "./config", result.WorkingDir)
-	assert.Equal(t, ".", result.ServicesDir)
-	assert.Equal(t, "false", result.AddWritePerm) // Default value
-	assert.Equal(t, 5005, result.Port)            // Default value
-}
-
-func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
-	// CLI values should take priority over env variables and defaults
-	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
-	t.Setenv("AUTONAS_ADD_WRITE_PERM", "false")
-	t.Setenv("AUTONAS_PORT", "8080")
-
-	params := RunParams{
-		DeploymentParams: models.DeploymentParams{
-			ServicesDir: "/s",
-		},
-		ServerParams: models.ServerParams{
-			Port: 9090,
-		},
-	}
-
-	result := getParamsWithDefaults(params, "true")
-
-	// CLI value should win
-	assert.Equal(t, "/s", result.ServicesDir)
-	assert.Equal(t, "true", result.AddWritePerm)
-	assert.Equal(t, 9090, result.Port)
-}
-
-func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
-	// Test a mix of CLI values, env variables, and defaults
-	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
 	t.Setenv("AUTONAS_WORKING_DIR", "")
+
+	go func() {
+		cmd.SetArgs([]string{
+			"-f", configFile,
+			"-d", workingDir,
+			"-s", servicesDir,
+			"-w", "true",
+			"-p", "5008",
+		})
+		cmd.Execute()
+	}()
+
+	targetFile := filepath.Join(servicesDir, "homepage", ".env")
+
+	ok := testutil.WaitForFile(targetFile, 10*time.Second)
+	assert.True(t, ok, "homepage files should be created")
+}
+
+func TestRunCommand_EnvParams(t *testing.T) {
+	baseDir := t.TempDir()
+	mocker := &Mocker{}
+	cmd := NewRunCommand(mocker, initMemoryStorage)
+
+	servicesDir := filepath.Join(baseDir, "services")
+	dataDir := filepath.Join(baseDir, "data")
+	workingDir := filepath.Join(baseDir, "work")
+	configFile := filepath.Join(workingDir, "config.yaml")
+	os.MkdirAll(servicesDir, 0o750)
+	os.MkdirAll(dataDir, 0o750)
+	os.MkdirAll(workingDir, 0o750)
+
+	mocker.On(
+		"Exec", "docker",
+		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
+	).Return(nil)
+
+	remoteRepoPath := initConfigRepo(t)
+
+	err := os.WriteFile(configFile,
+		[]byte(strings.Join([]string{
+			"SERVICES_PATH: " + servicesDir,
+			"DATA_PATH: " + dataDir,
+			fmt.Sprintf("repo: \"%v\"", remoteRepoPath),
+			"cron : 1",
+			"services:",
+			"  homepage:",
+			"    port : 12345",
+		}, "\n")), 0o750)
+	assert.NoError(t, err, "error while creating config file")
+
+	t.Setenv("AUTONAS_CONFIG_FILE", configFile)
+	t.Setenv("AUTONAS_WORKING_DIR", workingDir)
+	t.Setenv("AUTONAS_SERVICES_DIR", servicesDir)
 	t.Setenv("AUTONAS_ADD_WRITE_PERM", "true")
-	t.Setenv("AUTONAS_PORT", "8080")
+	t.Setenv("AUTONAS_PORT", "5009")
 
-	params := RunParams{
-		ConfigFile: "cli.yaml", // From CLI
-		DeploymentParams: models.DeploymentParams{
-			ServicesDir: "/s", // From CLI (overrides env)
-			// WorkingDir && addWritePerm not provided, should use env or default
-		},
-		ServerParams: models.ServerParams{
-			Port: 9090, // From CLI
-		},
+	go func() {
+		cmd.Execute()
+	}()
+
+	targetFile := filepath.Join(servicesDir, "homepage", ".env")
+
+	ok := testutil.WaitForFile(targetFile, 10*time.Second)
+	assert.True(t, ok, "homepage files should be created")
+}
+
+func TestRunCommand_WithInvalidConfig(t *testing.T) {
+	mocker := &Mocker{}
+	cmd := NewRunCommand(mocker, func(_ RunParams) (storage.Storage, error) {
+		return nil, errors.New("mock error")
+	})
+
+	// Create a channel to capture the command's exit status
+	done := make(chan error, 1)
+
+	go func() {
+		err := cmd.Execute()
+		done <- err
+	}()
+
+	select {
+
+	case cmdErr := <-done:
+		assert.ErrorContains(t, cmdErr, "mock error")
+	case <-time.After(1 * time.Second):
+		assert.Fail(t, "timeout while waiting for command error")
 	}
-
-	result := getParamsWithDefaults(params, "")
-
-	assert.Equal(t, "cli.yaml", result.ConfigFile)
-	assert.Equal(t, "/s", result.ServicesDir)
-	assert.Equal(t, "./config", result.WorkingDir) // Should use default
-	assert.Equal(t, "true", result.AddWritePerm)
-	assert.Equal(t, 9090, result.Port)
 }

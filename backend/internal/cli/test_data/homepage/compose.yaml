@@ -1,0 +1,20 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:${VERSION:-latest}
+    container_name: homepage
+    restart: unless-stopped
+    user: "${UID:-1000}:${GID:-1000}"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - ${PORT:-3000}:3000
+    env_file:
+      - .env
+    volumes:
+      - ${SERVICES_PATH}/homepage/config:/app/config # Make sure your local config directory exists
+      - ${DATA_PATH}:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock # (optional) For docker integrations, see alternative methods
+    environment:
+      PUID: $PUID # read them from .env
+      PGID: $PGID # read them from .env
+networks: {}

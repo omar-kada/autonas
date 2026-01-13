@@ -22,9 +22,9 @@ type Deployer interface {
 }
 
 // NewDeployer creates an instance of Manager for docker containers
-func NewDeployer(dispatcher events.Dispatcher) Deployer {
+func NewDeployer(dispatcher events.Dispatcher, executor shell.Executor) Deployer {
 	return &deployer{
-		cmdRunner:    shell.NewRunner(),
+		cmdExecuter:  executor,
 		envGenerator: NewEnvGenerator(),
 		copier:       files.NewCopier(),
 		dispatcher:   dispatcher,
@@ -34,7 +34,7 @@ func NewDeployer(dispatcher events.Dispatcher) Deployer {
 
 // deployer manages Docker Compose services.
 type deployer struct {
-	cmdRunner    shell.Runner
+	cmdExecuter  shell.Executor
 	envGenerator *EnvGenerator
 	copier       files.Copier
 	dispatcher   events.Dispatcher
@@ -88,7 +88,7 @@ func (d deployer) DeployServices(cfg models.Config, servicesDir string) map[stri
 
 func (d deployer) composeUp(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
-	if err := d.cmdRunner.Run("docker", args...); err != nil {
+	if err := d.cmdExecuter.Exec("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
 	return nil
@@ -96,7 +96,7 @@ func (d deployer) composeUp(composePath string) error {
 
 func (d deployer) composeDown(composePath string) error {
 	args := []string{"compose", "--project-directory", composePath, "down"}
-	if err := d.cmdRunner.Run("docker", args...); err != nil {
+	if err := d.cmdExecuter.Exec("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}
 	return nil

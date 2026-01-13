@@ -3,8 +3,9 @@ package storage
 import (
 	"fmt"
 	"maps"
-	"omar-kada/autonas/models"
 	"os"
+
+	"omar-kada/autonas/models"
 
 	"github.com/go-viper/mapstructure/v2"
 	"go.yaml.in/yaml/v3"
@@ -51,7 +52,7 @@ func (s *configStore) Update(cfg models.Config) error {
 		return fmt.Errorf("error marshaling config: %w", err)
 	}
 
-	if err := os.WriteFile(s.configFilePath, bs, 0644); err != nil {
+	if err := os.WriteFile(s.configFilePath, bs, 0o644); err != nil {
 		return fmt.Errorf("error writing config file %s: %w", s.configFilePath, err)
 	}
 
@@ -86,6 +87,9 @@ func decodeConfig(configMap map[string]any) (models.Config, error) {
 	}
 	if err := decoder.Decode(configMap); err != nil {
 		return models.Config{}, fmt.Errorf("error decoding merged config: %w", err)
+	}
+	if cfg.Branch == "" {
+		cfg.Branch = "main"
 	}
 	return cfg, nil
 }

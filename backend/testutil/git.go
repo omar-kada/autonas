@@ -20,12 +20,12 @@ func SetupRemoteRepo(t *testing.T) string {
 		t.Fatal(err)
 	}
 
-	AddCommitToRepo(t, dir, "README.md", "initial commit")
+	AddCommitToRepo(t, dir, "README.md", []byte("initial commit"))
 	return dir
 }
 
 // AddCommitToRepo commits a file in the given repo
-func AddCommitToRepo(t *testing.T, repoPath string, fileName string, content string) {
+func AddCommitToRepo(t *testing.T, repoPath string, fileName string, content []byte) {
 	t.Helper()
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
@@ -41,7 +41,7 @@ func AddCommitToRepo(t *testing.T, repoPath string, fileName string, content str
 	if err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
-	file.Write([]byte(content))
+	file.Write(content)
 	file.Close()
 
 	w.Add(fileName)
