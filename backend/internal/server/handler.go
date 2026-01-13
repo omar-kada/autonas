@@ -75,6 +75,17 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 		return nil, err
 	}
 	dep, err := h.store.GetDeployment(id)
+	if err != nil {
+		return nil, err
+	} else if dep.ID == 0 {
+		return api.DeployementAPIReaddefaultJSONResponse{
+			Body: api.Error{
+				Code:    404,
+				Message: err.Error(),
+			},
+			StatusCode: 404,
+		}, err
+	}
 
 	return api.DeployementAPIRead200JSONResponse(h.depDetailsMapper.Map(dep)), err
 }
@@ -123,7 +134,6 @@ func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObjec
 func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
 	fileDiffs, err := h.processSvc.GetDiff()
 	if err != nil {
-		slog.Error(err.Error())
 		return nil, err
 	}
 	return api.DiffAPIGet200JSONResponse(models.ListMapper(h.diffMapper.Map)(fileDiffs)), nil

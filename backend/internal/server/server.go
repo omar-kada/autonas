@@ -52,11 +52,11 @@ func (s *HTTPServer) Serve(port int) error {
 	h := api.HandlerFromMux(strict, mux)
 
 	s.server = &http.Server{
-		Handler:           h,
+		Handler:           loggingMiddleware(h),
 		Addr:              ":" + strconv.Itoa(port),
 		ReadHeaderTimeout: 3 * time.Second,
 	}
-	slog.Info("Server starting on ", "port", port)
+	slog.Info("server starting", "port", port)
 
 	// And we serve HTTP until the world ends.
 	return s.server.ListenAndServe()

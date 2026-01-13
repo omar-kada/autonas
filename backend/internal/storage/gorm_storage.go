@@ -38,7 +38,7 @@ func (s *gormStorage) GetDeployment(id uint64) (models.Deployment, error) {
 	var dep models.Deployment
 	if err := s.db.Preload("Files").Preload("Events").First(&dep, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return models.Deployment{}, err
+			return models.Deployment{}, nil
 		}
 		return models.Deployment{}, err
 	}

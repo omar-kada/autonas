@@ -293,14 +293,7 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	resp, err := h.DeployementAPIRead(context.Background(), req)
 	assert.Error(t, err)
 	assert.Equal(t, errGet, err)
-
-	switch r := resp.(type) {
-	case api.DeployementAPIRead200JSONResponse:
-		// returned response is mapping of zero-valued deployment
-		assert.Equal(t, "", r.Title)
-	default:
-		t.Fatalf("unexpected response type: %T", resp)
-	}
+	assert.Nil(t, resp)
 
 	store.AssertExpectations(t)
 }
