@@ -73,7 +73,6 @@ func TestPaginate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			// Run the paginated query and verify semantics (IDs < offset and count == expected limit)
 			var users []User
 			db.Model(&User{}).Scopes(Paginate(tt.cursor)).Order("id desc").Find(&users)
