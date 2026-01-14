@@ -11,8 +11,8 @@ import (
 
 	"omar-kada/autonas/internal/events"
 	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,7 +38,7 @@ func (m *Mocker) Copy(src, dest string) error {
 }
 
 func newDeployerWithMocks(mocker *Mocker) *deployer {
-	store := storage.NewMemoryStorage()
+	store := testutil.NewMemoryStorage()
 	dep, _ := store.InitDeployment("test commit", "Test", "", []models.FileDiff{})
 	ctx := context.WithValue(context.Background(), events.ObjectID, dep.ID)
 	return &deployer{

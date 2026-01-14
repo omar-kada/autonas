@@ -2,11 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
-	"os"
-	"path/filepath"
-	"time"
 
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
@@ -17,9 +13,6 @@ import (
 	"omar-kada/autonas/internal/storage"
 
 	"github.com/spf13/cobra"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type runCommand struct {
@@ -61,46 +54,6 @@ func NewRunCommand(executor shell.Executor, storeCreator func(params RunParams) 
 		varInfoMap.GetDefaultString("port that will be used for exposing the API", _port))
 
 	return run.cmd
-}
-
-// InitGormStorage initializes a new GORM-based storage implementation
-func InitGormStorage(params RunParams) (storage.Storage, error) {
-	dbFile := filepath.Join(params.GetDBDir(), "autonas.db")
-	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(dbFile), 0o700|params.GetAddWritePerm()); err != nil {
-			return nil, err
-		}
-	} else if err != nil {
-		return nil, err
-	}
-	fmt.Printf("dbFile = %v\n", dbFile)
-
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold: time.Second, // Slow SQL threshold
-			LogLevel:      logger.Info, // Log level
-			Colorful:      true,        // Enable color
-		},
-	)
-
-	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{
-		Logger: newLogger,
-	})
-	if err != nil {
-		return nil, err
-	}
-	// pragmas and pooling
-	db.Exec("PRAGMA journal_mode=WAL;")
-	db.Exec("PRAGMA foreign_keys = ON;")
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't init sqlite db %w", err)
-	}
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
-
-	return storage.NewGormStorage(db)
 }
 
 func (run *runCommand) doRun() error {

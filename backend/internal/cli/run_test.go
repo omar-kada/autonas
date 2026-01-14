@@ -26,7 +26,7 @@ func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
 }
 
 func initMemoryStorage(_ RunParams) (storage.Storage, error) {
-	return storage.NewMemoryStorage(), nil
+	return testutil.NewMemoryStorage(), nil
 }
 
 func initConfigRepo(t *testing.T) string {

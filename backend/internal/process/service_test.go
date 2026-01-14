@@ -114,7 +114,7 @@ func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.Dep
 		mocker,
 		mocker,
 		mocker,
-		storage.NewMemoryStorage(),
+		testutil.NewMemoryStorage(),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -160,6 +160,7 @@ func TestSync_Success(t *testing.T) {
 	assert.Equal(t, models.DeploymentStatusRunning, dep.Status)
 
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
 
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
@@ -192,6 +193,7 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	assert.Equal(t, models.DeploymentStatusRunning, dep.Status)
 
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
 
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
@@ -218,6 +220,7 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	assert.NoError(t, err)
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
 	time.Sleep(10 * time.Millisecond)
+
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, models.DeploymentStatusError, newDep.Status)
@@ -393,7 +396,7 @@ func TestSync_ErrorGettingConfig(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		storage.NewMemoryStorage(),
+		testutil.NewMemoryStorage(),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -469,6 +472,7 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 	assert.NotEqual(t, models.Deployment{}, dep)
 
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
 
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
@@ -501,6 +505,7 @@ func TestSync_NoStacksRunning(t *testing.T) {
 	assert.NotEqual(t, models.Deployment{}, dep)
 
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
 
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
@@ -532,6 +537,7 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 	assert.NotEqual(t, models.Deployment{}, dep)
 
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
 
 	newDep, err := service.store.GetDeployment(dep.ID)
 	assert.NoError(t, err)
@@ -592,7 +598,7 @@ func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		storage.NewMemoryStorage(),
+		testutil.NewMemoryStorage(),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -620,7 +626,7 @@ func TestGetDiff_ErrorGettingConfigFromStore(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		storage.NewMemoryStorage(),
+		testutil.NewMemoryStorage(),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -654,7 +660,7 @@ func TestGetDeployments_WithPagination(t *testing.T) {
 	mocker := &Mocker{}
 	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
 
-	for i := 0; i < 6; i++ {
+	for i := 1; i <= 6; i++ {
 		dep, _ := service.store.InitDeployment("deployment"+string(rune(i)), "author", "diff", nil)
 		service.store.EndDeployment(dep.ID, models.DeploymentStatusSuccess)
 	}
@@ -665,12 +671,12 @@ func TestGetDeployments_WithPagination(t *testing.T) {
 	assert.Equal(t, 2, len(page1))
 
 	// Get second page
-	page2, err := service.GetDeployments(2, 2)
+	page2, err := service.GetDeployments(2, 5)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(page2))
 
 	// Get third page
-	page3, err := service.GetDeployments(2, 4)
+	page3, err := service.GetDeployments(2, 3)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(page3))
 }

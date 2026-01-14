@@ -2,26 +2,23 @@ package storage
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func setupStorage(t *testing.T) (Storage, *gorm.DB) {
-	db, err := gorm.Open(sqlite.Open(":memory:"))
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	st, err := NewGormStorage(db)
+	st, err := NewGormStorage(":memory:", 0o000)
 	if err != nil {
 		t.Fatalf("new storage: %v", err)
 	}
-	return st, db
+	return st, st.(*gormStorage).db
 }
 
 func TestNewGormStorage_Migrates(t *testing.T) {
@@ -46,6 +43,16 @@ func TestInitAndGetDeployment(t *testing.T) {
 	assert.Equal(t, files[0].NewFile, got.Files[0].NewFile)
 	assert.Equal(t, files[0].OldFile, got.Files[0].OldFile)
 	assert.Empty(t, got.Events)
+}
+
+func TestGetDeployment_NoNExisting(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	dep, err := s.GetDeployment(999999)
+
+	// Verify that no error is returned and the deployment is empty
+	assert.NoError(t, err)
+	assert.Equal(t, models.Deployment{}, dep)
 }
 
 func TestStoreEventAndGetEvents(t *testing.T) {
@@ -130,4 +137,26 @@ func TestGetDeployments_Pagination(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewGormStorage_FileCreation(t *testing.T) {
+	// Create a temporary directory for the test
+	tempDir := t.TempDir()
+	dbFile := filepath.Join(tempDir, "test.db")
+
+	// Create a new GORM storage with the temporary file
+	st, err := NewGormStorage(dbFile, 0o000)
+	assert.NoError(t, err)
+	assert.NotNil(t, st)
+
+	// Verify that the database file was created
+	_, err = os.Stat(dbFile)
+	assert.NoError(t, err, "Database file should be created")
+
+	// Clean up: close the database connection
+	db, ok := st.(*gormStorage)
+	assert.True(t, ok, "Expected gormStorage type")
+	sqlDB, err := db.db.DB()
+	assert.NoError(t, err)
+	assert.NoError(t, sqlDB.Close())
 }

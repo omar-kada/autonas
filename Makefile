@@ -30,13 +30,13 @@ gen-api :
 	make orval-gen
 
 tsp-gen:
-	cd api && npx tsp compile .
+	cd api && npm run tsp
 
 oapi-gen:
 	cd backend && go tool oapi-codegen -config oapi-codegen.yaml ../api/tsp-output/schema/openapi.1.0.yaml
 
 orval-gen:
-	cd frontend && npx orval --config orval.config.js
+	cd frontend && npm run orval
 
 # docker-run:
 # 	docker compose --env-file ./_ignore_.env up --build
