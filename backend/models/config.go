@@ -9,6 +9,9 @@ import (
 	"github.com/elliotchance/orderedmap/v3"
 )
 
+// DefaultBranch is the default branch name used when no branch is specified in the configuration.
+const DefaultBranch = "main"
+
 // ServiceConfig represents configuration for an individual service.
 type ServiceConfig map[string]any
 
@@ -47,5 +50,5 @@ func (cfg Config) GetBranch() string {
 	if cfg.Branch != "" {
 		return cfg.Branch
 	}
-	return "main"
+	return DefaultBranch
 }
