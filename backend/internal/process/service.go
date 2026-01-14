@@ -19,6 +19,7 @@ import (
 
 // DeploymentID is the key used to store deployment ID in context
 const DeploymentID = "deployment_id"
+const WorkingBranch = "to_be_deployed"
 
 // Service abstracts service deployment operations
 type Service interface {
@@ -78,7 +79,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		return models.Deployment{}, fmt.Errorf("error getting current config:  %w", err)
 	}
 	fetcher := s.fetcher.WithConfig(cfg)
-	slog.Info("deploying from " + cfg.Repo + "/" + cfg.Branch)
+	slog.Info("deploying from " + cfg.Repo + "/" + cfg.GetBranch())
 
 	patch, syncErr := fetcher.DiffWithRemote()
 
@@ -103,7 +104,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	}
 	go func() {
 		ctx := context.WithValue(context.Background(), events.ObjectID, deployment.ID)
-		err := fetcher.PullBranch("to_be_deployed", "")
+		err := fetcher.PullBranch(WorkingBranch, "")
 		if err != nil {
 			s.updateDeploymentStatus(ctx, deployment, err)
 			return
@@ -117,7 +118,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		}
 		s.dispatcher.Info(ctx, "Deployed changes to running stacks")
 
-		err = fetcher.PullBranch(cfg.Branch, patch.CommitHash)
+		err = fetcher.PullBranch(cfg.GetBranch(), patch.CommitHash)
 		s.updateDeploymentStatus(ctx, deployment, err)
 
 		s.currentCfg = cfg
@@ -165,6 +166,7 @@ func (s *service) GetManagedStacks() (map[string][]models.ContainerSummary, erro
 
 // GetCurrentStats returns the statistics of deployments for the last N days
 func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
+	// TODO change this to either take number of deployment or implement days into it
 	deps, err := s.store.GetDeployments(storage.NewIDCursor(100, 0))
 	if err != nil {
 		return models.Stats{}, err
