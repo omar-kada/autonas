@@ -32,16 +32,10 @@ jobs:
         working-directory: ./api
 
       - name: Generate API
-        run: make gen-api
+        run: make tsp-gen
 
-      - name: Upload backend API
+      - name: Upload open API
         uses: actions/upload-artifact@v4
         with:
-          name: backend-api
-          path: ./backend/api
-
-      - name: Upload frontend API
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-api
-          path: ./frontend/src/api
+          name: open-api
+          path: ./api/tsp-output
