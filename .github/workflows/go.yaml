@@ -37,7 +37,7 @@ jobs:
       - name: download dependencies
         run: go mod download
 
-      - name: Download backend API
+      - name: Download open API
         uses: actions/download-artifact@v4
         with:
           name: open-api
@@ -45,6 +45,7 @@ jobs:
 
       - name: Generate Backend API
         run: make oapi-gen
+        working-directory: .
 
       - name: generate
         run: go generate ./...

@@ -46,6 +46,7 @@ jobs:
 
       - name: Generate Backend API
         run: make orval-gen
+        working-directory: .
 
       - name: Build Vite project
         run: npm run build
