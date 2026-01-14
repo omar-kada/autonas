@@ -19,7 +19,7 @@ type Settings struct {
 	CronPeriod string `mapstructure:"cron"`
 }
 
-// Environment represents global environment vairables.
+// Environment represents global environment variables.
 type Environment map[string]any
 
 // ServiceConfig represents configuration for an individual service.
