@@ -3,6 +3,8 @@ package cli
 
 import (
 	"omar-kada/autonas/internal/shell"
+	"omar-kada/autonas/internal/storage"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -13,6 +15,11 @@ func NewRootCmd(executor shell.Executor) *cobra.Command {
 		Use:   "autonas",
 		Short: "AutoNAS CLI",
 	}
-	rootCmd.AddCommand(NewRunCommand(executor, InitGormStorage))
+	rootCmd.AddCommand(NewRunCommand(executor, func(params RunParams) (storage.Storage, error) {
+		return storage.NewGormStorage(
+			filepath.Join(params.GetDBDir(), "autonas.db"),
+			params.GetAddWritePerm(),
+		)
+	}))
 	return rootCmd
 }

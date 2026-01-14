@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
+	"omar-kada/autonas/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,14 +14,14 @@ import (
 var deploymentID uint64
 
 func newStore() storage.EventStorage {
-	store := storage.NewMemoryStorage()
+	store := testutil.NewMemoryStorage()
 	dep, _ := store.InitDeployment("test", "author", "", []models.FileDiff{})
 	deploymentID = dep.ID
 	return store
 }
 
 func TestNewDefaultDispatcher(t *testing.T) {
-	store := storage.NewMemoryStorage()
+	store := testutil.NewMemoryStorage()
 	dispatcher := NewDefaultDispatcher(store)
 
 	if dispatcher == nil {
