@@ -18,8 +18,10 @@ import (
 )
 
 // DeploymentID is the key used to store deployment ID in context
-const DeploymentID = "deployment_id"
-const WorkingBranch = "to_be_deployed"
+const (
+	DeploymentID  = "deployment_id"
+	WorkingBranch = "to_be_deployed"
+)
 
 // Service abstracts service deployment operations
 type Service interface {
