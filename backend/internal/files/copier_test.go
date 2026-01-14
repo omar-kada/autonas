@@ -17,7 +17,7 @@ func TestCopy_Success_SingleFile(t *testing.T) {
 	srcFile := filepath.Join(srcDir, "test.txt")
 	testContent := "Hello, World!"
 
-	err := os.WriteFile(srcFile, []byte(testContent), 0644)
+	err := os.WriteFile(srcFile, []byte(testContent), 0o644)
 	assert.NoError(t, err, "Failed to create source file")
 
 	copier := NewCopier()
@@ -37,16 +37,16 @@ func TestCopy_Success_NestedDirectories(t *testing.T) {
 
 	// Create nested directory structure
 	nestedDir := filepath.Join(srcDir, "subdir", "nested")
-	err := os.MkdirAll(nestedDir, 0750)
+	err := os.MkdirAll(nestedDir, 0o750)
 	assert.NoError(t, err, "Failed to create nested directory")
 
 	// Create files in nested directories
 	rootFile := filepath.Join(srcDir, "root.txt")
 	nestedFile := filepath.Join(nestedDir, "nested.txt")
 
-	err = os.WriteFile(rootFile, []byte("root content"), 0644)
+	err = os.WriteFile(rootFile, []byte("root content"), 0o644)
 	assert.NoError(t, err, "Failed to create root file")
-	err = os.WriteFile(nestedFile, []byte("nested content"), 0644)
+	err = os.WriteFile(nestedFile, []byte("nested content"), 0o644)
 	assert.NoError(t, err, "Failed to create nested file")
 
 	copier := NewCopier()
@@ -80,7 +80,7 @@ func TestCopy_Error_InvalidDestination(t *testing.T) {
 
 	// Create a file in source
 	srcFile := filepath.Join(srcDir, "test.txt")
-	err := os.WriteFile(srcFile, []byte("content"), 0644)
+	err := os.WriteFile(srcFile, []byte("content"), 0o644)
 	assert.NoError(t, err, "Failed to create source file")
 
 	invalidDst := "/nonexistent/path/that/does/not/exist/destination"
