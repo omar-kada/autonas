@@ -30,7 +30,7 @@ func TestSchedule(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{CronPeriod: "@every 1s"}
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: "@every 1s"}}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -93,7 +93,7 @@ func TestScheduleWhileRunning(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{CronPeriod: "@every 1s"}
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: "@every 1s"}}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -142,7 +142,8 @@ func TestScheduleImmediateExecution(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config with "1" cron period
-	testConfig := models.Config{CronPeriod: "1"}
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: "1"}}
+
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -182,7 +183,7 @@ func TestGetNext_AfterScheduling(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{CronPeriod: "@every 10s"}
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: "@every 10s"}}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -206,7 +207,7 @@ func TestGetNext_MultipleSchedules(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{CronPeriod: "@every 1m"}
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: "@every 1m"}}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -241,7 +242,7 @@ func TestGetNext_ImmediateExecution(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config with immediate execution
-	testConfig := models.Config{CronPeriod: "1"}
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: "1"}}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 

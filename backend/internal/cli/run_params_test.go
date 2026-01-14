@@ -64,7 +64,7 @@ func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
 	assert.Equal(t, "./config", result.WorkingDir)
 	assert.Equal(t, ".", result.ServicesDir)
 	assert.Equal(t, "false", result.AddWritePerm) // Default value
-	assert.Equal(t, 0, result.Port)               // Default value
+	assert.Equal(t, 5005, result.Port)            // Default value
 }
 
 func TestGetParamsWithDefaults_CliPriority(t *testing.T) {

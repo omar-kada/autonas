@@ -84,21 +84,25 @@ func (m *Mocker) DiffWithRemote() (git.Patch, error) {
 
 var (
 	mockConfigOld = models.Config{
-		Repo:   "https://example.com/repo.git",
-		Branch: "main",
+		Settings: models.Settings{
+			Repo:   "https://example.com/repo.git",
+			Branch: "main",
+		},
+		Environment: map[string]any{},
 		Services: map[string]models.ServiceConfig{
 			"svc1": {
-				// Extra: map[string]any{
 				"Port":    8080,
 				"Version": "v1",
-				//},
 			},
 			"svc2": {},
 		},
 	}
 	mockConfigNew = models.Config{
-		Repo:   "https://example.com/repo.git",
-		Branch: "main",
+		Settings: models.Settings{
+			Repo:   "https://example.com/repo.git",
+			Branch: "main",
+		},
+		Environment: map[string]any{},
 		Services: map[string]models.ServiceConfig{
 			"svc2": {},
 			"svc3": {},

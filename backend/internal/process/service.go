@@ -81,7 +81,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		return models.Deployment{}, fmt.Errorf("error getting current config:  %w", err)
 	}
 	fetcher := s.fetcher.WithConfig(cfg)
-	slog.Info("deploying from " + cfg.Repo + "/" + cfg.GetBranch())
+	slog.Info("deploying from " + cfg.Settings.Repo + "/" + cfg.GetBranch())
 
 	patch, syncErr := fetcher.DiffWithRemote()
 
@@ -223,7 +223,7 @@ func (s *service) GetDiff() ([]models.FileDiff, error) {
 }
 
 func (s *service) getConfig() (models.Config, error) {
-	if s.currentCfg.Repo != "" {
+	if s.currentCfg.Settings.Repo != "" {
 		return s.currentCfg, nil
 	}
 	return s.configStore.Get()

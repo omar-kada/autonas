@@ -107,7 +107,7 @@ func (f *fetcher) PullBranch(branch string, commitHash string) error {
 func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	if !repoExists(f.repoPath) {
 		repo, err = git.PlainClone(f.repoPath, &git.CloneOptions{
-			URL:           f.cfg.Repo,
+			URL:           f.cfg.Settings.Repo,
 			ReferenceName: plumbing.NewBranchReferenceName(f.cfg.GetBranch()),
 			SingleBranch:  true,
 			Progress:      events.NewSlogWriter(slog.LevelInfo),

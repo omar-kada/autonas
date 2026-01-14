@@ -42,7 +42,7 @@ func (s *configStore) Update(cfg models.Config) error {
 	if err := encoder.Decode(cfg); err != nil {
 		return fmt.Errorf("error encoding config: %w", err)
 	}
-	maps.Copy(m, cfg.Extra)
+	maps.Copy(m, cfg.Environment)
 	maps.DeleteFunc(m, func(key string, _ any) bool {
 		return key == "extra"
 	})

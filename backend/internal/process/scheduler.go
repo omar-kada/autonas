@@ -46,12 +46,12 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg.CronPeriod == "1" {
+	if cfg.Settings.CronPeriod == "1" {
 		fn()
 		return nil, nil
-	} else if cfg.CronPeriod != "" && cfg.CronPeriod != "0" {
+	} else if cfg.Settings.CronPeriod != "" && cfg.Settings.CronPeriod != "0" {
 
-		_, err := c.AddFunc(cfg.CronPeriod, fn)
+		_, err := c.AddFunc(cfg.Settings.CronPeriod, fn)
 		if err != nil {
 			return nil, err
 		}

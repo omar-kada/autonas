@@ -10,14 +10,12 @@ import (
 
 func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 	cfg := Config{
-		Extra: map[string]any{
+		Environment: map[string]any{
 			"GLOBAL": "g",
 		},
 		Services: map[string]ServiceConfig{
 			"svc": {
-				// Extra: map[string]any{
 				"SVC_EXTRA": "s",
-				//},
 			},
 		},
 	}
@@ -34,20 +32,15 @@ func TestConfigPerService_BuildsCorrectArray(t *testing.T) {
 
 func TestGetEnabledServices_FiltersCorrectly(t *testing.T) {
 	cfg := Config{
-		Extra: map[string]any{
+		Environment: map[string]any{
 			"GLOBAL": "g",
 		},
 		Services: map[string]ServiceConfig{
 			"svc": {
-				// Extra: map[string]any{
 				"SVC_EXTRA": "s",
-				//},
 			},
 			"svc2": {
-				// Disabled: true,
-				// Extra: map[string]any{
 				"SVC_EXTRA": "s",
-				//},
 			},
 		},
 	}

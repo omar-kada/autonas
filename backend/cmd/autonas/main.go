@@ -20,7 +20,6 @@ func main() {
 	} else {
 		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	}
-	slog.Error("init 444444444")
 
 	// Add subcommands
 	rootCmd := cli.NewRootCmd(shell.NewExecutor())
