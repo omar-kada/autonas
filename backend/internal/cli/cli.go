@@ -2,9 +2,10 @@
 package cli
 
 import (
+	"path/filepath"
+
 	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/internal/storage"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )

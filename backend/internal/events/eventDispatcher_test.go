@@ -3,10 +3,11 @@ package events
 import (
 	"context"
 	"log/slog"
+	"testing"
+
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 	"omar-kada/autonas/testutil"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
