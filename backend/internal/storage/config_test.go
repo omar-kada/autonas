@@ -13,8 +13,10 @@ import (
 
 func TestDecodeConfig(t *testing.T) {
 	input := map[string]any{
-		"AUTONAS_HOST": "localhost",
-		"DATA_PATH":    "/data",
+		"environment": map[string]any{
+			"AUTONAS_HOST": "localhost",
+			"DATA_PATH":    "/data",
+		},
 		"services": map[string]any{
 			"svc1": map[string]any{
 				"PORT":      8080,
@@ -29,7 +31,7 @@ func TestDecodeConfig(t *testing.T) {
 		},
 	}
 	want := models.Config{
-		Extra: map[string]any{
+		Environment: map[string]any{
 			"AUTONAS_HOST": "localhost",
 			"DATA_PATH":    "/data",
 		},
@@ -64,8 +66,10 @@ func TestUpdateConfig(t *testing.T) {
 		store := NewConfigStore(filePath)
 
 		input := models.Config{
-			Branch: models.DefaultBranch,
-			Extra: map[string]any{
+			Settings: models.Settings{
+				Branch: models.DefaultBranch,
+			},
+			Environment: map[string]any{
 				"AUTONAS_HOST": "localhost",
 				"DATA_PATH":    "/data",
 			},
@@ -104,7 +108,7 @@ func TestUpdateConfig(t *testing.T) {
 		store := NewConfigStore(filePath)
 
 		input := models.Config{
-			Extra: map[string]any{
+			Environment: map[string]any{
 				"AUTONAS_HOST": "localhost",
 			},
 		}

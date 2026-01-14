@@ -18,7 +18,7 @@ var varInfoMap = defaults.VariableInfoMap{
 	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
 	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
 	_addWritePerm: {EnvKey: "AUTONAS_ADD_WRITE_PERM", DefaultValue: "false"},
-	_port:         {EnvKey: "AUTONAS_PORT", DefaultValue: 0},
+	_port:         {EnvKey: "AUTONAS_PORT", DefaultValue: 5005},
 }
 
 // RunParams contain parameters of the run command

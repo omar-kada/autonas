@@ -23,7 +23,7 @@ func TestFrontendFileSystem(t *testing.T) {
 
 	for _, tf := range testFiles {
 		fullPath := tempDir + "/" + tf.path
-		if err := os.MkdirAll(fullPath[:len(fullPath)-len(tf.path[len(tf.path)-len("index.html"):])], 0744); err != nil {
+		if err := os.MkdirAll(fullPath[:len(fullPath)-len(tf.path[len(tf.path)-len("index.html"):])], 0740); err != nil {
 			t.Fatalf("Failed to create directory: %v", err)
 		}
 		if err := os.WriteFile(fullPath, []byte(tf.content), 0644); err != nil {
