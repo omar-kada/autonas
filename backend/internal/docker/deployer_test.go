@@ -53,10 +53,10 @@ func newDeployerWithMocks(mocker *Mocker) *deployer {
 }
 
 var mockConfig = models.Config{
-	Environment: map[string]string{
+	Environment: models.Environment{
 		"AUTONAS_HOST": "localhost",
 	},
-	Services: map[string]map[string]string{
+	Services: map[string]models.ServiceConfig{
 		"svc1": {
 			"Port": "8080",
 		},

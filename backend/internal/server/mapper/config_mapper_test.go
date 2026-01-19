@@ -23,11 +23,11 @@ func TestConfigMapper_Map(t *testing.T) {
 					Branch:     "main",
 					CronPeriod: "0 0 * * *",
 				},
-				Environment: map[string]string{
+				Environment: models.Environment{
 					"key1": "value1",
 					"key2": "value2",
 				},
-				Services: map[string]map[string]string{
+				Services: map[string]models.ServiceConfig{
 					"service1": {
 						"key1": "value1",
 						"key2": "value2",
@@ -59,8 +59,8 @@ func TestConfigMapper_Map(t *testing.T) {
 			name: "empty",
 			in: models.Config{
 				Settings:    models.Settings{},
-				Environment: map[string]string{},
-				Services:    map[string]map[string]string{},
+				Environment: models.Environment{},
+				Services:    map[string]models.ServiceConfig{},
 			},
 			want: api.Config{
 				GlobalVariables: map[string]string{},

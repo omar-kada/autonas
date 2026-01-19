@@ -17,13 +17,13 @@ func TestDecodeConfig(t *testing.T) {
 			"AUTONAS_HOST": "localhost",
 			"DATA_PATH":    "/data",
 		},
-		"services": map[string]models.ServiceConfig{
-			"svc1": map[string]string{
+		"services": map[string]map[string]string{
+			"svc1": {
 				"PORT":      "8080",
 				"VERSION":   "v1",
 				"NEW_FIELD": "new_value",
 			},
-			"svc2": map[string]string{
+			"svc2": {
 				"Disabled": "true",
 				"Port":     "9090",
 				"Version":  "v2",
@@ -31,11 +31,11 @@ func TestDecodeConfig(t *testing.T) {
 		},
 	}
 	want := models.Config{
-		Environment: map[string]string{
+		Environment: models.Environment{
 			"AUTONAS_HOST": "localhost",
 			"DATA_PATH":    "/data",
 		},
-		Services: map[string]map[string]string{
+		Services: map[string]models.ServiceConfig{
 			"svc1": {
 				"NEW_FIELD": "new_value",
 				"PORT":      "8080",
@@ -69,11 +69,11 @@ func TestUpdateConfig(t *testing.T) {
 			Settings: models.Settings{
 				Branch: models.DefaultBranch,
 			},
-			Environment: map[string]string{
+			Environment: models.Environment{
 				"AUTONAS_HOST": "localhost",
 				"DATA_PATH":    "/data",
 			},
-			Services: map[string]map[string]string{
+			Services: map[string]models.ServiceConfig{
 				"svc1": {
 					"PORT":    "8080",
 					"VERSION": "v1",
@@ -108,7 +108,7 @@ func TestUpdateConfig(t *testing.T) {
 		store := NewConfigStore(filePath)
 
 		input := models.Config{
-			Environment: map[string]string{
+			Environment: models.Environment{
 				"AUTONAS_HOST": "localhost",
 			},
 		}

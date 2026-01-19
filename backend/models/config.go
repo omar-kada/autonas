@@ -27,9 +27,9 @@ type ServiceConfig map[string]string
 
 // Config represents the overall configuration structure.
 type Config struct {
-	Settings    Settings                     `mapstructure:"settings"`
-	Environment map[string]string            `mapstructure:"environment"`
-	Services    map[string]map[string]string `mapstructure:"services"`
+	Settings    Settings                 `mapstructure:"settings"`
+	Environment Environment              `mapstructure:"environment"`
+	Services    map[string]ServiceConfig `mapstructure:"services"`
 }
 
 // PerService generates a slice of configuration variables for a specific service

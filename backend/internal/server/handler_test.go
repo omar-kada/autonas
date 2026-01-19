@@ -362,7 +362,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 	h.features.DisplayConfig = true
 
 	config := models.Config{
-		Environment: map[string]string{
+		Environment: models.Environment{
 			"ENV": "VALUE",
 		},
 	}
