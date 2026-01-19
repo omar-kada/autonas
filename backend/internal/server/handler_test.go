@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -73,10 +74,20 @@ func (m *MockStore) GetLastDeployment() (models.Deployment, error) {
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
+func (m *MockStore) Get() (models.Config, error) {
+	args := m.Called()
+	return args.Get(0).(models.Config), args.Error(1)
+}
+
+func (m *MockStore) Update(config models.Config) error {
+	args := m.Called(config)
+	return args.Error(0)
+}
+
 func TestDeployementAPIList_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	deps := []models.Deployment{
 		{ID: 1, Title: "first", Author: "alice", Diff: "d1", Status: models.DeploymentStatusSuccess},
@@ -102,7 +113,7 @@ func TestDeployementAPIList_Success(t *testing.T) {
 func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	off := "notuint"
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 1, Offset: &off}}
@@ -114,7 +125,7 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 func TestDeployementAPIRead_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	dep := models.Deployment{ID: 10, Title: "Automatic Deploy", Author: "ci", Diff: "diff"}
 	store.On("GetDeployment", uint64(10)).Return(dep, nil)
@@ -137,7 +148,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 func TestDeployementAPIRead_InvalidID(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	req := api.DeployementAPIReadRequestObject{Id: "abc"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)
@@ -148,7 +159,7 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	dep := models.Deployment{ID: 99, Title: "Automatic Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
 	m.On("SyncDeployment").Return(dep, nil)
@@ -178,7 +189,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 func TestStatusAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	stacks := map[string][]models.ContainerSummary{
 		"stack1": {{ID: "c1", Name: "c1", Image: "img1", State: container.StateRunning, Health: container.Healthy}},
@@ -202,7 +213,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 func TestStatsAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	next := time.Now().Add(1 * time.Hour)
 	stats := models.Stats{Author: "bob", Error: 1, Success: 2, LastStatus: models.DeploymentStatusError, NextDeploy: next}
@@ -228,7 +239,7 @@ func TestStatsAPIGet_Success(t *testing.T) {
 func TestDiffAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	fileDiffs := []models.FileDiff{{OldFile: "file1.txt", NewFile: "file1.txt", Diff: "d1"}}
 	m.On("GetDiff").Return(fileDiffs, nil)
@@ -250,7 +261,7 @@ func TestDiffAPIGet_Success(t *testing.T) {
 func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	errList := errors.New("db error")
 	m.On("GetDeployments", 2, uint64(0)).Return([]models.Deployment{}, errList)
@@ -273,7 +284,7 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 0}}
 	resp, err := h.DeployementAPIList(context.Background(), req)
@@ -284,7 +295,7 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	errGet := errors.New("not found")
 	store.On("GetDeployment", uint64(10)).Return(models.Deployment{}, errGet)
@@ -301,7 +312,7 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 func TestStatusAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	errStacks := errors.New("failed to get stacks")
 	m.On("GetManagedStacks").Return(map[string][]models.ContainerSummary{}, errStacks)
@@ -316,7 +327,7 @@ func TestStatusAPIGet_Error(t *testing.T) {
 func TestStatsAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	errStats := errors.New("stats error")
 	m.On("GetCurrentStats", 7).Return(models.Stats{}, errStats)
@@ -332,7 +343,7 @@ func TestStatsAPIGet_Error(t *testing.T) {
 func TestDiffAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m)
+	h := NewHandler(store, store, m)
 
 	errDiff := errors.New("diff error")
 	m.On("GetDiff").Return([]models.FileDiff{}, errDiff)
@@ -342,4 +353,80 @@ func TestDiffAPIGet_Error(t *testing.T) {
 	assert.Equal(t, errDiff, err)
 
 	m.AssertExpectations(t)
+}
+
+func TestConfigAPIGet_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.DisplayConfig = true
+
+	config := models.Config{
+		Environment: models.Environment{
+			"ENV": "VALUE",
+		},
+	}
+	store.On("Get").Return(config, nil)
+
+	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.ConfigAPIGet200JSONResponse:
+		assert.Equal(t, "VALUE", r.GlobalVariables["ENV"])
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	store.AssertExpectations(t)
+}
+
+func TestConfigAPIGet_Disabled(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.DisplayConfig = false
+
+	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.ConfigAPIGetdefaultJSONResponse:
+		assert.Equal(t, http.StatusMethodNotAllowed, r.StatusCode)
+		assert.Equal(t, "DISABLED", r.Body.Message)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestConfigAPIGet_Error(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.DisplayConfig = true
+
+	errConfig := errors.New("config error")
+	store.On("Get").Return(models.Config{}, errConfig)
+
+	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
+	assert.Nil(t, resp)
+	assert.Equal(t, errConfig, err)
+
+	store.AssertExpectations(t)
+}
+
+func TestFeaturesAPIGet_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+
+	resp, err := h.FeaturesAPIGet(context.Background(), api.FeaturesAPIGetRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.FeaturesAPIGet200JSONResponse:
+		assert.Equal(t, h.features.DisplayConfig, r.DisplayConfig)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
 }

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"maps"
 	"os"
 
 	"omar-kada/autonas/models"
@@ -42,10 +41,6 @@ func (s *configStore) Update(cfg models.Config) error {
 	if err := encoder.Decode(cfg); err != nil {
 		return fmt.Errorf("error encoding config: %w", err)
 	}
-	maps.Copy(m, cfg.Environment)
-	maps.DeleteFunc(m, func(key string, _ any) bool {
-		return key == "extra"
-	})
 
 	bs, err := yaml.Marshal(m)
 	if err != nil {

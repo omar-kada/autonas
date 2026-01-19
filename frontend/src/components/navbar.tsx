@@ -19,7 +19,7 @@ const LINKS: Array<NavbarElementProps> = [
     path: ROUTES.LOGS,
   },
   {
-    label: 'CONFIG',
+    label: 'CONFIGURATION.CONFIGURATION',
     Icon: SlidersHorizontal,
     path: ROUTES.CONFIG,
   },

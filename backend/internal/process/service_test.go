@@ -88,10 +88,10 @@ var (
 			Repo:   "https://example.com/repo.git",
 			Branch: "main",
 		},
-		Environment: map[string]any{},
+		Environment: models.Environment{},
 		Services: map[string]models.ServiceConfig{
 			"svc1": {
-				"Port":    8080,
+				"Port":    "8080",
 				"Version": "v1",
 			},
 			"svc2": {},
@@ -102,7 +102,7 @@ var (
 			Repo:   "https://example.com/repo.git",
 			Branch: "main",
 		},
-		Environment: map[string]any{},
+		Environment: models.Environment{},
 		Services: map[string]models.ServiceConfig{
 			"svc2": {},
 			"svc3": {},

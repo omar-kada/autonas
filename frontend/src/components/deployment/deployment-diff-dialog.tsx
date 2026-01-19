@@ -23,7 +23,7 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
         <DialogDescription>
           {t('DIFF.DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION')}
         </DialogDescription>
-        <ScrollArea className="max-h-[80vh] max-w-[90vw] spa">
+        <ScrollArea className="max-h-[80vh] max-w-[90vw]">
           {error ? (
             <ErrorAlert title={error && 'ALERT.DIFF_ERROR'} details={error?.message} />
           ) : isPending ? (

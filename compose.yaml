@@ -8,6 +8,7 @@ services:
     environment:
       AUTONAS_CONFIG_FILE: "/config.yaml" # the configuration file that will define what should be deployed
       AUTONAS_SERVICES_DIR: "${SERVICES_DIR}" # directory where compose stacks will be stored
+      AUTONAS_DISPLAY_CONFIG: true
       ENV: "${ENV}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

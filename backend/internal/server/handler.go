@@ -17,27 +17,35 @@ import (
 // Handler implements the generated strict server interface
 type Handler struct {
 	store            storage.DeploymentStorage
+	configStore      storage.ConfigStore
 	processSvc       process.Service
 	depMapper        mapper.DeploymentMapper
 	depDetailsMapper mapper.DeploymentDetailsMapper
 	diffMapper       mapper.DiffMapper
 	statusMapper     mapper.StatusMapper
 	statsMapper      mapper.StatsMapper
+	configMapper     mapper.ConfigMapper
+	featuresMapper   mapper.FeaturesMapper
+
+	features models.Features
 }
 
 // NewHandler creates a new Handler
-func NewHandler(store storage.DeploymentStorage, service process.Service) *Handler {
+func NewHandler(store storage.DeploymentStorage, configStore storage.ConfigStore, service process.Service) *Handler {
 	diffMapper := mapper.DiffMapper{}
 	eventMapper := mapper.EventMapper{}
 
 	return &Handler{
 		store:            store,
+		configStore:      configStore,
 		processSvc:       service,
 		depMapper:        mapper.NewDeploymentMapper(),
 		depDetailsMapper: mapper.NewDeploymentDetailsMapper(diffMapper, eventMapper),
 		diffMapper:       diffMapper,
 		statusMapper:     mapper.StatusMapper{},
 		statsMapper:      mapper.StatsMapper{},
+		configMapper:     mapper.ConfigMapper{},
+		features:         models.LoadFeatures(),
 	}
 }
 
@@ -138,4 +146,27 @@ func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (
 		return nil, err
 	}
 	return api.DiffAPIGet200JSONResponse(models.ListMapper(h.diffMapper.Map)(fileDiffs)), nil
+}
+
+// ConfigAPIGet implements the StrictServerInterface interface
+func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
+	if !h.features.DisplayConfig {
+		return api.ConfigAPIGetdefaultJSONResponse{
+			Body: api.Error{
+				Code:    http.StatusMethodNotAllowed,
+				Message: "DISABLED",
+			},
+			StatusCode: http.StatusMethodNotAllowed,
+		}, nil
+	}
+	config, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	return api.ConfigAPIGet200JSONResponse(h.configMapper.Map(config)), nil
+}
+
+// FeaturesAPIGet implements the StrictServerInterface interface
+func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
+	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil
 }

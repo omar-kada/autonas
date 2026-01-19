@@ -1,5 +1,12 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { DeploymentsPage, EnvironementHealth, NavBar, StatusPage, Topbar } from './components';
+import {
+  ConfigPage,
+  DeploymentsPage,
+  EnvironementHealth,
+  NavBar,
+  StatusPage,
+  Topbar,
+} from './components';
 import { ROUTES } from './lib';
 
 function App() {
@@ -20,11 +27,11 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Navigate to={ROUTES.DEPLOYMENTS}></Navigate>} />
-          <Route path={ROUTES.DEPLOYMENTS} element={<DeploymentsPage></DeploymentsPage>} />
-          <Route path={ROUTES.DEPLOYMENT(':id')} element={<DeploymentsPage></DeploymentsPage>} />
-          <Route path={ROUTES.STATUS} element={<StatusPage></StatusPage>} />
+          <Route path={ROUTES.DEPLOYMENTS} element={<DeploymentsPage />} />
+          <Route path={ROUTES.DEPLOYMENT(':id')} element={<DeploymentsPage />} />
+          <Route path={ROUTES.STATUS} element={<StatusPage />} />
           <Route path={ROUTES.LOGS} element={<div> logs </div>} />
-          <Route path={ROUTES.CONFIG} element={<div> config </div>} />
+          <Route path={ROUTES.CONFIG} element={<ConfigPage />} />
         </Routes>
       </div>
     </BrowserRouter>

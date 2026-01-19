@@ -1,3 +1,4 @@
+export * from './config-page';
 export * from './deployment';
 export * from './deployments-page';
 export * from './navbar';
