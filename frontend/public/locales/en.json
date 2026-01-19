@@ -15,7 +15,11 @@
     "SELECT_DEPLOYMENT_FOR_DETAILS": "Select deployment for details"
   },
   "SETTINGS": "Settings",
-  "CONFIG": "Configuration",
+  "CONFIGURATION": {
+    "CONFIGURATION": "Configuration",
+    "DISABLED_TITLE": "Configuration is disabled",
+    "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_DISPLAY_CONFIG' to 'true'"
+  },
   "LOGS": "Logs",
   "ACTION": {
     "BACK": "Back",
@@ -43,6 +47,7 @@
     "LOAD_DEPLOYMENT_ERROR": "Error while loading deployment",
     "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
     "LOAD_STATS_ERROR": "Error while loading stats",
-    "LOAD_STATUS_ERROR": "Error while loading status"
+    "LOAD_STATUS_ERROR": "Error while loading status",
+    "LOAD_CONFIGURATION_ERROR": "Error while loading configuration"
   }
 }

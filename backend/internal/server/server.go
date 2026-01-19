@@ -5,12 +5,16 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/storage"
+
+	"github.com/rs/cors"
 )
 
 // Server will listen to requests on a port
@@ -22,18 +26,31 @@ type Server interface {
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
 	store            storage.DeploymentStorage
+	configStore      storage.ConfigStore
 	processSvc       process.Service
 	websocketHandler *WebsocketHandler
 	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.DeploymentStorage, service process.Service) Server {
+func NewServer(store storage.DeploymentStorage, configStore storage.ConfigStore, service process.Service) Server {
 	return &HTTPServer{
 		store:            store,
+		configStore:      configStore,
 		processSvc:       service,
 		websocketHandler: newWebsocketHandler(store),
 	}
+}
+func spaHandler(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join("frontend", "dist", r.URL.Path)
+
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		http.ServeFile(w, r, filepath.Join("frontend", "dist", "index.html"))
+		return
+	}
+
+	http.FileServer(http.Dir("frontend/dist")).ServeHTTP(w, r)
 }
 
 // Serve initializes routes from generated api and serves on the given port
@@ -42,16 +59,25 @@ func (s *HTTPServer) Serve(port int) error {
 	mux := http.NewServeMux()
 
 	// Add frontend file server
-	mux.Handle("/", http.FileServer(frontendFileSystem{fs: http.Dir("./frontend/dist")}))
 	mux.HandleFunc("/ws", s.websocketHandler.handle)
+	mux.HandleFunc("/", spaHandler)
 
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	myHandler := NewHandler(s.store, s.processSvc)
+	myHandler := NewHandler(s.store, s.configStore, s.processSvc)
 	strict := api.NewStrictHandler(myHandler, []api.StrictMiddlewareFunc{})
 
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(strict, mux)
+	// Set up the CORS filter
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	})
 
+	// Use the CORS filter as a middleware
+	h = c.Handler(h)
 	s.server = &http.Server{
 		Handler:           loggingMiddleware(h),
 		Addr:              ":" + strconv.Itoa(port),

@@ -90,6 +90,6 @@ func (run *runCommand) doRun() error {
 			slog.Warn(err.Error())
 		}
 	}()
-	server := server.NewServer(store, service)
+	server := server.NewServer(store, configStore, service)
 	return server.Serve(params.Port)
 }

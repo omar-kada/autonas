@@ -30,6 +30,15 @@ import type {
   AxiosResponse
 } from 'axios';
 
+export type ConfigGlobalVariables = {[key: string]: string};
+
+export type ConfigServices = {[key: string]: {[key: string]: string}};
+
+export interface Config {
+  globalVariables: ConfigGlobalVariables;
+  services: ConfigServices;
+}
+
 export type ContainerHealth = typeof ContainerHealth[keyof typeof ContainerHealth];
 
 
@@ -129,6 +138,13 @@ export interface Event {
   level: EventLevel;
 }
 
+export interface Features {
+  displayConfig: boolean;
+  editConfig: boolean;
+  displayLogs: boolean;
+  editSettings: boolean;
+}
+
 export interface FileDiff {
   oldFile: string;
   newFile: string;
@@ -173,6 +189,91 @@ export type DeployementAPIList200 = {
   items: Deployment[];
   pageInfo: PageInfo;
 };
+
+export const configAPIGet = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Config>> => {
+    
+    
+    return axios.default.get(
+      `/api/config`,options
+    );
+  }
+
+
+
+
+export const getConfigAPIGetQueryKey = () => {
+    return [
+    `/api/config`
+    ] as const;
+    }
+
+    
+export const getConfigAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof configAPIGet>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof configAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getConfigAPIGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof configAPIGet>>> = ({ signal }) => configAPIGet({ signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof configAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ConfigAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof configAPIGet>>>
+export type ConfigAPIGetQueryError = AxiosError<Error>
+
+
+export function useConfigAPIGet<TData = Awaited<ReturnType<typeof configAPIGet>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof configAPIGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof configAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof configAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useConfigAPIGet<TData = Awaited<ReturnType<typeof configAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof configAPIGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof configAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof configAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useConfigAPIGet<TData = Awaited<ReturnType<typeof configAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof configAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useConfigAPIGet<TData = Awaited<ReturnType<typeof configAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof configAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getConfigAPIGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
 
 /**
  * List deployments
@@ -483,6 +584,91 @@ export function useDiffAPIGet<TData = Awaited<ReturnType<typeof diffAPIGet>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDiffAPIGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+export const featuresAPIGet = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Features>> => {
+    
+    
+    return axios.default.get(
+      `/api/features`,options
+    );
+  }
+
+
+
+
+export const getFeaturesAPIGetQueryKey = () => {
+    return [
+    `/api/features`
+    ] as const;
+    }
+
+    
+export const getFeaturesAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof featuresAPIGet>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof featuresAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getFeaturesAPIGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof featuresAPIGet>>> = ({ signal }) => featuresAPIGet({ signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof featuresAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type FeaturesAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof featuresAPIGet>>>
+export type FeaturesAPIGetQueryError = AxiosError<Error>
+
+
+export function useFeaturesAPIGet<TData = Awaited<ReturnType<typeof featuresAPIGet>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof featuresAPIGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof featuresAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof featuresAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFeaturesAPIGet<TData = Awaited<ReturnType<typeof featuresAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof featuresAPIGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof featuresAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof featuresAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFeaturesAPIGet<TData = Awaited<ReturnType<typeof featuresAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof featuresAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useFeaturesAPIGet<TData = Awaited<ReturnType<typeof featuresAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof featuresAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFeaturesAPIGetQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

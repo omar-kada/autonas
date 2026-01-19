@@ -90,10 +90,17 @@ model Stats {
 //   cron: string;
 // }
 
-// model Config {
-//   globalVariables: Record<string>;
-//   services: Record<Record<string>>;
-// }
+model Config {
+  globalVariables: Record<string>;
+  services: Record<Record<string>>;
+}
+
+model Features {
+  displayConfig: boolean;
+  editConfig: boolean;
+  displayLogs: boolean;
+  editSettings: boolean;
+}
 
 model Page<T> {
   items: T[];
@@ -132,12 +139,18 @@ interface DeployementAPI {
 //   @post set(@body settings: Settings): Settings | Error;
 // }
 
-// @route("/config")
-// @tag("Config")
-// interface ConfigAPI {
-//   @get get(): Config | Error;
-//   @post set(@body config: Config): Config | Error;
-// }
+@route("/config")
+@tag("Config")
+interface ConfigAPI {
+  @get get(): Config | Error;
+  // @post set(@body config: Config): Config | Error;
+}
+
+@route("/features")
+@tag("Features")
+interface FeaturesAPI {
+  @get get(): Features | Error;
+}
 
 @route("/diff")
 @tag("Diff")
