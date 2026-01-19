@@ -41,6 +41,7 @@ func NewServer(store storage.DeploymentStorage, configStore storage.ConfigStore,
 		websocketHandler: newWebsocketHandler(store),
 	}
 }
+
 func spaHandler(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join("frontend", "dist", r.URL.Path)
 

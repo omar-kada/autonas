@@ -10,7 +10,6 @@ type FeaturesMapper struct{}
 
 // Map converts a models.Features to an api.Features
 func (FeaturesMapper) Map(features models.Features) api.Features {
-
 	return api.Features{
 		DisplayConfig: features.DisplayConfig,
 	}
