@@ -6,7 +6,7 @@ export const getConfigQueryOptions = ({ enabled }: { enabled: boolean }) => {
     query: {
       select: (data) => data?.data,
       gcTime: 10 * 60 * 1000,
-      enabled: enabled,
+      enabled,
     },
   });
 };

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"omar-kada/autonas/api"
@@ -43,15 +44,21 @@ func NewServer(store storage.DeploymentStorage, configStore storage.ConfigStore,
 }
 
 func spaHandler(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Join("frontend", "dist", r.URL.Path)
+	frontDir, _ := filepath.Abs(filepath.Join("frontend", "dist"))
+	path := filepath.Join(frontDir, r.URL.Path)
 
-	_, err := os.Stat(path)
+	absPath, err := filepath.Abs(path)
+	if err != nil || !strings.HasPrefix(absPath, frontDir) {
+		http.Error(w, "Invalid path", http.StatusBadRequest)
+		return
+	}
+	_, err = os.Stat(absPath)
 	if os.IsNotExist(err) {
-		http.ServeFile(w, r, filepath.Join("frontend", "dist", "index.html"))
+		http.ServeFile(w, r, filepath.Join(frontDir, "index.html"))
 		return
 	}
 
-	http.FileServer(http.Dir("frontend/dist")).ServeHTTP(w, r)
+	http.FileServer(http.Dir(frontDir)).ServeHTTP(w, r)
 }
 
 // Serve initializes routes from generated api and serves on the given port
