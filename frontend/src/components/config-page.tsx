@@ -3,7 +3,7 @@ import { getConfigQueryOptions, getFeaturesQueryOptions, useUpdateConfig } from 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { RotateCcw, Save } from 'lucide-react';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ConfigForm, formSchema, fromConfig, toConfig, type FormValues } from './config';
@@ -36,6 +36,7 @@ export function ConfigPage() {
     resolver: zodResolver(formSchema),
     disabled,
   });
+  const resetForm = useCallback(() => form.reset(fromConfig(config)), [form, config]);
 
   useEffect(() => {
     // init and reset when config changes
@@ -69,7 +70,7 @@ export function ConfigPage() {
         !disabled && (
           <div className="flex w-full justify-end-safe gap-2">
             {form.formState.isDirty && (
-              <Button variant="outline" onClick={() => form.reset(fromConfig(config))}>
+              <Button variant="outline" onClick={resetForm}>
                 <RotateCcw />
                 {t('ACTION.RESET')}
               </Button>
