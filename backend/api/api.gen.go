@@ -6,6 +6,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -182,6 +183,9 @@ type DeployementAPIListParams struct {
 	Offset *string `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// ConfigAPISetJSONRequestBody defines body for ConfigAPISet for application/json ContentType.
+type ConfigAPISetJSONRequestBody = Config
+
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
 
@@ -258,6 +262,11 @@ type ClientInterface interface {
 	// ConfigAPIGet request
 	ConfigAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConfigAPISetWithBody request with any body
+	ConfigAPISetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ConfigAPISet(ctx context.Context, body ConfigAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeployementAPIList request
 	DeployementAPIList(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -282,6 +291,30 @@ type ClientInterface interface {
 
 func (c *Client) ConfigAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConfigAPIGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfigAPISetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfigAPISetRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfigAPISet(ctx context.Context, body ConfigAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfigAPISetRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -399,6 +432,46 @@ func NewConfigAPIGetRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewConfigAPISetRequest calls the generic ConfigAPISet builder with application/json body
+func NewConfigAPISetRequest(server string, body ConfigAPISetJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConfigAPISetRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewConfigAPISetRequestWithBody generates requests for ConfigAPISet with any type of body
+func NewConfigAPISetRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/config")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -686,6 +759,11 @@ type ClientWithResponsesInterface interface {
 	// ConfigAPIGetWithResponse request
 	ConfigAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigAPIGetResponse, error)
 
+	// ConfigAPISetWithBodyWithResponse request with any body
+	ConfigAPISetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfigAPISetResponse, error)
+
+	ConfigAPISetWithResponse(ctx context.Context, body ConfigAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfigAPISetResponse, error)
+
 	// DeployementAPIListWithResponse request
 	DeployementAPIListWithResponse(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error)
 
@@ -725,6 +803,29 @@ func (r ConfigAPIGetResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConfigAPIGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConfigAPISetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Config
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfigAPISetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfigAPISetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -904,6 +1005,23 @@ func (c *ClientWithResponses) ConfigAPIGetWithResponse(ctx context.Context, reqE
 	return ParseConfigAPIGetResponse(rsp)
 }
 
+// ConfigAPISetWithBodyWithResponse request with arbitrary body returning *ConfigAPISetResponse
+func (c *ClientWithResponses) ConfigAPISetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfigAPISetResponse, error) {
+	rsp, err := c.ConfigAPISetWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfigAPISetResponse(rsp)
+}
+
+func (c *ClientWithResponses) ConfigAPISetWithResponse(ctx context.Context, body ConfigAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfigAPISetResponse, error) {
+	rsp, err := c.ConfigAPISet(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfigAPISetResponse(rsp)
+}
+
 // DeployementAPIListWithResponse request returning *DeployementAPIListResponse
 func (c *ClientWithResponses) DeployementAPIListWithResponse(ctx context.Context, params *DeployementAPIListParams, reqEditors ...RequestEditorFn) (*DeployementAPIListResponse, error) {
 	rsp, err := c.DeployementAPIList(ctx, params, reqEditors...)
@@ -976,6 +1094,39 @@ func ParseConfigAPIGetResponse(rsp *http.Response) (*ConfigAPIGetResponse, error
 	}
 
 	response := &ConfigAPIGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Config
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConfigAPISetResponse parses an HTTP response from a ConfigAPISetWithResponse call
+func ParseConfigAPISetResponse(rsp *http.Response) (*ConfigAPISetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfigAPISetResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1240,6 +1391,9 @@ type ServerInterface interface {
 	// (GET /api/config)
 	ConfigAPIGet(w http.ResponseWriter, r *http.Request)
 
+	// (POST /api/config)
+	ConfigAPISet(w http.ResponseWriter, r *http.Request)
+
 	// (GET /api/deployment)
 	DeployementAPIList(w http.ResponseWriter, r *http.Request, params DeployementAPIListParams)
 
@@ -1276,6 +1430,20 @@ func (siw *ServerInterfaceWrapper) ConfigAPIGet(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ConfigAPIGet(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfigAPISet operation middleware
+func (siw *ServerInterfaceWrapper) ConfigAPISet(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfigAPISet(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1554,6 +1722,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/config", wrapper.ConfigAPIGet)
+	m.HandleFunc("POST "+options.BaseURL+"/api/config", wrapper.ConfigAPISet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment", wrapper.DeployementAPIList)
 	m.HandleFunc("POST "+options.BaseURL+"/api/deployment", wrapper.DeployementAPISync)
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
@@ -1587,6 +1756,35 @@ type ConfigAPIGetdefaultJSONResponse struct {
 }
 
 func (response ConfigAPIGetdefaultJSONResponse) VisitConfigAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type ConfigAPISetRequestObject struct {
+	Body *ConfigAPISetJSONRequestBody
+}
+
+type ConfigAPISetResponseObject interface {
+	VisitConfigAPISetResponse(w http.ResponseWriter) error
+}
+
+type ConfigAPISet200JSONResponse Config
+
+func (response ConfigAPISet200JSONResponse) VisitConfigAPISetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ConfigAPISetdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response ConfigAPISetdefaultJSONResponse) VisitConfigAPISetResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -1801,6 +1999,9 @@ type StrictServerInterface interface {
 	// (GET /api/config)
 	ConfigAPIGet(ctx context.Context, request ConfigAPIGetRequestObject) (ConfigAPIGetResponseObject, error)
 
+	// (POST /api/config)
+	ConfigAPISet(ctx context.Context, request ConfigAPISetRequestObject) (ConfigAPISetResponseObject, error)
+
 	// (GET /api/deployment)
 	DeployementAPIList(ctx context.Context, request DeployementAPIListRequestObject) (DeployementAPIListResponseObject, error)
 
@@ -1869,6 +2070,37 @@ func (sh *strictHandler) ConfigAPIGet(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ConfigAPIGetResponseObject); ok {
 		if err := validResponse.VisitConfigAPIGetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfigAPISet operation middleware
+func (sh *strictHandler) ConfigAPISet(w http.ResponseWriter, r *http.Request) {
+	var request ConfigAPISetRequestObject
+
+	var body ConfigAPISetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfigAPISet(ctx, request.(ConfigAPISetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfigAPISet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfigAPISetResponseObject); ok {
+		if err := validResponse.VisitConfigAPISetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

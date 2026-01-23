@@ -166,6 +166,31 @@ func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObjec
 	return api.ConfigAPIGet200JSONResponse(h.configMapper.Map(config)), nil
 }
 
+// ConfigAPISet implements the StrictServerInterface interface
+func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
+	if !h.features.EditConfig {
+		return api.ConfigAPISetdefaultJSONResponse{
+			Body: api.Error{
+				Code:    http.StatusMethodNotAllowed,
+				Message: "DISABLED",
+			},
+			StatusCode: http.StatusMethodNotAllowed,
+		}, nil
+	}
+	config := h.configMapper.UnMap(api.Config(*r.Body))
+	oldConfig, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	oldConfig.Environment = config.Environment
+	oldConfig.Services = config.Services
+	err = h.configStore.Update(oldConfig)
+	if err != nil {
+		return nil, err
+	}
+	return api.ConfigAPISet200JSONResponse(h.configMapper.Map(oldConfig)), nil
+}
+
 // FeaturesAPIGet implements the StrictServerInterface interface
 func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
 	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil

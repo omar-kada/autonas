@@ -7,3 +7,4 @@ export * from './use-mobile';
 export * from './use-stats';
 export * from './use-status';
 export * from './use-sync';
+export * from './use-update-config';

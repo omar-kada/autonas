@@ -1,12 +1,24 @@
-import { getConfigQueryOptions, getFeaturesQueryOptions } from '@/hooks';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { getConfigQueryOptions, getFeaturesQueryOptions, useUpdateConfig } from '@/hooks';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
+import { RotateCcw, Save } from 'lucide-react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { ConfigForm, formSchema, fromConfig, toConfig, type FormValues } from './config';
+import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { ErrorAlert, InfoEmpty } from './view';
+import { Spinner } from './ui/spinner';
+import { ErrorAlert, HeaderLayout, InfoEmpty } from './view';
 
 export function ConfigPage() {
   const { t } = useTranslation();
-  const { data: features } = useQuery(getFeaturesQueryOptions());
+  const {
+    data: features,
+    isPending: featuresPending,
+    error: featuresError,
+  } = useQuery(getFeaturesQueryOptions());
   const {
     data: config,
     isPending,
@@ -16,7 +28,31 @@ export function ConfigPage() {
       enabled: !!features?.displayConfig,
     }),
   );
-  if (!features?.displayConfig) {
+  const { updateConfig, isPending: isSavePending } = useUpdateConfig();
+  const onSubmit = (data: FormValues) => updateConfig(toConfig(data));
+
+  const disabled = !features?.editConfig;
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    disabled,
+  });
+
+  useEffect(() => {
+    // init and reset when config changes
+    if (config) {
+      form.reset(fromConfig(config));
+    }
+  }, [config, form]);
+
+  if (featuresPending || (features?.displayConfig && isPending)) {
+    return (
+      <div className="flex flex-col gap-10 m-4">
+        <EnvVarSkeleton repeat={2} />
+        <EnvVarSkeleton repeat={1} />
+      </div>
+    );
+  }
+  if (features && !features.displayConfig) {
     return (
       <InfoEmpty
         title="CONFIGURATION.DISABLED_TITLE"
@@ -24,39 +60,41 @@ export function ConfigPage() {
       ></InfoEmpty>
     );
   }
-  return (
-    <div className="p-4 space-y-4">
-      <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
-      <ErrorAlert title={error && 'ALERT.LOAD_CONFIGURATION_ERROR'} details={error?.message} />
 
-      {isPending ? (
-        <div className="flex flex-col gap-10">
-          <EnvVarSkeleton repeat={2} />
-          <EnvVarSkeleton repeat={1} />
-        </div>
-      ) : (
-        <>
-          {config?.globalVariables &&
-            Object.entries(config.globalVariables).map(([key, value]) => (
-              <div key={key}>
-                <strong>{key}:</strong> {value}
-              </div>
-            ))}
-          {config?.services &&
-            Object.entries(config.services)?.map(([serviceKey, serviceValue]) => (
-              <div key={serviceKey}>
-                <strong>{serviceKey}:</strong>
-                {serviceValue &&
-                  Object.entries(serviceValue)?.map(([key, value]) => (
-                    <div key={key} className="ml-4">
-                      <strong>{key}:</strong> {value}
-                    </div>
-                  ))}
-              </div>
-            ))}
-        </>
-      )}
-    </div>
+  const mergedError = featuresError || error;
+
+  return (
+    <HeaderLayout
+      header={
+        !disabled && (
+          <div className="flex w-full justify-end-safe gap-2">
+            {form.formState.isDirty && (
+              <Button variant="outline" onClick={() => form.reset(fromConfig(config))}>
+                <RotateCcw />
+                {t('ACTION.RESET')}
+              </Button>
+            )}
+            {!disabled && (
+              <Button onClick={form.handleSubmit(onSubmit)} disabled={!form.formState.isDirty}>
+                {isSavePending ? <Spinner /> : <Save />}
+                {t('ACTION.SAVE')}
+              </Button>
+            )}
+          </div>
+        )
+      }
+    >
+      <ErrorAlert
+        title={mergedError && 'ALERT.LOAD_CONFIGURATION_ERROR'}
+        details={mergedError?.message}
+        className="m-4"
+      />
+      <ScrollArea className="h-full flex-1">
+        {config && (
+          <ConfigForm className="flex-1 w-full p-4" form={form} disabled={disabled}></ConfigForm>
+        )}
+      </ScrollArea>
+    </HeaderLayout>
   );
 }
 
