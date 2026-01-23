@@ -17,7 +17,7 @@ export function EnvVarArrayForm({
   name,
   disabled,
 }: {
-  control: Control<FormValues, any, FormValues>;
+  control: Control<FormValues, unknown, FormValues>;
   name: 'globalEnvVars' | `services.${number}.envVars`;
   disabled?: boolean;
 }) {
@@ -27,7 +27,7 @@ export function EnvVarArrayForm({
     update,
     remove,
   } = useFieldArray({
-    control: control,
+    control,
     name,
   });
 

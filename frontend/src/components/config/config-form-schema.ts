@@ -54,6 +54,6 @@ export function toConfig(data: FormValues): Config {
 
 function envArrayToObject<T>(vars: { key: string; value: T }[]): { [key: string]: T } {
   return vars
-    .filter((env) => env.key && env.key.trim() != '')
+    .filter((env) => env.key && env.key.trim() !== '')
     .reduce((acc, env) => ({ ...acc, [env.key]: env.value }), {});
 }
