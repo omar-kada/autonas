@@ -24,7 +24,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
   } = useQuery(getDiffQueryOptions());
 
   return (
-    <div className={cn('flex flex-wrap items-center align-bottom gap-4 m-2', className)}>
+    <div className={cn('flex flex-wrap items-center align-bottom gap-4', className)}>
       <div className="flex items-center p-2 gap-2">
         <span className="text-sm font-light mx-1 flex-1 flex gap-1 items-center">
           <History className="size-4"></History>
@@ -94,7 +94,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
           </Button>
         </DeploymentDiffDialog>
         <Button variant="outline" onClick={sync} disabled={isSyncLoading}>
-          <RefreshCcw className={isSyncLoading ? 'animate-spin' : ''} />
+          {isSyncLoading ? <Spinner /> : <RefreshCcw />}
           {!isMobile && t('ACTION.SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
         </Button>

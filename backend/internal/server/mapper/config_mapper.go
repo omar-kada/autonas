@@ -21,3 +21,17 @@ func (ConfigMapper) Map(config models.Config) api.Config {
 		Services:        convertedMap,
 	}
 }
+
+// UnMap transforms back from api.Config to models.Config
+func (ConfigMapper) UnMap(config api.Config) models.Config {
+	convertedMap := make(map[string]models.ServiceConfig)
+
+	for key, innerMap := range config.Services {
+		convertedMap[key] = innerMap
+	}
+
+	return models.Config{
+		Environment: config.GlobalVariables,
+		Services:    convertedMap,
+	}
+}

@@ -1,5 +1,6 @@
 export * from './aside-layout';
 export * from './error-alert';
+export * from './header-layout';
 export * from './human-time';
 export * from './info-empty';
 export * from './navbar-element';

@@ -12,5 +12,6 @@ type FeaturesMapper struct{}
 func (FeaturesMapper) Map(features models.Features) api.Features {
 	return api.Features{
 		DisplayConfig: features.DisplayConfig,
+		EditConfig:    features.EditConfig,
 	}
 }

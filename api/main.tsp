@@ -143,7 +143,7 @@ interface DeployementAPI {
 @tag("Config")
 interface ConfigAPI {
   @get get(): Config | Error;
-  // @post set(@body config: Config): Config | Error;
+  @post set(@body config: Config): Config | Error;
 }
 
 @route("/features")

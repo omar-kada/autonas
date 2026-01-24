@@ -60,6 +60,11 @@ func TestFileGeneration(t *testing.T) {
 		}, "\n")), 0o750)
 	assert.NoError(t, err, "error while creating config file")
 
+	if _, err := os.Stat("../../.env"); os.IsNotExist(err) {
+		err = os.WriteFile("../../.env", []byte{}, 0o750)
+		assert.NoError(t, err, "error while creating .env file")
+	}
+
 	// When
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../../compose.yaml")

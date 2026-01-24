@@ -12,7 +12,7 @@ import { ROUTES } from './lib';
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col h-screen pb-15 sm:pb-0">
+      <div className="flex flex-col h-screen pb-12 md:pb-0">
         <Topbar>
           {/* Top navigation bar, on big screens */}
           <div className="flex">

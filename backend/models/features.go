@@ -8,12 +8,14 @@ import (
 // Features represents the feature flags that can be enabled or disabled.
 type Features struct {
 	DisplayConfig bool
+	EditConfig    bool
 }
 
 // LoadFeatures loads feature flags from environment variables.
 func LoadFeatures() Features {
 	return Features{
 		DisplayConfig: getBool("AUTONAS_DISPLAY_CONFIG", false),
+		EditConfig:    getBool("AUTONAS_EDIT_CONFIG", false),
 	}
 }
 

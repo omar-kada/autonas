@@ -275,6 +275,62 @@ export function useConfigAPIGet<TData = Awaited<ReturnType<typeof configAPIGet>>
 
 
 
+export const configAPISet = (
+    config: Config, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Config>> => {
+    
+    
+    return axios.default.post(
+      `/api/config`,
+      config,options
+    );
+  }
+
+
+
+export const getConfigAPISetMutationOptions = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configAPISet>>, TError,{data: Config}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof configAPISet>>, TError,{data: Config}, TContext> => {
+
+const mutationKey = ['configAPISet'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof configAPISet>>, {data: Config}> = (props) => {
+          const {data} = props ?? {};
+
+          return  configAPISet(data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfigAPISetMutationResult = NonNullable<Awaited<ReturnType<typeof configAPISet>>>
+    export type ConfigAPISetMutationBody = Config
+    export type ConfigAPISetMutationError = AxiosError<Error>
+
+    export const useConfigAPISet = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configAPISet>>, TError,{data: Config}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof configAPISet>>,
+        TError,
+        {data: Config},
+        TContext
+      > => {
+
+      const mutationOptions = getConfigAPISetMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
 /**
  * List deployments
  */

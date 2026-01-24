@@ -18,11 +18,24 @@
   "CONFIGURATION": {
     "CONFIGURATION": "Configuration",
     "DISABLED_TITLE": "Configuration is disabled",
-    "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_DISPLAY_CONFIG' to 'true'"
+    "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_DISPLAY_CONFIG' to 'true'",
+    "FORM": {
+      "GLOBAL_ENV_VARS": "Global environment variables",
+      "KEY": "Key",
+      "VALUE": "Value",
+      "SERVICES": "Services",
+      "SERVICE_NAME": "Service name",
+      "ADD_SERVICE": "Add service",
+      "REMOVE_SERVICE": "Remove service",
+      "REMOVE_VAR": "Remove variable",
+      "SERVICE_NAME_REQUIRED": "Service name is required"
+    }
   },
   "LOGS": "Logs",
   "ACTION": {
     "BACK": "Back",
+    "SAVE": "Save",
+    "RESET": "Reset",
     "TOGGLE_THEME": "Toggle Theme",
     "SYNC_NOW": "Sync now"
   },
@@ -39,6 +52,8 @@
     "DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION": "Showing differences between what's currently deployed and the latest version from the repository."
   },
   "ALERT": {
+    "SUCCESS": "Success",
+    "ERROR": "Error",
     "SYNCHRONIZING": "Synchronizing",
     "SYNC_SUCCESS": "Success, Deployment is running",
     "SYNC_NO_CHANGES": "No changes to synchronize",
