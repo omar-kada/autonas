@@ -19,6 +19,8 @@
     "CONFIGURATION": "Configuration",
     "DISABLED_TITLE": "Configuration is disabled",
     "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_DISPLAY_CONFIG' to 'true'",
+    "DISABLED_EDIT_TITLE": "Editing is disabled",
+    "DISABLED_EDIT_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_EDIT_CONFIG' to 'true'",
     "FORM": {
       "GLOBAL_ENV_VARS": "Global environment variables",
       "KEY": "Key",
@@ -37,7 +39,9 @@
     "SAVE": "Save",
     "RESET": "Reset",
     "TOGGLE_THEME": "Toggle Theme",
-    "SYNC_NOW": "Sync now"
+    "SYNC_NOW": "Sync now",
+    "VIEW_FILE": "View file",
+    "HIDE_FILE": "Hide file"
   },
   "TIME": {
     "JUST_NOW": "Just now",
@@ -63,6 +67,7 @@
     "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
     "LOAD_STATS_ERROR": "Error while loading stats",
     "LOAD_STATUS_ERROR": "Error while loading status",
-    "LOAD_CONFIGURATION_ERROR": "Error while loading configuration"
+    "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
+    "COPIED": "Copied"
   }
 }

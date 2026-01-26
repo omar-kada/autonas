@@ -1,4 +1,5 @@
 import type { Config } from '@/api/api';
+import yaml from 'js-yaml';
 import z from 'zod/v3';
 
 export const formSchema = z.object({
@@ -45,7 +46,7 @@ export function toConfig(data: FormValues): Config {
   return {
     globalVariables: envArrayToObject(data.globalEnvVars),
     services: envArrayToObject(
-      data.services.map((service) => {
+      data.services?.map((service) => {
         return { key: service.name, value: envArrayToObject(service.envVars) };
       }),
     ),
@@ -53,7 +54,14 @@ export function toConfig(data: FormValues): Config {
 }
 
 function envArrayToObject<T>(vars: { key: string; value: T }[]): { [key: string]: T } {
+  if (!vars) return {};
   return vars
     .filter((env) => env.key && env.key.trim() !== '')
     .reduce((acc, env) => ({ ...acc, [env.key]: env.value }), {});
+}
+
+export function toYaml(formData: FormValues): string {
+  if (!formData) return '';
+  const config = toConfig(formData);
+  return yaml.dump(config);
 }
