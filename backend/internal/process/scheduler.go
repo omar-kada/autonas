@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 // ConfigScheduler is responsible for cron running a sheduled job with updated config
 type ConfigScheduler interface {
 	Schedule(fn func()) (*cron.Cron, error)
+	ReSchedule() (*cron.Cron, error)
 	GetNext() time.Time
 }
 
@@ -26,6 +28,7 @@ func NewConfigScheduler(configStore storage.ConfigStore) ConfigScheduler {
 // AtomicConfigScheduler runs only a single cron job at a time
 type AtomicConfigScheduler struct {
 	configStore storage.ConfigStore
+	fn          func()
 	cron        *cron.Cron
 	mu          sync.Mutex
 }
@@ -35,22 +38,25 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 	// make sure only one sync job is running at a time
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	a.fn = fn
 
 	if a.cron != nil {
 		a.cron.Stop()
 		a.cron = nil
 	}
-	c := cron.New()
 
 	cfg, err := a.configStore.Get()
 	if err != nil {
 		return nil, err
 	}
 	if cfg.Settings.CronPeriod == "1" {
+		slog.Debug("running job for a single time")
 		fn()
 		return nil, nil
 	} else if cfg.Settings.CronPeriod != "" && cfg.Settings.CronPeriod != "0" {
 
+		slog.Debug("scheduling a new cron job")
+		c := cron.New()
 		_, err := c.AddFunc(cfg.Settings.CronPeriod, fn)
 		if err != nil {
 			return nil, err
@@ -61,6 +67,11 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 	}
 
 	return nil, fmt.Errorf("couldn't schedule job, no cron period is defined")
+}
+
+// ReSchedule stops the current cron job and schedules a new one with the same function.
+func (a *AtomicConfigScheduler) ReSchedule() (*cron.Cron, error) {
+	return a.Schedule(a.fn)
 }
 
 // GetNext returns the next scheduled time of the cron job.

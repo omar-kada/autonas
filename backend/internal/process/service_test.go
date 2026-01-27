@@ -57,6 +57,11 @@ func (m *Mocker) Schedule(fn func()) (*cron.Cron, error) {
 	return args.Get(0).(*cron.Cron), args.Error(1)
 }
 
+func (m *Mocker) ReSchedule() (*cron.Cron, error) {
+	args := m.Called()
+	return args.Get(0).(*cron.Cron), args.Error(1)
+}
+
 func (m *Mocker) ClearRepo() error {
 	args := m.Called()
 	return args.Error(0)

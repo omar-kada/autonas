@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"omar-kada/autonas/models"
@@ -14,9 +15,11 @@ import (
 type ConfigStore interface {
 	Update(cfg models.Config) error
 	Get() (models.Config, error)
+	SetOnChange(fn func(oldConfig, newConfig models.Config))
 }
 
 type configStore struct {
+	OnConfigUpdate func(oldConfig, newConfig models.Config)
 	configFilePath string
 }
 
@@ -27,7 +30,22 @@ func NewConfigStore(filePath string) ConfigStore {
 	}
 }
 
-func (s *configStore) Update(cfg models.Config) error {
+func (s *configStore) Update(cfg models.Config) (err error) {
+
+	slog.Debug("updating configuration file")
+	if s.OnConfigUpdate != nil {
+		oldCfg, err := s.Get()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err != nil { // check no error occurred when updating the config
+				return
+			}
+			s.OnConfigUpdate(oldCfg, cfg)
+		}()
+	}
+
 	var m map[string]any
 	encCfg := &mapstructure.DecoderConfig{
 		TagName:          "mapstructure",
@@ -54,7 +72,12 @@ func (s *configStore) Update(cfg models.Config) error {
 	return nil
 }
 
-// reads the configuration from the config file
+func (s *configStore) SetOnChange(fn func(oldConfig, newConfig models.Config)) {
+	slog.Debug("setting OnConfigUpdate")
+	s.OnConfigUpdate = fn
+}
+
+// Get reads the configuration from the config file
 func (s *configStore) Get() (models.Config, error) {
 	bs, err := os.ReadFile(s.configFilePath)
 	if err != nil {

@@ -1,5 +1,6 @@
 import { Bell, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { SettingsSheet } from './settings';
 import { Button } from './ui/button';
 import { ThemeToggle } from './view/theme-toggle';
 
@@ -13,9 +14,11 @@ export function Topbar({ children }: { children?: ReactNode }) {
 
       {/* Settings + Notifications */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
-        </Button>
+        <SettingsSheet>
+          <Button variant="ghost" size="icon">
+            <Settings className="h-5 w-5" />
+          </Button>
+        </SettingsSheet>
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
         </Button>

@@ -39,7 +39,7 @@ export function ConfigViewer({
             <X className="size-4" />
           </Button>
         )}
-        <span className="text-sm font-medium text-accent-foreground">config.yaml</span>
+        <span className="text-sm font-medium text-accent-foreground ps-2">config.yaml</span>
 
         {/* gap between elements */}
         <div className="flex-1"></div>

@@ -25,6 +25,7 @@ type Handler struct {
 	statusMapper     mapper.StatusMapper
 	statsMapper      mapper.StatsMapper
 	configMapper     mapper.ConfigMapper
+	settingsMapper   mapper.SettingsMapper
 	featuresMapper   mapper.FeaturesMapper
 
 	features models.Features
@@ -189,6 +190,39 @@ func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObjec
 		return nil, err
 	}
 	return api.ConfigAPISet200JSONResponse(h.configMapper.Map(oldConfig)), nil
+}
+
+// SettingsAPIGet implements the StrictServerInterface interface
+func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
+	config, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	return api.SettingsAPIGet200JSONResponse(h.settingsMapper.Map(config.Settings)), nil
+}
+
+// SettingsAPISet implements the StrictServerInterface interface
+func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
+	if !h.features.EditSettings {
+		return api.SettingsAPISetdefaultJSONResponse{
+			Body: api.Error{
+				Code:    http.StatusMethodNotAllowed,
+				Message: "DISABLED",
+			},
+			StatusCode: http.StatusMethodNotAllowed,
+		}, nil
+	}
+	settings := h.settingsMapper.UnMap(api.Settings(*r.Body))
+	oldConfig, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	oldConfig.Settings = settings
+	err = h.configStore.Update(oldConfig)
+	if err != nil {
+		return nil, err
+	}
+	return api.SettingsAPISet200JSONResponse(h.settingsMapper.Map(settings)), nil
 }
 
 // FeaturesAPIGet implements the StrictServerInterface interface

@@ -84,6 +84,10 @@ func (m *MockStore) Update(config models.Config) error {
 	return args.Error(0)
 }
 
+func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
+	m.Called(fn)
+}
+
 func TestDeployementAPIList_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
@@ -429,4 +433,151 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
+}
+func TestSettingsAPIGet_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+
+	settings := models.Settings{
+		Repo:       "test-repo",
+		Branch:     "main",
+		CronPeriod: "0 0 * * *",
+	}
+	store.On("Get").Return(models.Config{Settings: settings}, nil)
+
+	resp, err := h.SettingsAPIGet(context.Background(), api.SettingsAPIGetRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.SettingsAPIGet200JSONResponse:
+		assert.Equal(t, "test-repo", r.Repo)
+		assert.Equal(t, "main", *r.Branch)
+		assert.Equal(t, "0 0 * * *", *r.Cron)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	store.AssertExpectations(t)
+}
+
+func TestSettingsAPIGet_Error(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+
+	errSettings := errors.New("settings error")
+	store.On("Get").Return(models.Config{}, errSettings)
+
+	resp, err := h.SettingsAPIGet(context.Background(), api.SettingsAPIGetRequestObject{})
+	assert.Nil(t, resp)
+	assert.Equal(t, errSettings, err)
+
+	store.AssertExpectations(t)
+}
+
+func TestSettingsAPISet_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.EditSettings = true
+
+	oldConfig := models.Config{
+		Environment: models.Environment{
+			"ENV": "VALUE",
+		},
+		Services: map[string]models.ServiceConfig{
+			"service1": {"key1": "value1"},
+		},
+		Settings: models.Settings{
+			Repo:       "old-repo",
+			Branch:     "old-branch",
+			CronPeriod: "old-cron",
+		},
+	}
+	newSettings := api.Settings{
+		Repo:   "new-repo",
+		Branch: ptr("new-branch"),
+		Cron:   ptr("new-cron"),
+	}
+
+	store.On("Get").Return(oldConfig, nil)
+	store.On("Update", mock.MatchedBy(func(newCfg models.Config) bool {
+		// Check that only settings are updated
+		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
+		assert.Equal(t, oldConfig.Services, newCfg.Services)
+		assert.Equal(t, models.Settings{
+			Repo:       newSettings.Repo,
+			Branch:     *newSettings.Branch,
+			CronPeriod: *newSettings.Cron,
+		}, newCfg.Settings)
+		return true
+	})).Return(nil)
+
+	req := api.SettingsAPISetRequestObject{Body: &newSettings}
+	resp, err := h.SettingsAPISet(context.Background(), req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.SettingsAPISet200JSONResponse:
+		assert.Equal(t, "new-repo", r.Repo)
+		assert.Equal(t, "new-branch", *r.Branch)
+		assert.Equal(t, "new-cron", *r.Cron)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	store.AssertExpectations(t)
+}
+
+func TestSettingsAPISet_Disabled(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.EditSettings = false
+
+	settings := api.Settings{
+		Repo:   "test-repo",
+		Branch: ptr("main"),
+		Cron:   ptr("0 0 * * *"),
+	}
+
+	req := api.SettingsAPISetRequestObject{Body: &settings}
+	resp, err := h.SettingsAPISet(context.Background(), req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.SettingsAPISetdefaultJSONResponse:
+		assert.Equal(t, http.StatusMethodNotAllowed, r.StatusCode)
+		assert.Equal(t, "DISABLED", r.Body.Message)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestSettingsAPISet_Error(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.EditSettings = true
+
+	settings := api.Settings{
+		Repo:   "test-repo",
+		Branch: ptr("main"),
+		Cron:   ptr("0 0 * * *"),
+	}
+
+	errSettings := errors.New("settings error")
+	store.On("Get").Return(models.Config{}, errSettings)
+
+	req := api.SettingsAPISetRequestObject{Body: &settings}
+	resp, err := h.SettingsAPISet(context.Background(), req)
+	assert.Nil(t, resp)
+	assert.Equal(t, errSettings, err)
+
+	store.AssertExpectations(t)
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }

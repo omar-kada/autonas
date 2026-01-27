@@ -23,7 +23,6 @@ import {
 } from './config';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resizable';
 import { Skeleton } from './ui/skeleton';
 import { Spinner } from './ui/spinner';
 import { Toggle } from './ui/toggle';
@@ -61,14 +60,12 @@ export function ConfigPage() {
       form.reset(fromConfig(config));
     }
   }, [config, form]);
+
   const isMobile = useIsMobile();
   const [showYaml, setShowYaml] = useState(!isMobile);
-  const hideFile = useCallback(() => setShowYaml(false), [setShowYaml]);
 
   useEffect(() => {
-    if (showYaml && isMobile) {
-      setShowYaml(false);
-    }
+    setShowYaml(!isMobile);
   }, [isMobile]);
 
   if (featuresPending || (features?.displayConfig && isPending)) {
@@ -89,21 +86,25 @@ export function ConfigPage() {
   }
 
   const mergedError = featuresError || error;
+  const displayYaml = !isMobile || showYaml;
+  const displayForm = !isMobile || !showYaml;
 
   return (
     <HeaderLayout
       header={
         <div className="flex w-full justify-between gap-2">
           <div>
-            <Toggle
-              pressed={showYaml}
-              onPressedChange={setShowYaml}
-              aria-label={showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
-              variant="outline"
-            >
-              <Code />
-              {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
-            </Toggle>
+            {isMobile && (
+              <Toggle
+                pressed={showYaml}
+                onPressedChange={setShowYaml}
+                aria-label={showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
+                variant="outline"
+              >
+                <Code />
+                {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
+              </Toggle>
+            )}
           </div>
           {!disabled && (
             <div className="flex">
@@ -130,31 +131,26 @@ export function ConfigPage() {
         className="m-4"
       />
       <ScrollArea className="h-full flex-1">
-        {disabled && (
+        {disabled && !featuresError && (
           <Alert variant="default" className="w-auto m-4">
             <AlertCircleIcon />
             <AlertTitle>{t('CONFIGURATION.DISABLED_EDIT_TITLE')}</AlertTitle>
             <AlertDescription>{t('CONFIGURATION.DISABLED_EDIT_DESCRIPTION')}</AlertDescription>
           </Alert>
         )}
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel hidden={isMobile && showYaml} className="min-w-1/3">
-            {config && (
-              <ConfigForm className={cn('flex-1 p-4')} form={form} disabled={disabled}></ConfigForm>
+        {config && (
+          <div className="grid grid-cols-1 md:grid-cols-2 w-full">
+            {config && displayForm && (
+              <ConfigForm className={cn('flex-1 p-4')} form={form} disabled={disabled} />
             )}
-          </ResizablePanel>
-          <ResizableHandle withHandle={!isMobile} />
-          <ResizablePanel hidden={!showYaml} className={showYaml ? 'min-w-1/3' : 'w-0 min-w-0'}>
-            <ConfigViewer
-              className={cn(
-                'transform transition-all',
-                showYaml ? 'translate-x-0' : 'translate-x-full w-0',
-              )}
-              text={toYaml(form.getValues())}
-              onClose={hideFile}
-            />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            {config && displayYaml && (
+              <ConfigViewer
+                text={toYaml(form.getValues())}
+                onClose={isMobile ? () => setShowYaml(false) : undefined}
+              />
+            )}
+          </div>
+        )}
       </ScrollArea>
     </HeaderLayout>
   );

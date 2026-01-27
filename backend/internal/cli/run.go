@@ -11,6 +11,7 @@ import (
 	"omar-kada/autonas/internal/server"
 	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/models"
 
 	"github.com/spf13/cobra"
 )
@@ -66,6 +67,12 @@ func (run *runCommand) doRun() error {
 	dispatcher := events.NewDefaultDispatcher(store)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)
+	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
+		slog.Info("checking if cron changed", "oldCron", oldCfg.Settings.CronPeriod, "newCron", cfg.Settings.CronPeriod)
+		if oldCfg.Settings.CronPeriod != cfg.Settings.CronPeriod {
+			scheduler.ReSchedule()
+		}
+	})
 	inspector, err := docker.NewInspector()
 	if err != nil {
 		return fmt.Errorf("couldn't init docker client %w", err)

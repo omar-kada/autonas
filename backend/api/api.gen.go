@@ -156,6 +156,13 @@ type PageInfo struct {
 	HasNextPage bool   `json:"hasNextPage"`
 }
 
+// Settings defines model for Settings.
+type Settings struct {
+	Branch *string `json:"branch,omitempty"`
+	Cron   *string `json:"cron,omitempty"`
+	Repo   string  `json:"repo"`
+}
+
 // StackStatus defines model for StackStatus.
 type StackStatus struct {
 	Name     string            `json:"name"`
@@ -185,6 +192,9 @@ type DeployementAPIListParams struct {
 
 // ConfigAPISetJSONRequestBody defines body for ConfigAPISet for application/json ContentType.
 type ConfigAPISetJSONRequestBody = Config
+
+// SettingsAPISetJSONRequestBody defines body for SettingsAPISet for application/json ContentType.
+type SettingsAPISetJSONRequestBody = Settings
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -282,6 +292,14 @@ type ClientInterface interface {
 	// FeaturesAPIGet request
 	FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SettingsAPIGet request
+	SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SettingsAPISetWithBody request with any body
+	SettingsAPISetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SettingsAPISet(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// StatsAPIGet request
 	StatsAPIGet(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -375,6 +393,42 @@ func (c *Client) DiffAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) 
 
 func (c *Client) FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFeaturesAPIGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSettingsAPIGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SettingsAPISetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSettingsAPISetRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SettingsAPISet(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSettingsAPISetRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -652,6 +706,73 @@ func NewFeaturesAPIGetRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewSettingsAPIGetRequest generates requests for SettingsAPIGet
+func NewSettingsAPIGetRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/settings")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSettingsAPISetRequest calls the generic SettingsAPISet builder with application/json body
+func NewSettingsAPISetRequest(server string, body SettingsAPISetJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSettingsAPISetRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSettingsAPISetRequestWithBody generates requests for SettingsAPISet with any type of body
+func NewSettingsAPISetRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/settings")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewStatsAPIGetRequest generates requests for StatsAPIGet
 func NewStatsAPIGetRequest(server string, days int32) (*http.Request, error) {
 	var err error
@@ -778,6 +899,14 @@ type ClientWithResponsesInterface interface {
 
 	// FeaturesAPIGetWithResponse request
 	FeaturesAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FeaturesAPIGetResponse, error)
+
+	// SettingsAPIGetWithResponse request
+	SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error)
+
+	// SettingsAPISetWithBodyWithResponse request with any body
+	SettingsAPISetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error)
+
+	SettingsAPISetWithResponse(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error)
 
 	// StatsAPIGetWithResponse request
 	StatsAPIGetWithResponse(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*StatsAPIGetResponse, error)
@@ -950,6 +1079,52 @@ func (r FeaturesAPIGetResponse) StatusCode() int {
 	return 0
 }
 
+type SettingsAPIGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Settings
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SettingsAPIGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SettingsAPIGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SettingsAPISetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Settings
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SettingsAPISetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SettingsAPISetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type StatsAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1065,6 +1240,32 @@ func (c *ClientWithResponses) FeaturesAPIGetWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseFeaturesAPIGetResponse(rsp)
+}
+
+// SettingsAPIGetWithResponse request returning *SettingsAPIGetResponse
+func (c *ClientWithResponses) SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error) {
+	rsp, err := c.SettingsAPIGet(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSettingsAPIGetResponse(rsp)
+}
+
+// SettingsAPISetWithBodyWithResponse request with arbitrary body returning *SettingsAPISetResponse
+func (c *ClientWithResponses) SettingsAPISetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error) {
+	rsp, err := c.SettingsAPISetWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSettingsAPISetResponse(rsp)
+}
+
+func (c *ClientWithResponses) SettingsAPISetWithResponse(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error) {
+	rsp, err := c.SettingsAPISet(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSettingsAPISetResponse(rsp)
 }
 
 // StatsAPIGetWithResponse request returning *StatsAPIGetResponse
@@ -1319,6 +1520,72 @@ func ParseFeaturesAPIGetResponse(rsp *http.Response) (*FeaturesAPIGetResponse, e
 	return response, nil
 }
 
+// ParseSettingsAPIGetResponse parses an HTTP response from a SettingsAPIGetWithResponse call
+func ParseSettingsAPIGetResponse(rsp *http.Response) (*SettingsAPIGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SettingsAPIGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Settings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSettingsAPISetResponse parses an HTTP response from a SettingsAPISetWithResponse call
+func ParseSettingsAPISetResponse(rsp *http.Response) (*SettingsAPISetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SettingsAPISetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Settings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseStatsAPIGetResponse parses an HTTP response from a StatsAPIGetWithResponse call
 func ParseStatsAPIGetResponse(rsp *http.Response) (*StatsAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1408,6 +1675,12 @@ type ServerInterface interface {
 
 	// (GET /api/features)
 	FeaturesAPIGet(w http.ResponseWriter, r *http.Request)
+
+	// (GET /api/settings)
+	SettingsAPIGet(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/settings)
+	SettingsAPISet(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/stats/{days})
 	StatsAPIGet(w http.ResponseWriter, r *http.Request, days int32)
@@ -1553,6 +1826,34 @@ func (siw *ServerInterfaceWrapper) FeaturesAPIGet(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FeaturesAPIGet(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SettingsAPIGet operation middleware
+func (siw *ServerInterfaceWrapper) SettingsAPIGet(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SettingsAPIGet(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SettingsAPISet operation middleware
+func (siw *ServerInterfaceWrapper) SettingsAPISet(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SettingsAPISet(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1728,6 +2029,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
 	m.HandleFunc("GET "+options.BaseURL+"/api/diff", wrapper.DiffAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/features", wrapper.FeaturesAPIGet)
+	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
+	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
 
@@ -1936,6 +2239,63 @@ func (response FeaturesAPIGetdefaultJSONResponse) VisitFeaturesAPIGetResponse(w 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type SettingsAPIGetRequestObject struct {
+}
+
+type SettingsAPIGetResponseObject interface {
+	VisitSettingsAPIGetResponse(w http.ResponseWriter) error
+}
+
+type SettingsAPIGet200JSONResponse Settings
+
+func (response SettingsAPIGet200JSONResponse) VisitSettingsAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SettingsAPIGetdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response SettingsAPIGetdefaultJSONResponse) VisitSettingsAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type SettingsAPISetRequestObject struct {
+	Body *SettingsAPISetJSONRequestBody
+}
+
+type SettingsAPISetResponseObject interface {
+	VisitSettingsAPISetResponse(w http.ResponseWriter) error
+}
+
+type SettingsAPISet200JSONResponse Settings
+
+func (response SettingsAPISet200JSONResponse) VisitSettingsAPISetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SettingsAPISetdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response SettingsAPISetdefaultJSONResponse) VisitSettingsAPISetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type StatsAPIGetRequestObject struct {
 	Days int32 `json:"days"`
 }
@@ -2016,6 +2376,12 @@ type StrictServerInterface interface {
 
 	// (GET /api/features)
 	FeaturesAPIGet(ctx context.Context, request FeaturesAPIGetRequestObject) (FeaturesAPIGetResponseObject, error)
+
+	// (GET /api/settings)
+	SettingsAPIGet(ctx context.Context, request SettingsAPIGetRequestObject) (SettingsAPIGetResponseObject, error)
+
+	// (POST /api/settings)
+	SettingsAPISet(ctx context.Context, request SettingsAPISetRequestObject) (SettingsAPISetResponseObject, error)
 
 	// (GET /api/stats/{days})
 	StatsAPIGet(ctx context.Context, request StatsAPIGetRequestObject) (StatsAPIGetResponseObject, error)
@@ -2225,6 +2591,61 @@ func (sh *strictHandler) FeaturesAPIGet(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(FeaturesAPIGetResponseObject); ok {
 		if err := validResponse.VisitFeaturesAPIGetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SettingsAPIGet operation middleware
+func (sh *strictHandler) SettingsAPIGet(w http.ResponseWriter, r *http.Request) {
+	var request SettingsAPIGetRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SettingsAPIGet(ctx, request.(SettingsAPIGetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SettingsAPIGet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SettingsAPIGetResponseObject); ok {
+		if err := validResponse.VisitSettingsAPIGetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SettingsAPISet operation middleware
+func (sh *strictHandler) SettingsAPISet(w http.ResponseWriter, r *http.Request) {
+	var request SettingsAPISetRequestObject
+
+	var body SettingsAPISetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SettingsAPISet(ctx, request.(SettingsAPISetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SettingsAPISet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SettingsAPISetResponseObject); ok {
+		if err := validResponse.VisitSettingsAPISetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
