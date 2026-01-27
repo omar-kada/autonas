@@ -61,7 +61,6 @@ func TestDecodeConfig(t *testing.T) {
 
 func TestUpdateConfig(t *testing.T) {
 	t.Run("successful update", func(t *testing.T) {
-
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
 		store := NewConfigStore(filePath)

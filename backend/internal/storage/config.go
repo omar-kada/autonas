@@ -31,7 +31,6 @@ func NewConfigStore(filePath string) ConfigStore {
 }
 
 func (s *configStore) Update(cfg models.Config) (err error) {
-
 	slog.Debug("updating configuration file")
 	if s.OnConfigUpdate != nil {
 		oldCfg, err := s.Get()
