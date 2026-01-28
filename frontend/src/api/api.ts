@@ -156,6 +156,12 @@ export interface PageInfo {
   endCursor: string;
 }
 
+export interface Settings {
+  repo: string;
+  branch?: string;
+  cron?: string;
+}
+
 export interface StackStatus {
   stackId: string;
   name: string;
@@ -737,6 +743,147 @@ export function useFeaturesAPIGet<TData = Awaited<ReturnType<typeof featuresAPIG
 
 
 
+export const settingsAPIGet = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Settings>> => {
+    
+    
+    return axios.default.get(
+      `/api/settings`,options
+    );
+  }
+
+
+
+
+export const getSettingsAPIGetQueryKey = () => {
+    return [
+    `/api/settings`
+    ] as const;
+    }
+
+    
+export const getSettingsAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof settingsAPIGet>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof settingsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSettingsAPIGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof settingsAPIGet>>> = ({ signal }) => settingsAPIGet({ signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof settingsAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SettingsAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof settingsAPIGet>>>
+export type SettingsAPIGetQueryError = AxiosError<Error>
+
+
+export function useSettingsAPIGet<TData = Awaited<ReturnType<typeof settingsAPIGet>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof settingsAPIGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof settingsAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof settingsAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSettingsAPIGet<TData = Awaited<ReturnType<typeof settingsAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof settingsAPIGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof settingsAPIGet>>,
+          TError,
+          Awaited<ReturnType<typeof settingsAPIGet>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSettingsAPIGet<TData = Awaited<ReturnType<typeof settingsAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof settingsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSettingsAPIGet<TData = Awaited<ReturnType<typeof settingsAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof settingsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSettingsAPIGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+export const settingsAPISet = (
+    settings: Settings, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<Settings>> => {
+    
+    
+    return axios.default.post(
+      `/api/settings`,
+      settings,options
+    );
+  }
+
+
+
+export const getSettingsAPISetMutationOptions = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPISet>>, TError,{data: Settings}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof settingsAPISet>>, TError,{data: Settings}, TContext> => {
+
+const mutationKey = ['settingsAPISet'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof settingsAPISet>>, {data: Settings}> = (props) => {
+          const {data} = props ?? {};
+
+          return  settingsAPISet(data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SettingsAPISetMutationResult = NonNullable<Awaited<ReturnType<typeof settingsAPISet>>>
+    export type SettingsAPISetMutationBody = Settings
+    export type SettingsAPISetMutationError = AxiosError<Error>
+
+    export const useSettingsAPISet = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPISet>>, TError,{data: Settings}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof settingsAPISet>>,
+        TError,
+        {data: Settings},
+        TContext
+      > => {
+
+      const mutationOptions = getSettingsAPISetMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
 export const statsAPIGet = (
     days: number, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<Stats>> => {

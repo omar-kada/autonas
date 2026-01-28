@@ -255,3 +255,44 @@ func TestGetNext_ImmediateExecution(t *testing.T) {
 	next := scheduler.GetNext()
 	assert.Zero(t, next, "Expected zero time for immediate execution")
 }
+
+func TestReSchedule(t *testing.T) {
+	configStore := createTestConfigStore(t)
+	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
+
+	// Set up test config
+	testConfig := models.Config{Settings: models.Settings{CronPeriod: ""}}
+	err := configStore.Update(testConfig)
+	assert.NoError(t, err)
+
+	// Create a channel to signal when the function is called
+	fnCalled := make(chan bool, 1)
+
+	// Schedule the function
+	c, err := scheduler.Schedule(func() {
+		fnCalled <- true
+	})
+	assert.Error(t, err)
+	assert.Nil(t, c, "nothing should be scheduled")
+
+	// Update the config
+	testConfig = models.Config{Settings: models.Settings{CronPeriod: "@every 1s"}}
+	err = configStore.Update(testConfig)
+	assert.NoError(t, err)
+
+	// ReSchedule the function
+	c, err = scheduler.ReSchedule()
+	assert.NoError(t, err)
+	assert.NotNil(t, c, "Expected non-nil cron after rescheduling")
+
+	// Wait for the function to be called
+	select {
+	case <-fnCalled:
+		// Function was called again
+	case <-time.After(2 * time.Second):
+		t.Error("Function was not called again within expected time")
+	}
+
+	// Stop the cron
+	c.Stop()
+}

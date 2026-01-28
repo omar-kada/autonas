@@ -84,11 +84,11 @@ model Stats {
   health: ContainerHealth;
 }
 
-// model Settings {
-//   repo: string;
-//   branch: string;
-//   cron: string;
-// }
+model Settings {
+  repo: string;
+  branch?: string;
+  cron?: string;
+}
 
 model Config {
   globalVariables: Record<string>;
@@ -132,12 +132,12 @@ interface DeployementAPI {
   @post sync(): DeploymentWithDetails | Error;
 }
 
-// @route("/settings")
-// @tag("Settings")
-// interface SettingsAPI {
-//   @get get(): Settings | Error;
-//   @post set(@body settings: Settings): Settings | Error;
-// }
+@route("/settings")
+@tag("Settings")
+interface SettingsAPI {
+  @get get(): Settings | Error;
+  @post set(@body settings: Settings): Settings | Error;
+}
 
 @route("/config")
 @tag("Config")

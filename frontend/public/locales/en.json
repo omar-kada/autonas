@@ -14,7 +14,6 @@
     "NO_DEPLOYMENTS_DESCRIPTION": "Get started by pushing a configuration and synchronizing.",
     "SELECT_DEPLOYMENT_FOR_DETAILS": "Select deployment for details"
   },
-  "SETTINGS": "Settings",
   "CONFIGURATION": {
     "CONFIGURATION": "Configuration",
     "DISABLED_TITLE": "Configuration is disabled",
@@ -33,9 +32,24 @@
       "SERVICE_NAME_REQUIRED": "Service name is required"
     }
   },
+  "SETTINGS": {
+    "SETTINGS": "Settings",
+    "DISABLED_TITLE": "Settings are disabled",
+    "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AUTONAS_EDIT_SETTINGS' to 'true'",
+    "FORM": {
+      "REPO": "Repository",
+      "REPO_PLACEHOLDER": "https://github.com/omar-kada/autonas-config",
+      "BRANCH": "Branch",
+      "BRANCH_PLACEHOLDER": "main",
+      "CRON": "Cron period",
+      "CRON_PLACEHOLDER": "Autosync is disabled when empty",
+      "REPO_REQUIRED": "Repository is required"
+    }
+  },
   "LOGS": "Logs",
   "ACTION": {
     "BACK": "Back",
+    "CLOSE": "Close",
     "SAVE": "Save",
     "RESET": "Reset",
     "TOGGLE_THEME": "Toggle Theme",
@@ -68,6 +82,7 @@
     "LOAD_STATS_ERROR": "Error while loading stats",
     "LOAD_STATUS_ERROR": "Error while loading status",
     "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
+    "LOAD_SETTINGS_ERROR": "Error while loading settings",
     "COPIED": "Copied"
   }
 }

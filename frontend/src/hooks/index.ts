@@ -4,6 +4,7 @@ export * from './use-deployments';
 export * from './use-diff';
 export * from './use-features';
 export * from './use-mobile';
+export * from './use-settings';
 export * from './use-stats';
 export * from './use-status';
 export * from './use-sync';

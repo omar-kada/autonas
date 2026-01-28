@@ -97,6 +97,45 @@ func TestUpdateConfig(t *testing.T) {
 		}
 	})
 
+	t.Run("on config update callback", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		filePath := filepath.Join(tmpDir, "config.yaml")
+		store := NewConfigStore(filePath)
+
+		// Initial config
+		initialCfg := models.Config{
+			Environment: models.Environment{
+				"AUTONAS_HOST": "localhost",
+			},
+			Services: map[string]models.ServiceConfig{},
+		}
+		err := store.Update(initialCfg)
+		assert.NoError(t, err)
+
+		// Set up the callback
+		var called bool
+		var oldCfg, newCfg models.Config
+		store.SetOnChange(func(oldC, newC models.Config) {
+			called = true
+			oldCfg = oldC
+			newCfg = newC
+		})
+
+		// Update the config
+		updatedCfg := models.Config{
+			Environment: models.Environment{
+				"AUTONAS_HOST": "new-host",
+			},
+		}
+		err = store.Update(updatedCfg)
+		assert.NoError(t, err)
+
+		// Verify the callback was called
+		assert.True(t, called)
+		assert.Equal(t, initialCfg, oldCfg)
+		assert.Equal(t, updatedCfg, newCfg)
+	})
+
 	t.Run("file write error", func(t *testing.T) {
 		// Create a directory that we can't write to
 		tmpDir := t.TempDir()
@@ -106,6 +145,10 @@ func TestUpdateConfig(t *testing.T) {
 
 		filePath := filepath.Join(readOnlyDir, "config.yaml")
 		store := NewConfigStore(filePath)
+		called := false
+		store.SetOnChange(func(_, _ models.Config) {
+			called = true
+		})
 
 		input := models.Config{
 			Environment: models.Environment{
@@ -115,6 +158,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		err = store.Update(input)
 		assert.Error(t, err)
+		assert.False(t, called)
 	})
 }
 
