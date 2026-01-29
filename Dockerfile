@@ -59,7 +59,10 @@ COPY --from=frontend-builder /app/dist /app/frontend/dist
 RUN chmod -R 744 /app
 
 ENV AUTONAS_WORKING_DIR="/data"
-EXPOSE 8080
+EXPOSE 5005
 
 # Start the application
 CMD ["sh", "-c", "/app/autonas run"]
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5005/ || exit 1

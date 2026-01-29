@@ -68,7 +68,7 @@ func (run *runCommand) doRun() error {
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)
 	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
-		slog.Info("checking if cron changed", "oldCron", oldCfg.Settings.CronPeriod, "newCron", cfg.Settings.CronPeriod)
+		slog.Debug("checking if cron changed", "oldCron", oldCfg.Settings.CronPeriod, "newCron", cfg.Settings.CronPeriod)
 		if oldCfg.Settings.CronPeriod != cfg.Settings.CronPeriod {
 			scheduler.ReSchedule()
 		}
