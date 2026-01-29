@@ -158,9 +158,11 @@ type PageInfo struct {
 
 // Settings defines model for Settings.
 type Settings struct {
-	Branch *string `json:"branch,omitempty"`
-	Cron   *string `json:"cron,omitempty"`
-	Repo   string  `json:"repo"`
+	Branch   *string `json:"branch,omitempty"`
+	Cron     *string `json:"cron,omitempty"`
+	Repo     string  `json:"repo"`
+	Token    *string `json:"token,omitempty"`
+	Username *string `json:"username,omitempty"`
 }
 
 // StackStatus defines model for StackStatus.

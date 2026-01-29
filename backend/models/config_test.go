@@ -2,6 +2,7 @@ package models
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/elliotchance/orderedmap/v3"
@@ -47,4 +48,40 @@ func TestGetEnabledServices_FiltersCorrectly(t *testing.T) {
 
 	want := []string{"svc"}
 	assert.EqualValues(t, want, cfg.GetEnabledServices())
+}
+
+func TestObfuscateToken(t *testing.T) {
+	tests := []struct {
+		name     string
+		token    string
+		expected string
+	}{
+		{"Empty token", "", ""},
+		{"Short token", "123", strings.Repeat("*", 30)},
+		{"Long token", "12345678901234567890", strings.Repeat("*", 25) + "67890"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, ObfuscateToken(tt.token))
+		})
+	}
+}
+
+func TestIsObfuscated(t *testing.T) {
+	tests := []struct {
+		name     string
+		token    string
+		expected bool
+	}{
+		{"Obfuscated token", "*****12345", true},
+		{"Not obfuscated", "1234567890", false},
+		{"Empty token", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsObfuscated(tt.token))
+		})
+	}
 }

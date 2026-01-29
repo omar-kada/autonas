@@ -441,9 +441,11 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 	h := NewHandler(store, store, m)
 
 	settings := models.Settings{
-		Repo:       "test-repo",
-		Branch:     "main",
-		CronPeriod: "0 0 * * *",
+		Repo:     "test-repo",
+		Branch:   "main",
+		Cron:     "0 0 * * *",
+		Username: "user",
+		Token:    "123456789123456789",
 	}
 	store.On("Get").Return(models.Config{Settings: settings}, nil)
 
@@ -455,6 +457,8 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 		assert.Equal(t, "test-repo", r.Repo)
 		assert.Equal(t, "main", *r.Branch)
 		assert.Equal(t, "0 0 * * *", *r.Cron)
+		assert.Equal(t, "user", *r.Username)
+		assert.Equal(t, "*************************56789", *r.Token)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
@@ -491,15 +495,19 @@ func TestSettingsAPISet_Success(t *testing.T) {
 			"service1": {"key1": "value1"},
 		},
 		Settings: models.Settings{
-			Repo:       "old-repo",
-			Branch:     "old-branch",
-			CronPeriod: "old-cron",
+			Repo:     "old-repo",
+			Branch:   "old-branch",
+			Cron:     "old-cron",
+			Token:    "123456789",
+			Username: "old-user",
 		},
 	}
 	newSettings := api.Settings{
-		Repo:   "new-repo",
-		Branch: ptr("new-branch"),
-		Cron:   ptr("new-cron"),
+		Repo:     "new-repo",
+		Branch:   ptr("new-branch"),
+		Cron:     ptr("new-cron"),
+		Username: ptr("new-user"),
+		Token:    ptr("********************"),
 	}
 
 	store.On("Get").Return(oldConfig, nil)
@@ -508,9 +516,11 @@ func TestSettingsAPISet_Success(t *testing.T) {
 		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
 		assert.Equal(t, oldConfig.Services, newCfg.Services)
 		assert.Equal(t, models.Settings{
-			Repo:       newSettings.Repo,
-			Branch:     *newSettings.Branch,
-			CronPeriod: *newSettings.Cron,
+			Repo:     newSettings.Repo,
+			Branch:   *newSettings.Branch,
+			Cron:     *newSettings.Cron,
+			Username: *newSettings.Username,
+			Token:    oldConfig.Settings.Token,
 		}, newCfg.Settings)
 		return true
 	})).Return(nil)
@@ -524,6 +534,58 @@ func TestSettingsAPISet_Success(t *testing.T) {
 		assert.Equal(t, "new-repo", r.Repo)
 		assert.Equal(t, "new-branch", *r.Branch)
 		assert.Equal(t, "new-cron", *r.Cron)
+		assert.Equal(t, "new-user", *r.Username)
+		assert.Equal(t, "******************************", *r.Token)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	store.AssertExpectations(t)
+}
+
+func TestSettingsAPISet_UpdateToken(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, store, m)
+	h.features.EditSettings = true
+
+	oldConfig := models.Config{
+		Environment: models.Environment{},
+		Services:    map[string]models.ServiceConfig{},
+		Settings: models.Settings{
+			Repo:     "old-repo",
+			Token:    "123456789",
+			Username: "old-user",
+		},
+	}
+	newSettings := api.Settings{
+		Repo:     "new-repo",
+		Username: ptr("new-user"),
+		Token:    ptr("123456789123456789"),
+	}
+
+	store.On("Get").Return(oldConfig, nil)
+	store.On("Update", mock.MatchedBy(func(newCfg models.Config) bool {
+		// Check that only settings are updated
+		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
+		assert.Equal(t, oldConfig.Services, newCfg.Services)
+		assert.Equal(t, models.Settings{
+			Repo:     newSettings.Repo,
+			Username: *newSettings.Username,
+			Token:    *newSettings.Token,
+		}, newCfg.Settings)
+		return true
+	})).Return(nil)
+
+	req := api.SettingsAPISetRequestObject{Body: &newSettings}
+	resp, err := h.SettingsAPISet(context.Background(), req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.SettingsAPISet200JSONResponse:
+		assert.Equal(t, "new-repo", r.Repo)
+		assert.Equal(t, "new-user", *r.Username)
+		assert.Equal(t, "*************************56789", *r.Token)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
@@ -538,9 +600,11 @@ func TestSettingsAPISet_Disabled(t *testing.T) {
 	h.features.EditSettings = false
 
 	settings := api.Settings{
-		Repo:   "test-repo",
-		Branch: ptr("main"),
-		Cron:   ptr("0 0 * * *"),
+		Repo:     "test-repo",
+		Branch:   ptr("main"),
+		Cron:     ptr("0 0 * * *"),
+		Token:    ptr(""),
+		Username: ptr("user"),
 	}
 
 	req := api.SettingsAPISetRequestObject{Body: &settings}
@@ -563,9 +627,11 @@ func TestSettingsAPISet_Error(t *testing.T) {
 	h.features.EditSettings = true
 
 	settings := api.Settings{
-		Repo:   "test-repo",
-		Branch: ptr("main"),
-		Cron:   ptr("0 0 * * *"),
+		Repo:     "test-repo",
+		Branch:   ptr("main"),
+		Cron:     ptr("0 0 * * *"),
+		Token:    ptr(""),
+		Username: ptr("user"),
 	}
 
 	errSettings := errors.New("settings error")

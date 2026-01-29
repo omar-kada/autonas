@@ -5,19 +5,22 @@ import (
 	"omar-kada/autonas/models"
 )
 
-// SettingsMapper maps models.Config to api.Config
+// SettingsMapper maps models.Settings to api.Settings
 type SettingsMapper struct{}
 
-// Map converts a models.Config to an api.Config
+// Map converts a models.Settings to an api.Settings
 func (SettingsMapper) Map(settings models.Settings) api.Settings {
+	token := settings.GetObfuscateToken()
 	return api.Settings{
-		Branch: &settings.Branch,
-		Cron:   &settings.CronPeriod,
-		Repo:   settings.Repo,
+		Repo:     settings.Repo,
+		Branch:   &settings.Branch,
+		Cron:     &settings.Cron,
+		Token:    &token,
+		Username: &settings.Username,
 	}
 }
 
-// UnMap transforms back from api.Config to models.Config
+// UnMap transforms back from api.Settings to models.Settings
 func (SettingsMapper) UnMap(settings api.Settings) models.Settings {
 	res := models.Settings{
 		Repo: settings.Repo,
@@ -26,7 +29,13 @@ func (SettingsMapper) UnMap(settings api.Settings) models.Settings {
 		res.Branch = *settings.Branch
 	}
 	if settings.Cron != nil {
-		res.CronPeriod = *settings.Cron
+		res.Cron = *settings.Cron
+	}
+	if settings.Token != nil {
+		res.Token = *settings.Token
+	}
+	if settings.Username != nil {
+		res.Username = *settings.Username
 	}
 	return res
 }

@@ -21,7 +21,7 @@ func TestConfigMapper_Map(t *testing.T) {
 				Settings: models.Settings{
 					Repo:       "https://github.com/example/repo",
 					Branch:     "main",
-					CronPeriod: "0 0 * * *",
+					Cron: "0 0 * * *",
 				},
 				Environment: models.Environment{
 					"key1": "value1",

@@ -14,9 +14,11 @@ const DefaultBranch = "main"
 
 // Settings represents configuration of autonas.
 type Settings struct {
-	Repo       string `mapstructure:"repo"`
-	Branch     string `mapstructure:"branch"`
-	CronPeriod string `mapstructure:"cron"`
+	Repo     string `mapstructure:"repo"`
+	Branch   string `mapstructure:"branch"`
+	Username string `mapstructure:"username"`
+	Token    string `mapstructure:"token"`
+	Cron     string `mapstructure:"cron"`
 }
 
 // Environment represents global environment variables.
@@ -59,4 +61,26 @@ func (cfg Config) GetBranch() string {
 		return cfg.Settings.Branch
 	}
 	return DefaultBranch
+}
+
+// GetObfuscateToken returns an obfuscated token
+func (settings Settings) GetObfuscateToken() string {
+	return ObfuscateToken(settings.Token)
+}
+
+// ObfuscateToken replaces most of the token with asterisks to hide sensitive information
+func ObfuscateToken(token string) string {
+	if token == "" {
+		return token
+	}
+	length := len(token)
+	if length < 10 {
+		return strings.Repeat("*", 30)
+	}
+	return strings.Repeat("*", 25) + token[length-5:length]
+}
+
+// IsObfuscated checks if the token is obfuscated by checking if it starts with "*****".
+func IsObfuscated(token string) bool {
+	return strings.HasPrefix(token, "*****")
 }

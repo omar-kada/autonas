@@ -12,6 +12,9 @@ import (
 func TestSettingsMapper_Map(t *testing.T) {
 	main := "main"
 	cron := "0 0 * * *"
+	username := "user"
+	token := "123456789123456789"
+	obfuscatedToken := models.ObfuscateToken(token)
 	empty := ""
 	cases := []struct {
 		name string
@@ -21,27 +24,31 @@ func TestSettingsMapper_Map(t *testing.T) {
 		{
 			name: "basic",
 			in: models.Settings{
-				Repo:       "https://github.com/example/repo",
-				Branch:     "main",
-				CronPeriod: "0 0 * * *",
+				Repo:     "https://github.com/example/repo",
+				Branch:   main,
+				Cron:     cron,
+				Username: username,
+				Token:    token,
 			},
 			want: api.Settings{
-				Repo:   "https://github.com/example/repo",
-				Branch: &main,
-				Cron:   &cron,
+				Repo:     "https://github.com/example/repo",
+				Branch:   &main,
+				Cron:     &cron,
+				Token:    &obfuscatedToken,
+				Username: &username,
 			},
 		},
 		{
 			name: "empty",
 			in: models.Settings{
-				Repo:       "",
-				Branch:     empty,
-				CronPeriod: empty,
+				Repo: "",
 			},
 			want: api.Settings{
-				Repo:   "",
-				Branch: &empty,
-				Cron:   &empty,
+				Repo:     "",
+				Branch:   &empty,
+				Cron:     &empty,
+				Token:    &empty,
+				Username: &empty,
 			},
 		},
 	}
@@ -73,9 +80,9 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Cron:   &cron,
 			},
 			want: models.Settings{
-				Repo:       repo,
-				Branch:     branch,
-				CronPeriod: cron,
+				Repo:   repo,
+				Branch: branch,
+				Cron:   cron,
 			},
 		},
 		{
@@ -86,9 +93,9 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Repo:   "",
 			},
 			want: models.Settings{
-				Repo:       "",
-				Branch:     "",
-				CronPeriod: "",
+				Repo:   "",
+				Branch: "",
+				Cron:   "",
 			},
 		},
 	}
