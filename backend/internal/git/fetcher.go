@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	gitObject "github.com/go-git/go-git/v6/plumbing/object"
+	"github.com/go-git/go-git/v6/plumbing/transport/http"
 )
 
 // NoErrAlreadyUpToDate is returned when the repository is already up to date.
@@ -42,6 +43,7 @@ type fetcher struct {
 	addPermissions os.FileMode
 	repoPath       string
 	cfg            models.Config
+	auth           *http.BasicAuth
 }
 
 // NewFetcher creates a new Syncer and returns it
@@ -58,6 +60,10 @@ func NewFetcher(addPermissions os.FileMode, repoPath string) Fetcher {
 func (f *fetcher) WithConfig(cfg models.Config) Fetcher {
 	newFetcher := NewFetcher(f.addPermissions, f.repoPath).(*fetcher)
 	newFetcher.cfg = cfg
+	newFetcher.auth = &http.BasicAuth{
+		Username: cfg.Settings.Username,
+		Password: cfg.Settings.Token,
+	}
 	return newFetcher
 }
 
@@ -111,6 +117,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 			ReferenceName: plumbing.NewBranchReferenceName(f.cfg.GetBranch()),
 			SingleBranch:  true,
 			Progress:      events.NewSlogWriter(slog.LevelInfo),
+			Auth:          f.auth,
 		})
 	} else {
 		repo, err = git.PlainOpen(f.repoPath)
@@ -118,7 +125,13 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	if err != nil {
 		return repo, fmt.Errorf("error while opening repo : %w, %v", err, *f)
 	}
-	repo.Fetch(&git.FetchOptions{})
+	err = repo.Fetch(&git.FetchOptions{
+		Auth: f.auth,
+	})
+
+	if err != nil && err != NoErrAlreadyUpToDate {
+		return repo, fmt.Errorf("error while fetching repo : %w, %v", err, *f)
+	}
 
 	if branch != "" {
 		err = f.checkoutOrCreate(repo, branch)

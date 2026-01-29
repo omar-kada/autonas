@@ -88,6 +88,8 @@ model Settings {
   repo: string;
   branch?: string;
   cron?: string;
+  username?: string;
+  token?: string;
 }
 
 model Config {

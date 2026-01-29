@@ -5,6 +5,8 @@ export const formSchema = z.object({
   repo: z.string().min(1, { message: 'SETTINGS.FORM.REPO_REQUIRED' }),
   branch: z.string().optional(),
   cron: z.string().optional(),
+  username: z.string().optional(),
+  token: z.string().optional(),
 });
 export type FormValues = z.infer<typeof formSchema>;
 

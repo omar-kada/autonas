@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { ErrorAlert } from '../view';
 import { SettingsForm } from './settings-form';
@@ -48,7 +49,10 @@ export function SettingsSheet({ children }: { children: ReactNode }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent className="w-9/10 md:w-none">
+      <SheetContent
+        className="w-full md:w-none flex flex-col h-full"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle>{t('SETTINGS.SETTINGS')}</SheetTitle>
           {disabled && (
@@ -57,15 +61,17 @@ export function SettingsSheet({ children }: { children: ReactNode }) {
             </SheetDescription>
           )}
         </SheetHeader>
-        <div className="grid flex-1 auto-rows-min gap-6 px-4">
-          {mergedError && (
-            <ErrorAlert
-              title={t('ALERT.LOAD_SETTINGS_ERROR')}
-              details={mergedError.message}
-            ></ErrorAlert>
-          )}
-          {isPending ? <SettingsSkeleton /> : settings && <SettingsForm form={form} />}
-        </div>
+        <ScrollArea className="h-1 flex-1">
+          <div className=" grid auto-rows-min gap-6 px-4 mb-25">
+            {mergedError && (
+              <ErrorAlert
+                title={t('ALERT.LOAD_SETTINGS_ERROR')}
+                details={mergedError.message}
+              ></ErrorAlert>
+            )}
+            {isPending ? <SettingsSkeleton /> : settings && <SettingsForm form={form} />}
+          </div>
+        </ScrollArea>
         <SheetFooter>
           <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
             {t('ACTION.SAVE')}

@@ -49,15 +49,15 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg.Settings.CronPeriod == "1" {
+	if cfg.Settings.Cron == "1" {
 		slog.Debug("running job for a single time")
 		fn()
 		return nil, nil
-	} else if cfg.Settings.CronPeriod != "" && cfg.Settings.CronPeriod != "0" {
+	} else if cfg.Settings.Cron != "" && cfg.Settings.Cron != "0" {
 
 		slog.Debug("scheduling a new cron job")
 		c := cron.New()
-		_, err := c.AddFunc(cfg.Settings.CronPeriod, fn)
+		_, err := c.AddFunc(cfg.Settings.Cron, fn)
 		if err != nil {
 			return nil, err
 		}

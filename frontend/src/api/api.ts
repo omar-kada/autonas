@@ -160,6 +160,8 @@ export interface Settings {
   repo: string;
   branch?: string;
   cron?: string;
+  username?: string;
+  token?: string;
 }
 
 export interface StackStatus {

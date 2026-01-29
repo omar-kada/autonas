@@ -16,7 +16,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			rec.status = http.StatusOK
 		}
 		dur := time.Since(start)
-		slog.Info("[HTTP] request",
+		slog.Debug("[HTTP] request",
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", rec.status,

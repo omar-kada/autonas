@@ -212,10 +212,14 @@ func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestO
 			StatusCode: http.StatusMethodNotAllowed,
 		}, nil
 	}
-	settings := h.settingsMapper.UnMap(api.Settings(*r.Body))
 	oldConfig, err := h.configStore.Get()
 	if err != nil {
 		return nil, err
+	}
+	settings := h.settingsMapper.UnMap(api.Settings(*r.Body))
+
+	if models.IsObfuscated(settings.Token) {
+		settings.Token = oldConfig.Settings.Token // keep old token when obfuscated
 	}
 	oldConfig.Settings = settings
 	err = h.configStore.Update(oldConfig)

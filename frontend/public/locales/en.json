@@ -37,13 +37,20 @@
     "DISABLED_TITLE": "Settings are disabled",
     "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AUTONAS_EDIT_SETTINGS' to 'true'",
     "FORM": {
-      "REPO": "Repository",
-      "REPO_PLACEHOLDER": "https://github.com/omar-kada/autonas-config",
-      "BRANCH": "Branch",
-      "BRANCH_PLACEHOLDER": "main",
-      "CRON": "Cron period",
-      "CRON_PLACEHOLDER": "Autosync is disabled when empty",
-      "REPO_REQUIRED": "Repository is required"
+      "GIT": "Git",
+      "repo": "Repository",
+      "repo_PLACEHOLDER": "https://github.com/omar-kada/autonas-config",
+      "repo_REQUIRED": "Repository is required",
+      "branch": "Branch",
+      "branch_PLACEHOLDER": "main",
+      "username": "Username",
+      "username_PLACEHOLDER": "required for private repositories",
+      "token": "Token",
+      "token_PLACEHOLDER": "required for private repositories",
+      "AUTO_SYNC": "Auto sync",
+      "cron": "Cron period",
+      "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
+      "cron_PLACEHOLDER": "disabled when empty"
     }
   },
   "LOGS": "Logs",
