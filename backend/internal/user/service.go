@@ -114,7 +114,7 @@ func (a *service) Register(credentials models.Credentials) (models.Auth, error) 
 	}
 
 	user := models.User{
-		Username:      credentials.Username,
+		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
 		Auth: models.Auth{
 			Token:     token,

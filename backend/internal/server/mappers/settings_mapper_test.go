@@ -61,6 +61,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 		})
 	}
 }
+
 func TestSettingsMapper_UnMap(t *testing.T) {
 	branch := "main"
 	cron := "0 0 * * *"

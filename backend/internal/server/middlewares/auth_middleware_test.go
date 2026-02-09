@@ -189,6 +189,7 @@ func TestAuthMiddleware_UnauthorizedAccess(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	mockAuthService.AssertExpectations(t)
 }
+
 func TestAuthMiddleware_UnauthorizedEmptyToken(t *testing.T) {
 	mockAuthService := new(MockAuthService)
 

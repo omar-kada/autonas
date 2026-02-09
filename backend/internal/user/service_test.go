@@ -21,7 +21,7 @@ func TestLogin_Success(t *testing.T) {
 
 	hashedPassword, _ := hashPassword(credentials.Password)
 	mockUser := models.User{
-		Username:      credentials.Username,
+		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
 	}
 
@@ -61,7 +61,7 @@ func TestLogin_InvalidPassword(t *testing.T) {
 
 	hashedPassword, _ := hashPassword("correctpassword")
 	mockUser := models.User{
-		Username:      credentials.Username,
+		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
 	}
 

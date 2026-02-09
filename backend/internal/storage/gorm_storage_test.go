@@ -215,6 +215,7 @@ func TestUserByToken(t *testing.T) {
 	assert.Equal(t, userToAdd.Token, user.Token)
 	assert.Equal(t, userToAdd.ExpiresIn.Unix(), user.ExpiresIn.Unix())
 }
+
 func TestUserByUsername(t *testing.T) {
 	s, _ := setupStorage(t)
 
@@ -243,6 +244,7 @@ func TestUserByUsername(t *testing.T) {
 	assert.Equal(t, userToAdd.Token, user.Token)
 	assert.Equal(t, userToAdd.ExpiresIn.Unix(), user.ExpiresIn.Unix())
 }
+
 func TestUpsertUser_InsertNewUser(t *testing.T) {
 	s, _ := setupStorage(t)
 
@@ -328,6 +330,7 @@ func TestUpsertUser_InvalidUser(t *testing.T) {
 	_, err := s.UpsertUser(invalidUser)
 	assert.ErrorIs(t, err, ErrEmptyUsername)
 }
+
 func TestDeleteUserByUserName_Success(t *testing.T) {
 	s, _ := setupStorage(t)
 
