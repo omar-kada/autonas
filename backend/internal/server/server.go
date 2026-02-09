@@ -5,15 +5,14 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
+	"omar-kada/autonas/internal/server/middlewares"
 	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/internal/user"
 
 	"github.com/rs/cors"
 )
@@ -26,39 +25,23 @@ type Server interface {
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	store            storage.DeploymentStorage
+	store            storage.Storage
 	configStore      storage.ConfigStore
 	processSvc       process.Service
+	userSvc          user.Service
 	websocketHandler *WebsocketHandler
 	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.DeploymentStorage, configStore storage.ConfigStore, service process.Service) Server {
+func NewServer(store storage.Storage, configStore storage.ConfigStore, service process.Service, userService user.Service) Server {
 	return &HTTPServer{
 		store:            store,
 		configStore:      configStore,
 		processSvc:       service,
+		userSvc:          userService,
 		websocketHandler: newWebsocketHandler(store),
 	}
-}
-
-func spaHandler(w http.ResponseWriter, r *http.Request) {
-	frontDir, _ := filepath.Abs(filepath.Join("frontend", "dist"))
-	path := filepath.Join(frontDir, r.URL.Path)
-
-	absPath, err := filepath.Abs(path)
-	if err != nil || !strings.HasPrefix(absPath, frontDir) {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
-		return
-	}
-	_, err = os.Stat(absPath)
-	if os.IsNotExist(err) {
-		http.ServeFile(w, r, filepath.Join(frontDir, "index.html"))
-		return
-	}
-
-	http.FileServer(http.Dir(frontDir)).ServeHTTP(w, r)
 }
 
 // Serve initializes routes from generated api and serves on the given port
@@ -71,11 +54,12 @@ func (s *HTTPServer) Serve(port int) error {
 	mux.HandleFunc("/", spaHandler)
 
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	myHandler := NewHandler(s.store, s.configStore, s.processSvc)
+	myHandler := NewHandler(s.configStore, s.processSvc, s.userSvc)
 	strict := api.NewStrictHandler(myHandler, []api.StrictMiddlewareFunc{})
 
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(strict, mux)
+	h = middlewares.AuthMiddleware(h, s.userSvc)
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
@@ -86,8 +70,17 @@ func (s *HTTPServer) Serve(port int) error {
 
 	// Use the CORS filter as a middleware
 	h = c.Handler(h)
+
+	// api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
+	// 	BaseRouter: mux,
+	// 	Middlewares: []api.MiddlewareFunc{
+	// 		s.checkUsersMiddleware,
+	// 		c.Handler,
+	// 		loggingMiddleware,
+	// 	},
+	// })
 	s.server = &http.Server{
-		Handler:           loggingMiddleware(h),
+		Handler:           middlewares.LoggingMiddleware(h),
 		Addr:              ":" + strconv.Itoa(port),
 		ReadHeaderTimeout: 3 * time.Second,
 	}

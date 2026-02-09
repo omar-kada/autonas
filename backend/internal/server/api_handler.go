@@ -1,0 +1,293 @@
+package server
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"strconv"
+
+	"omar-kada/autonas/api"
+	"omar-kada/autonas/internal/process"
+	"omar-kada/autonas/internal/server/mappers"
+	"omar-kada/autonas/internal/server/middlewares"
+	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/models"
+)
+
+var disabledAPIError = api.Error{
+	Code:    http.StatusMethodNotAllowed,
+	Message: "DISABLED",
+}
+
+var (
+	errUserNotFound  = errors.New("user error")
+	errShouldntReach = errors.New("shouldn't be reachable")
+)
+
+// Handler implements the generated strict server interface
+type Handler struct {
+	configStore    storage.ConfigStore
+	processService process.Service
+	accountService user.AccountService
+
+	depMapper        mappers.DeploymentMapper
+	depDetailsMapper mappers.DeploymentDetailsMapper
+	diffMapper       mappers.DiffMapper
+	statusMapper     mappers.StatusMapper
+	statsMapper      mappers.StatsMapper
+	configMapper     mappers.ConfigMapper
+	settingsMapper   mappers.SettingsMapper
+	featuresMapper   mappers.FeaturesMapper
+
+	features models.Features
+}
+
+// NewHandler creates a new Handler
+func NewHandler(configStore storage.ConfigStore, processService process.Service, userService user.AccountService) *Handler {
+	diffMapper := mappers.DiffMapper{}
+	eventMapper := mappers.EventMapper{}
+
+	return &Handler{
+		configStore:      configStore,
+		processService:   processService,
+		accountService:   userService,
+		depMapper:        mappers.NewDeploymentMapper(),
+		depDetailsMapper: mappers.NewDeploymentDetailsMapper(diffMapper, eventMapper),
+		diffMapper:       diffMapper,
+		statusMapper:     mappers.StatusMapper{},
+		statsMapper:      mappers.StatsMapper{},
+		configMapper:     mappers.ConfigMapper{},
+		features:         models.LoadFeatures(),
+	}
+}
+
+// DeployementAPIList lists deployments with pagination support
+func (h *Handler) DeployementAPIList(_ context.Context, request api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
+	offset, err := validateCursorOffset(request.Params.Offset)
+	if err != nil {
+		return nil, fmt.Errorf("invalid after value")
+	}
+
+	if request.Params.Limit <= 0 {
+		return nil, fmt.Errorf("invalid first value")
+	}
+
+	deps, err := h.processService.GetDeployments(int(request.Params.Limit), offset)
+
+	return api.DeployementAPIList200JSONResponse{
+		Items:    models.ListMapper(h.depMapper.Map)(deps),
+		PageInfo: h.depMapper.MapToPageInfo(deps, int(request.Params.Limit)),
+	}, err
+}
+
+func validateCursorOffset(offsetStr *string) (uint64, error) {
+	offset := uint64(0)
+	var err error
+	if offsetStr != nil && *offsetStr != "" {
+		offset, err = strconv.ParseUint(*offsetStr, 10, 64)
+	}
+	return offset, err
+}
+
+// DeployementAPIRead retrieves details of a specific deployment
+func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
+	id, err := strconv.ParseUint(request.Id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	dep, err := h.processService.GetDeployment(id)
+	if err != nil {
+		return nil, err
+	} else if dep.ID == 0 {
+		return api.DeployementAPIReaddefaultJSONResponse{
+			Body: api.Error{
+				Code:    http.StatusNotFound,
+				Message: err.Error(),
+			},
+			StatusCode: http.StatusNotFound,
+		}, err
+	}
+
+	return api.DeployementAPIRead200JSONResponse(h.depDetailsMapper.Map(dep)), err
+}
+
+// DeployementAPISync syncs the deployment
+func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
+	dep, err := h.processService.SyncDeployment()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	return api.DeployementAPISync200JSONResponse(h.depDetailsMapper.Map(dep)), err
+}
+
+// StatusAPIGet retrieves the status of managed stacks
+func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
+	stacks, err := h.processService.GetManagedStacks()
+	if err != nil {
+		return nil, err
+	}
+
+	result := models.MapMapper[string](
+		models.ListMapper(h.statusMapper.Map),
+	)(stacks)
+
+	var response []api.StackStatus
+	for stackName, containers := range result {
+		response = append(response, api.StackStatus{
+			StackId:  stackName,
+			Name:     stackName,
+			Services: containers,
+		})
+	}
+	return api.StatusAPIGet200JSONResponse(response), nil
+}
+
+// StatsAPIGet retrieves statistics for a specified number of days
+func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObject) (api.StatsAPIGetResponseObject, error) {
+	stats, err := h.processService.GetCurrentStats(int(req.Days))
+	if err != nil {
+		return nil, err
+	}
+	return api.StatsAPIGet200JSONResponse(h.statsMapper.Map(stats)), nil
+}
+
+// DiffAPIGet retrieves the differences in files
+func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
+	fileDiffs, err := h.processService.GetDiff()
+	if err != nil {
+		return nil, err
+	}
+	return api.DiffAPIGet200JSONResponse(models.ListMapper(h.diffMapper.Map)(fileDiffs)), nil
+}
+
+// ConfigAPIGet retrieves the current configuration
+func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
+	if !h.features.DisplayConfig {
+		return api.ConfigAPIGetdefaultJSONResponse{
+			Body:       disabledAPIError,
+			StatusCode: http.StatusMethodNotAllowed,
+		}, nil
+	}
+	config, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	return api.ConfigAPIGet200JSONResponse(h.configMapper.Map(config)), nil
+}
+
+// ConfigAPISet updates the current configuration
+func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
+	if !h.features.EditConfig {
+		return api.ConfigAPISetdefaultJSONResponse{
+			Body:       disabledAPIError,
+			StatusCode: http.StatusMethodNotAllowed,
+		}, nil
+	}
+	config := h.configMapper.UnMap(api.Config(*r.Body))
+	oldConfig, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	oldConfig.Environment = config.Environment
+	oldConfig.Services = config.Services
+	err = h.configStore.Update(oldConfig)
+	if err != nil {
+		return nil, err
+	}
+	return api.ConfigAPISet200JSONResponse(h.configMapper.Map(oldConfig)), nil
+}
+
+// SettingsAPIGet retrieves the current settings
+func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
+	config, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	return api.SettingsAPIGet200JSONResponse(h.settingsMapper.Map(config.Settings)), nil
+}
+
+// SettingsAPISet updates the current settings
+func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
+	if !h.features.EditSettings {
+		return api.SettingsAPISetdefaultJSONResponse{
+			Body:       disabledAPIError,
+			StatusCode: http.StatusMethodNotAllowed,
+		}, nil
+	}
+	oldConfig, err := h.configStore.Get()
+	if err != nil {
+		return nil, err
+	}
+	settings := h.settingsMapper.UnMap(api.Settings(*r.Body))
+
+	if models.IsObfuscated(settings.Token) {
+		settings.Token = oldConfig.Settings.Token // keep old token when obfuscated
+	}
+	oldConfig.Settings = settings
+	err = h.configStore.Update(oldConfig)
+	if err != nil {
+		return nil, err
+	}
+	return api.SettingsAPISet200JSONResponse(h.settingsMapper.Map(settings)), nil
+}
+
+// FeaturesAPIGet retrieves the current features
+func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
+	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil
+}
+
+// RegisterAPIRegister registers a new user
+func (*Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
+	// should be done in the auth middleware so if we react this return an error
+	return api.RegisterAPIRegister200JSONResponse{}, errShouldntReach
+}
+
+// AuthAPILogin logs in a user
+func (*Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
+	// should be done in the auth middleware so if we react this return an error
+	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
+}
+
+// LogoutAPILogout logs out a user
+func (*Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
+	// should be done in the auth middleware so if we react this return an error
+	return api.LogoutAPILogout200JSONResponse{}, errShouldntReach
+}
+
+// RegisterAPIRegistered checks if a user is registered
+func (*Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegisteredRequestObject) (api.RegisterAPIRegisteredResponseObject, error) {
+	// should be done in the auth middleware so if we react this return an error
+	return api.RegisterAPIRegistereddefaultJSONResponse{}, errShouldntReach
+}
+
+// UserAPIGet returns the authenticated user's information
+func (*Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
+	user, exists := middlewares.UserFromContext(ctx)
+	if !exists {
+		return nil, nil
+	}
+
+	return api.UserAPIGet200JSONResponse{
+		Username: user.Username,
+	}, nil
+}
+
+// UserAPIDelete deletes the authenticated user
+func (h *Handler) UserAPIDelete(ctx context.Context, _ api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
+	user, exists := middlewares.UserFromContext(ctx)
+	if !exists {
+		return api.UserAPIDeletedefaultJSONResponse{}, errUserNotFound
+	}
+	ok, err := h.accountService.DeleteUser(user.Username)
+	if err != nil || !ok {
+		return api.UserAPIDelete200JSONResponse{
+			Success: false,
+		}, fmt.Errorf("failed to delete user: %w", err)
+	}
+	return api.UserAPIDelete200JSONResponse{
+		Success: true,
+	}, nil
+}

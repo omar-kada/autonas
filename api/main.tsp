@@ -7,6 +7,7 @@ using Versioning;
 @service(#{ title: "AutoNAS API" })
 @versioned(Versions)
 @route("/api")
+@useAuth(BearerAuth /*| OpenIdConnectAuth<"">*/)
 namespace DeploymentService;
 enum Versions {
   v1: "1.0",
@@ -118,6 +119,50 @@ model PageInfo {
 model Error {
   code: int32;
   message: string;
+}
+
+@route("/register")
+@tag("Register")
+@useAuth(NoAuth)
+interface RegisterAPI {
+  @get registered(): {
+    registered: boolean;
+  } | Error;
+  @post register(@body user: Credentials): BooleanResponse | Error;
+}
+
+model User {
+  username: string;
+}
+
+model Credentials {
+  username: string;
+  password: string;
+}
+
+model BooleanResponse {
+  success: boolean;
+}
+
+@route("/login")
+@tag("Login")
+@useAuth(NoAuth)
+interface AuthAPI {
+  @post login(@body credentials: Credentials): BooleanResponse | Error;
+}
+
+@route("/logout")
+@tag("Logout")
+interface LogoutAPI {
+  @post logout(): BooleanResponse | Error;
+}
+
+@route("/user")
+@tag("user")
+interface UserAPI {
+  @get get(): User | Error;
+  //@post update(user: User): BooleanResponse | Error;
+  @delete delete(): BooleanResponse | Error;
 }
 
 @route("/deployment")

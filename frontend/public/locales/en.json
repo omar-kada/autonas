@@ -6,6 +6,28 @@
     "NO_STACKS_FOUND": "No stacks found",
     "NO_STACKS_FOUND_DESCRIPTION": "Check the deployment page for more information"
   },
+  "REGISTER": {
+    "REGISTER": "Register",
+    "FORM": {
+      "TITLE": "Create a user",
+      "username": "Username",
+      "username_MIN_3": "Username should be at least 3 characters",
+      "password": "Password",
+      "password_MIN_12": "Password should be at least 12 characters",
+      "SUBMIT": "Create"
+    }
+  },
+  "LOGIN": {
+    "LOGIN": "Login",
+    "FORM": {
+      "TITLE": "Login",
+      "username": "Username",
+      "username_MIN_3": "Username should be at least 3 characters",
+      "password": "Password",
+      "password_MIN_12": "Password should be at least 12 characters",
+      "SUBMIT": "Login"
+    }
+  },
   "DEPLOYMENTS": {
     "DEPLOYMENTS": "Deployments",
     "EVENTS_LOG": "Events log",
@@ -90,6 +112,8 @@
     "LOAD_STATUS_ERROR": "Error while loading status",
     "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
     "LOAD_SETTINGS_ERROR": "Error while loading settings",
-    "COPIED": "Copied"
+    "COPIED": "Copied",
+    "LOGIN_ERROR": "Login error",
+    "USER_CREATION_ERROR": "register error"
   }
 }
