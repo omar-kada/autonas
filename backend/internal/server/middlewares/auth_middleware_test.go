@@ -81,7 +81,7 @@ func TestAuthMiddleware_RegisterGet(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/register", nil)
+	req := httptest.NewRequest("GET", "/api/register", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -127,7 +127,7 @@ func TestAuthMiddleware_Logout(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), mockAuthService)
 
-	req := httptest.NewRequest("POST", "/api/logout", nil)
+	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  "token",
 		Value: "testtoken",
@@ -155,7 +155,7 @@ func TestAuthMiddleware_AuthorizedAccess(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/protected", nil)
+	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  "token",
 		Value: "testtoken",
@@ -177,7 +177,7 @@ func TestAuthMiddleware_UnauthorizedAccess(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/protected", nil)
+	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  "token",
 		Value: "invalidtoken",
@@ -196,7 +196,7 @@ func TestAuthMiddleware_UnauthorizedEmptyToken(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/protected", nil)
+	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -212,7 +212,7 @@ func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/user", nil)
+	req := httptest.NewRequest("GET", "/api/user", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -287,7 +287,7 @@ func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/login", nil)
+	req := httptest.NewRequest("GET", "/api/login", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -362,7 +362,7 @@ func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), mockAuthService)
 
-	req := httptest.NewRequest("GET", "/api/logout", nil)
+	req := httptest.NewRequest("GET", "/api/logout", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -378,7 +378,7 @@ func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), mockAuthService)
 
-	req := httptest.NewRequest("POST", "/api/logout", nil)
+	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -396,7 +396,7 @@ func TestAuthMiddleware_LogoutFailure(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), mockAuthService)
 
-	req := httptest.NewRequest("POST", "/api/logout", nil)
+	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  "token",
 		Value: "testtoken",

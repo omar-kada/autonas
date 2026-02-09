@@ -47,7 +47,7 @@ export function RegisterForm({
     <form className={cn('space-y-4', className)} onSubmit={handleSubmit(onSubmit)}>
       <FieldSet>
         <Controller
-          name={`username`}
+          name="username"
           control={control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
@@ -68,7 +68,7 @@ export function RegisterForm({
         />
 
         <Controller
-          name={`password`}
+          name="password"
           control={control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>

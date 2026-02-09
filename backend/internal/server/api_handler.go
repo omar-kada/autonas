@@ -240,31 +240,31 @@ func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestO
 }
 
 // RegisterAPIRegister registers a new user
-func (h *Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
+func (*Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
 	return api.RegisterAPIRegister200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPILogin logs in a user
-func (h *Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
+func (*Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
 	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
 }
 
 // LogoutAPILogout logs out a user
-func (h *Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
+func (*Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
 	return api.LogoutAPILogout200JSONResponse{}, errShouldntReach
 }
 
 // RegisterAPIRegistered checks if a user is registered
-func (h *Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegisteredRequestObject) (api.RegisterAPIRegisteredResponseObject, error) {
+func (*Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegisteredRequestObject) (api.RegisterAPIRegisteredResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
 	return api.RegisterAPIRegistereddefaultJSONResponse{}, errShouldntReach
 }
 
 // UserAPIGet returns the authenticated user's information
-func (h *Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
+func (*Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
 	user, exists := middlewares.UserFromContext(ctx)
 	if !exists {
 		return nil, nil
