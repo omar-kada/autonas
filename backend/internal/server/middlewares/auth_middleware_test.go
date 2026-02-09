@@ -189,6 +189,21 @@ func TestAuthMiddleware_UnauthorizedAccess(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	mockAuthService.AssertExpectations(t)
 }
+func TestAuthMiddleware_UnauthorizedEmptyToken(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}), mockAuthService)
+
+	req := httptest.NewRequest("GET", "/api/protected", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
 
 func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
 	mockAuthService := new(MockAuthService)
@@ -203,5 +218,192 @@ func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_RegisterInvalidRequestBody(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	reqBody := `{"username":"testuser"}` // missing password
+	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_RegisterMissingCredentials(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	reqBody := `{"username":"","password":""}` // empty username and password
+	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_RegisterFailure(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	mockAuthService.On("Register", models.Credentials{
+		Username: "testuser",
+		Password: "testpass",
+	}).Return(models.Auth{}, errors.New("registration failed"))
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	reqBody := `{"username":"testuser","password":"testpass"}`
+	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	req := httptest.NewRequest("GET", "/api/login", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LoginInvalidRequestBody(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	reqBody := `{"username":"testuser"}` // missing password
+	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LoginMissingCredentials(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	reqBody := `{"username":"","password":""}` // empty username and password
+	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LoginFailure(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	mockAuthService.On("Login", models.Credentials{
+		Username: "testuser",
+		Password: "testpass",
+	}).Return(models.Auth{}, errors.New("login failed"))
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	reqBody := `{"username":"testuser","password":"testpass"}`
+	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	req := httptest.NewRequest("GET", "/api/logout", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	req := httptest.NewRequest("POST", "/api/logout", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	mockAuthService.AssertExpectations(t)
+}
+
+func TestAuthMiddleware_LogoutFailure(t *testing.T) {
+	mockAuthService := new(MockAuthService)
+
+	mockAuthService.On("Logout", "testtoken").Return(errors.New("logout failed"))
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), mockAuthService)
+
+	req := httptest.NewRequest("POST", "/api/logout", nil)
+	req.AddCookie(&http.Cookie{
+		Name:  "token",
+		Value: "testtoken",
+	})
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 	mockAuthService.AssertExpectations(t)
 }

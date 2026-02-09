@@ -61,11 +61,12 @@ func TestSettingsMapper_Map(t *testing.T) {
 		})
 	}
 }
-
 func TestSettingsMapper_UnMap(t *testing.T) {
 	branch := "main"
 	cron := "0 0 * * *"
 	repo := "https://github.com/example/repo"
+	username := "user"
+	token := "123456789123456789"
 
 	cases := []struct {
 		name string
@@ -75,27 +76,35 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 		{
 			name: "basic",
 			in: api.Settings{
-				Repo:   repo,
-				Branch: &branch,
-				Cron:   &cron,
+				Repo:     repo,
+				Branch:   &branch,
+				Cron:     &cron,
+				Username: &username,
+				Token:    &token,
 			},
 			want: models.Settings{
-				Repo:   repo,
-				Branch: branch,
-				Cron:   cron,
+				Repo:     repo,
+				Branch:   branch,
+				Cron:     cron,
+				Username: username,
+				Token:    token,
 			},
 		},
 		{
 			name: "empty",
 			in: api.Settings{
-				Branch: nil,
-				Cron:   nil,
-				Repo:   "",
+				Branch:   nil,
+				Cron:     nil,
+				Repo:     "",
+				Username: nil,
+				Token:    nil,
 			},
 			want: models.Settings{
-				Repo:   "",
-				Branch: "",
-				Cron:   "",
+				Repo:     "",
+				Branch:   "",
+				Cron:     "",
+				Username: "",
+				Token:    "",
 			},
 		},
 	}

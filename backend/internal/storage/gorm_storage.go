@@ -16,6 +16,8 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+var ErrEmptyUsername = errors.New("empty username")
+
 // gormStorage implements the Storage interface using GORM
 type gormStorage struct {
 	db *gorm.DB
@@ -181,6 +183,9 @@ func (s *gormStorage) UserByUsername(username string) (models.User, error) {
 
 // UpsertUser updates an existing user in the database
 func (s *gormStorage) UpsertUser(user models.User) (models.User, error) {
+	if user.Username == "" {
+		return models.User{}, ErrEmptyUsername
+	}
 	if err := s.db.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&user).Error; err != nil {

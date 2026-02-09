@@ -10,8 +10,8 @@ type Auth struct {
 
 // User represents a user with credentials and authentication details
 type User struct {
-	Username      string `gorm:"primaryKey"`
-	HasedPassword string
+	Username       string `gorm:"primaryKey"`
+	HashedPassword string
 	Auth
 }
 

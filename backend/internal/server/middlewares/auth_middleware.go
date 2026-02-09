@@ -207,12 +207,14 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, authService user.Auth
 	if err != nil || cookie.Value == "" {
 		slog.Error(err.Error())
 		http.Error(w, "Logout failed", http.StatusUnauthorized)
+		return
 	}
 
 	err = authService.Logout(cookie.Value)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "Logout failed", http.StatusUnauthorized)
+		return
 	}
 
 	http.SetCookie(w, &http.Cookie{

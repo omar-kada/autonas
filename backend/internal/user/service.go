@@ -66,7 +66,7 @@ func (a *service) Login(credentials models.Credentials) (models.Auth, error) {
 		return models.Auth{}, ErrUserNotFound
 	}
 
-	if !checkPasswordHash(credentials.Password, user.HasedPassword) {
+	if !checkPasswordHash(credentials.Password, user.HashedPassword) {
 		return models.Auth{}, ErrInvalidPassword
 	}
 
@@ -115,7 +115,7 @@ func (a *service) Register(credentials models.Credentials) (models.Auth, error) 
 
 	user := models.User{
 		Username:      credentials.Username,
-		HasedPassword: hashedPassword,
+		HashedPassword: hashedPassword,
 		Auth: models.Auth{
 			Token:     token,
 			ExpiresIn: time.Now().Add(24 * time.Hour),

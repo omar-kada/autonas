@@ -28,6 +28,28 @@ func TestNewGormStorage_Migrates(t *testing.T) {
 	assert.True(t, has)
 }
 
+func TestNewGormStorage_FileCreation(t *testing.T) {
+	// Create a temporary directory for the test
+	tempDir := t.TempDir()
+	dbFile := filepath.Join(tempDir, "test.db")
+
+	// Create a new GORM storage with the temporary file
+	st, err := NewGormStorage(dbFile, 0o000)
+	assert.NoError(t, err)
+	assert.NotNil(t, st)
+
+	// Verify that the database file was created
+	_, err = os.Stat(dbFile)
+	assert.NoError(t, err, "Database file should be created")
+
+	// Clean up: close the database connection
+	db, ok := st.(*gormStorage)
+	assert.True(t, ok, "Expected gormStorage type")
+	sqlDB, err := db.db.DB()
+	assert.NoError(t, err)
+	assert.NoError(t, sqlDB.Close())
+}
+
 func TestInitAndGetDeployment(t *testing.T) {
 	s, _ := setupStorage(t)
 	files := []models.FileDiff{{Diff: "d1", NewFile: "n1", OldFile: "o1"}}
@@ -139,24 +161,204 @@ func TestGetDeployments_Pagination(t *testing.T) {
 	}
 }
 
-func TestNewGormStorage_FileCreation(t *testing.T) {
-	// Create a temporary directory for the test
-	tempDir := t.TempDir()
-	dbFile := filepath.Join(tempDir, "test.db")
+func TestHasUsers(t *testing.T) {
+	s, _ := setupStorage(t)
 
-	// Create a new GORM storage with the temporary file
-	st, err := NewGormStorage(dbFile, 0o000)
+	// Test when there are no users
+	exists, err := s.HasUsers()
 	assert.NoError(t, err)
-	assert.NotNil(t, st)
+	assert.False(t, exists)
 
-	// Verify that the database file was created
-	_, err = os.Stat(dbFile)
-	assert.NoError(t, err, "Database file should be created")
-
-	// Clean up: close the database connection
-	db, ok := st.(*gormStorage)
-	assert.True(t, ok, "Expected gormStorage type")
-	sqlDB, err := db.db.DB()
+	// Add a user to the database
+	user := models.User{
+		Username:       "testuser",
+		HashedPassword: "hashedpassword",
+		Auth: models.Auth{
+			Token:     "testtoken",
+			ExpiresIn: time.Now().Add(24 * time.Hour),
+		},
+	}
+	_, err = s.UpsertUser(user)
 	assert.NoError(t, err)
-	assert.NoError(t, sqlDB.Close())
+
+	// Test when there are users
+	exists, err = s.HasUsers()
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func TestUserByToken(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Test when the token does not exist
+	user, err := s.UserByToken("nonexistenttoken")
+	assert.NoError(t, err)
+	assert.Equal(t, models.User{}, user)
+
+	// Add a user to the database
+	userToAdd := models.User{
+		Username:       "testuser",
+		HashedPassword: "hashedpassword",
+		Auth: models.Auth{
+			Token:     "testtoken",
+			ExpiresIn: time.Now().Add(24 * time.Hour),
+		},
+	}
+	_, err = s.UpsertUser(userToAdd)
+	assert.NoError(t, err)
+
+	// Test when the token exists
+	user, err = s.UserByToken("testtoken")
+	assert.NoError(t, err)
+	assert.Equal(t, userToAdd.Username, user.Username)
+	assert.Equal(t, userToAdd.HashedPassword, user.HashedPassword)
+	assert.Equal(t, userToAdd.Token, user.Token)
+	assert.Equal(t, userToAdd.ExpiresIn.Unix(), user.ExpiresIn.Unix())
+}
+func TestUserByUsername(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Test when the username does not exist
+	user, err := s.UserByUsername("nonexistentuser")
+	assert.NoError(t, err)
+	assert.Equal(t, models.User{}, user)
+
+	// Add a user to the database
+	userToAdd := models.User{
+		Username:       "testuser",
+		HashedPassword: "hashedpassword",
+		Auth: models.Auth{
+			Token:     "testtoken",
+			ExpiresIn: time.Now().Add(24 * time.Hour),
+		},
+	}
+	_, err = s.UpsertUser(userToAdd)
+	assert.NoError(t, err)
+
+	// Test when the username exists
+	user, err = s.UserByUsername("testuser")
+	assert.NoError(t, err)
+	assert.Equal(t, userToAdd.Username, user.Username)
+	assert.Equal(t, userToAdd.HashedPassword, user.HashedPassword)
+	assert.Equal(t, userToAdd.Token, user.Token)
+	assert.Equal(t, userToAdd.ExpiresIn.Unix(), user.ExpiresIn.Unix())
+}
+func TestUpsertUser_InsertNewUser(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Create a new user
+	user := models.User{
+		Username:       "newuser",
+		HashedPassword: "newpassword",
+		Auth: models.Auth{
+			Token:     "newtoken",
+			ExpiresIn: time.Now().Add(24 * time.Hour),
+		},
+	}
+
+	// Insert the new user
+	insertedUser, err := s.UpsertUser(user)
+	assert.NoError(t, err)
+	assert.Equal(t, user.Username, insertedUser.Username)
+	assert.Equal(t, user.HashedPassword, insertedUser.HashedPassword)
+	assert.Equal(t, user.Token, insertedUser.Token)
+	assert.Equal(t, user.ExpiresIn.Unix(), insertedUser.ExpiresIn.Unix())
+
+	// Verify the user was inserted
+	fetchedUser, err := s.UserByUsername("newuser")
+	assert.NoError(t, err)
+	assert.Equal(t, user.Username, fetchedUser.Username)
+	assert.Equal(t, user.HashedPassword, fetchedUser.HashedPassword)
+	assert.Equal(t, user.Token, fetchedUser.Token)
+	assert.Equal(t, user.ExpiresIn.Unix(), fetchedUser.ExpiresIn.Unix())
+}
+
+func TestUpsertUser_UpdateExistingUser(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Insert an initial user
+	initialUser := models.User{
+		Username:       "existinguser",
+		HashedPassword: "initialpassword",
+		Auth: models.Auth{
+			Token:     "initialtoken",
+			ExpiresIn: time.Now().Add(24 * time.Hour),
+		},
+	}
+	_, err := s.UpsertUser(initialUser)
+	assert.NoError(t, err)
+
+	// Update the user
+	updatedUser := models.User{
+		Username:       "existinguser",
+		HashedPassword: "updatedpassword",
+		Auth: models.Auth{
+			Token:     "updatedtoken",
+			ExpiresIn: time.Now().Add(48 * time.Hour),
+		},
+	}
+	upsertedUser, err := s.UpsertUser(updatedUser)
+	assert.NoError(t, err)
+	assert.Equal(t, updatedUser.Username, upsertedUser.Username)
+	assert.Equal(t, updatedUser.HashedPassword, upsertedUser.HashedPassword)
+	assert.Equal(t, updatedUser.Token, upsertedUser.Token)
+	assert.Equal(t, updatedUser.ExpiresIn.Unix(), upsertedUser.ExpiresIn.Unix())
+
+	// Verify the user was updated
+	fetchedUser, err := s.UserByUsername("existinguser")
+	assert.NoError(t, err)
+	assert.Equal(t, updatedUser.Username, fetchedUser.Username)
+	assert.Equal(t, updatedUser.HashedPassword, fetchedUser.HashedPassword)
+	assert.Equal(t, updatedUser.Token, fetchedUser.Token)
+	assert.Equal(t, updatedUser.ExpiresIn.Unix(), fetchedUser.ExpiresIn.Unix())
+}
+
+func TestUpsertUser_InvalidUser(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Attempt to insert a user with invalid data
+	invalidUser := models.User{
+		Username:       "",
+		HashedPassword: "",
+		Auth: models.Auth{
+			Token:     "",
+			ExpiresIn: time.Time{},
+		},
+	}
+	_, err := s.UpsertUser(invalidUser)
+	assert.ErrorIs(t, err, ErrEmptyUsername)
+}
+func TestDeleteUserByUserName_Success(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Add a user to the database
+	userToAdd := models.User{
+		Username:       "testuser",
+		HashedPassword: "hashedpassword",
+		Auth: models.Auth{
+			Token:     "testtoken",
+			ExpiresIn: time.Now().Add(24 * time.Hour),
+		},
+	}
+	_, err := s.UpsertUser(userToAdd)
+	assert.NoError(t, err)
+
+	// Delete the user by username
+	deleted, err := s.DeleteUserByUserName("testuser")
+	assert.NoError(t, err)
+	assert.True(t, deleted)
+
+	// Verify the user was deleted
+	user, err := s.UserByUsername("testuser")
+	assert.NoError(t, err)
+	assert.Equal(t, models.User{}, user)
+}
+
+func TestDeleteUserByUserName_NotFound(t *testing.T) {
+	s, _ := setupStorage(t)
+
+	// Attempt to delete a non-existent user
+	deleted, err := s.DeleteUserByUserName("nonexistentuser")
+	assert.NoError(t, err)
+	assert.False(t, deleted)
 }
