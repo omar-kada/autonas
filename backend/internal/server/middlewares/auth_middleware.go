@@ -1,3 +1,4 @@
+// Package middlewares provides HTTP middleware functionality.
 package middlewares
 
 import (
@@ -18,15 +19,27 @@ type contextKey string
 const _tokenKey = "token"
 const _userKey contextKey = "user"
 
+// ContextWithUser adds user information to the context.
+// @param ctx context.Context - the context to add user information to
+// @param user models.User - the user information to add
+// @return context.Context - the context with user information added
 func ContextWithUser(ctx context.Context, user models.User) context.Context {
 	return context.WithValue(ctx, _userKey, user)
 }
 
+// UserFromContext retrieves user information from the context.
+// @param ctx context.Context - the context to retrieve user information from
+// @return models.User - the user information retrieved
+// @return bool - true if user information was found, false otherwise
 func UserFromContext(ctx context.Context) (models.User, bool) {
 	user, ok := ctx.Value(_userKey).(models.User)
 	return user, ok
 }
 
+// AuthMiddleware provides authentication middleware.
+// @param next http.Handler - the next handler in the chain
+// @param authService user.AuthService - the authentication service
+// @return http.Handler - the authentication middleware
 func AuthMiddleware(next http.Handler, authService user.AuthService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url, ok := strings.CutPrefix(r.URL.Path, "/api/")

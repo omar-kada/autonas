@@ -1,3 +1,5 @@
+// Package mappers provides functionality for mapping between different data models.
+
 package mappers
 
 import (

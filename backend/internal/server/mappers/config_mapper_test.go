@@ -1,3 +1,5 @@
+// Package mappers provides functionality for mapping between different data models.
+
 package mappers
 
 import (
@@ -19,9 +21,9 @@ func TestConfigMapper_Map(t *testing.T) {
 			name: "basic",
 			in: models.Config{
 				Settings: models.Settings{
-					Repo:       "https://github.com/example/repo",
-					Branch:     "main",
-					Cron: "0 0 * * *",
+					Repo:   "https://github.com/example/repo",
+					Branch: "main",
+					Cron:   "0 0 * * *",
 				},
 				Environment: models.Environment{
 					"key1": "value1",

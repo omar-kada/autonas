@@ -27,6 +27,7 @@ type EventStorage interface {
 	GetEvents(objectID uint64) ([]models.Event, error)
 }
 
+// UserStorage is an abstraction of all user database operations
 type UserStorage interface {
 	HasUsers() (bool, error)
 	UserByToken(token string) (models.User, error)

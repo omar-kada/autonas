@@ -1,3 +1,4 @@
+// Package user provides user management and authentication services.
 package user
 
 import (
@@ -13,9 +14,12 @@ import (
 )
 
 var (
+	// ErrAlreadyRegistered indicates that a user is already registered
 	ErrAlreadyRegistered = errors.New("already registered")
-	ErrUserNotFound      = errors.New("user not found")
-	ErrInvalidPassword   = errors.New("invalid password")
+	// ErrUserNotFound indicates that a user was not found
+	ErrUserNotFound = errors.New("user not found")
+	// ErrInvalidPassword indicates that the provided password is incorrect
+	ErrInvalidPassword = errors.New("invalid password")
 )
 
 // Service abstracts authorization operations
@@ -24,6 +28,7 @@ type Service interface {
 	AccountService
 }
 
+// AuthService abstracts authentication operations
 type AuthService interface {
 	Login(credentials models.Credentials) (models.Auth, error)
 	Register(credentials models.Credentials) (models.Auth, error)
@@ -32,6 +37,7 @@ type AuthService interface {
 	GetUserByToken(token string) (models.User, error)
 }
 
+// AccountService abstracts account management operations
 type AccountService interface {
 	GetUser(username string) (models.User, error)
 	DeleteUser(username string) (bool, error)
@@ -41,12 +47,14 @@ type service struct {
 	userStore storage.UserStorage
 }
 
+// NewService creates a new userService
 func NewService(userStore storage.UserStorage) Service {
 	return &service{
 		userStore: userStore,
 	}
 }
 
+// Login authenticates a user and returns their authentication token.
 func (a *service) Login(credentials models.Credentials) (models.Auth, error) {
 	user, err := a.userStore.UserByUsername(credentials.Username)
 	if err != nil {
@@ -76,6 +84,7 @@ func (a *service) Login(credentials models.Credentials) (models.Auth, error) {
 	return savedUsed.Auth, nil
 }
 
+// IsRegistered checks if any users are registered in the system.
 func (a *service) IsRegistered() (bool, error) {
 	hasUsers, err := a.userStore.HasUsers()
 	if err != nil {
@@ -84,6 +93,7 @@ func (a *service) IsRegistered() (bool, error) {
 	return hasUsers, nil
 }
 
+// Register creates a new user account with the provided credentials
 func (a *service) Register(credentials models.Credentials) (models.Auth, error) {
 	hasUsers, err := a.userStore.HasUsers()
 	if err != nil {
@@ -118,6 +128,7 @@ func (a *service) Register(credentials models.Credentials) (models.Auth, error) 
 	return savedUser.Auth, nil
 }
 
+// Logout invalidates the user's authentication token.
 func (a *service) Logout(token string) error {
 	user, err := a.userStore.UserByToken(token)
 	if err != nil {
@@ -138,6 +149,7 @@ func (a *service) Logout(token string) error {
 	return nil
 }
 
+// GetUserByToken retrieves a user by their authentication token.
 func (a *service) GetUserByToken(token string) (models.User, error) {
 	user, err := a.userStore.UserByToken(token)
 	if err == nil && user.Username == "" {
@@ -146,6 +158,7 @@ func (a *service) GetUserByToken(token string) (models.User, error) {
 	return user, err
 }
 
+// GetUser retrieves a user by their username.
 func (a *service) GetUser(username string) (models.User, error) {
 	user, err := a.userStore.UserByUsername(username)
 	if err == nil && user.Username == "" {
@@ -154,6 +167,7 @@ func (a *service) GetUser(username string) (models.User, error) {
 	return user, err
 }
 
+// DeleteUser removes a user from the system by their username.
 func (a *service) DeleteUser(username string) (bool, error) {
 	return a.userStore.DeleteUserByUserName(username)
 }

@@ -64,7 +64,7 @@ func NewHandler(configStore storage.ConfigStore, processService process.Service,
 	}
 }
 
-// DeployementAPIList implements the StrictServerInterface interface
+// DeployementAPIList lists deployments with pagination support
 func (h *Handler) DeployementAPIList(_ context.Context, request api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
 	offset, err := validateCursorOffset(request.Params.Offset)
 	if err != nil {
@@ -92,7 +92,7 @@ func validateCursorOffset(offsetStr *string) (uint64, error) {
 	return offset, err
 }
 
-// DeployementAPIRead implements the StrictServerInterface interface
+// DeployementAPIRead retrieves details of a specific deployment
 func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
 	id, err := strconv.ParseUint(request.Id, 10, 64)
 	if err != nil {
@@ -114,7 +114,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	return api.DeployementAPIRead200JSONResponse(h.depDetailsMapper.Map(dep)), err
 }
 
-// DeployementAPISync implements the StrictServerInterface interface
+// DeployementAPISync syncs the deployment
 func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
 	dep, err := h.processService.SyncDeployment()
 	if err != nil {
@@ -123,7 +123,7 @@ func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISync
 	return api.DeployementAPISync200JSONResponse(h.depDetailsMapper.Map(dep)), err
 }
 
-// StatusAPIGet implements the StrictServerInterface interface
+// StatusAPIGet retrieves the status of managed stacks
 func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
 	stacks, err := h.processService.GetManagedStacks()
 	if err != nil {
@@ -145,7 +145,7 @@ func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObjec
 	return api.StatusAPIGet200JSONResponse(response), nil
 }
 
-// StatsAPIGet implements the StrictServerInterface interface
+// StatsAPIGet retrieves statistics for a specified number of days
 func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObject) (api.StatsAPIGetResponseObject, error) {
 	stats, err := h.processService.GetCurrentStats(int(req.Days))
 	if err != nil {
@@ -154,7 +154,7 @@ func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObjec
 	return api.StatsAPIGet200JSONResponse(h.statsMapper.Map(stats)), nil
 }
 
-// DiffAPIGet implements the StrictServerInterface interface
+// DiffAPIGet retrieves the differences in files
 func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
 	fileDiffs, err := h.processService.GetDiff()
 	if err != nil {
@@ -163,7 +163,7 @@ func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (
 	return api.DiffAPIGet200JSONResponse(models.ListMapper(h.diffMapper.Map)(fileDiffs)), nil
 }
 
-// ConfigAPIGet implements the StrictServerInterface interface
+// ConfigAPIGet retrieves the current configuration
 func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
 	if !h.features.DisplayConfig {
 		return api.ConfigAPIGetdefaultJSONResponse{
@@ -178,7 +178,7 @@ func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObjec
 	return api.ConfigAPIGet200JSONResponse(h.configMapper.Map(config)), nil
 }
 
-// ConfigAPISet implements the StrictServerInterface interface
+// ConfigAPISet updates the current configuration
 func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
 	if !h.features.EditConfig {
 		return api.ConfigAPISetdefaultJSONResponse{
@@ -200,7 +200,7 @@ func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObjec
 	return api.ConfigAPISet200JSONResponse(h.configMapper.Map(oldConfig)), nil
 }
 
-// SettingsAPIGet implements the StrictServerInterface interface
+// SettingsAPIGet retrieves the current settings
 func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
 	config, err := h.configStore.Get()
 	if err != nil {
@@ -209,7 +209,7 @@ func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestO
 	return api.SettingsAPIGet200JSONResponse(h.settingsMapper.Map(config.Settings)), nil
 }
 
-// SettingsAPISet implements the StrictServerInterface interface
+// SettingsAPISet updates the current settings
 func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
 	if !h.features.EditSettings {
 
@@ -235,38 +235,39 @@ func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestO
 	return api.SettingsAPISet200JSONResponse(h.settingsMapper.Map(settings)), nil
 }
 
-// FeaturesAPIGet implements the StrictServerInterface interface
+// FeaturesAPIGet retrieves the current features
 func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
 	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil
 }
 
-// RegisterAPIRegister implements the StrictServerInterface interface
+// RegisterAPIRegister registers a new user
 func (h *Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
 
 	// should be done in the auth middleware so if we react this return an error
 	return api.RegisterAPIRegister200JSONResponse{}, errShouldntReach
 }
 
-// AuthAPILogin implements the StrictServerInterface interface
+// AuthAPILogin logs in a user
 func (h *Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
 
 	// should be done in the auth middleware so if we react this return an error
 	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
 }
 
-// LogoutAPILogout implements the StrictServerInterface interface
+// LogoutAPILogout logs out a user
 func (h *Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
 
 	// should be done in the auth middleware so if we react this return an error
 	return api.LogoutAPILogout200JSONResponse{}, errShouldntReach
 }
 
-// RegisterAPIRegistered implements the StrictServerInterface interface
+// RegisterAPIRegistered checks if a user is registered
 func (h *Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegisteredRequestObject) (api.RegisterAPIRegisteredResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
 	return api.RegisterAPIRegistereddefaultJSONResponse{}, errShouldntReach
 }
 
+// UserAPIGet returns the authenticated user's information
 func (h *Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
 	user, exists := middlewares.UserFromContext(ctx)
 	if !exists {
@@ -278,7 +279,8 @@ func (h *Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject)
 	}, nil
 }
 
-func (h *Handler) UserAPIDelete(ctx context.Context, request api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
+// UserAPIDelete deletes the authenticated user
+func (h *Handler) UserAPIDelete(ctx context.Context, _ api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
 	user, exists := middlewares.UserFromContext(ctx)
 	if !exists {
 		return api.UserAPIDeletedefaultJSONResponse{}, errUserNotFound
