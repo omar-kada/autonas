@@ -1,4 +1,4 @@
-package mapper
+package mappers
 
 import (
 	"log/slog"

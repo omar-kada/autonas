@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"omar-kada/autonas/api"
-	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/internal/server/middlewares"
 	"omar-kada/autonas/models"
 
 	"github.com/moby/moby/api/types/container"
@@ -45,33 +45,23 @@ func (m *MockProcess) GetDeployments(limit int, offset uint64) ([]models.Deploym
 	return args.Get(0).([]models.Deployment), args.Error(1)
 }
 
-type MockStore struct {
-	mock.Mock
-}
-
-func (m *MockStore) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
-	args := m.Called(c)
-	return args.Get(0).([]models.Deployment), args.Error(1)
-}
-
-func (m *MockStore) GetDeployment(id uint64) (models.Deployment, error) {
+func (m *MockProcess) GetDeployment(id uint64) (models.Deployment, error) {
 	args := m.Called(id)
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
-func (m *MockStore) InitDeployment(title string, author string, diff string, files []models.FileDiff) (models.Deployment, error) {
-	args := m.Called(title, author, diff, files)
-	return args.Get(0).(models.Deployment), args.Error(1)
+func (m *MockProcess) GetUser(username string) (models.User, error) {
+	args := m.Called(username)
+	return args.Get(0).(models.User), args.Error(1)
 }
 
-func (m *MockStore) EndDeployment(deploymentID uint64, status models.DeploymentStatus) error {
-	args := m.Called(deploymentID, status)
-	return args.Error(0)
+func (m *MockProcess) DeleteUser(username string) (bool, error) {
+	args := m.Called(username)
+	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockStore) GetLastDeployment() (models.Deployment, error) {
-	args := m.Called()
-	return args.Get(0).(models.Deployment), args.Error(1)
+type MockStore struct {
+	mock.Mock
 }
 
 func (m *MockStore) Get() (models.Config, error) {
@@ -91,7 +81,7 @@ func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
 func TestDeployementAPIList_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	deps := []models.Deployment{
 		{ID: 1, Title: "first", Author: "alice", Diff: "d1", Status: models.DeploymentStatusSuccess},
@@ -117,7 +107,7 @@ func TestDeployementAPIList_Success(t *testing.T) {
 func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	off := "notuint"
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 1, Offset: &off}}
@@ -129,10 +119,10 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 func TestDeployementAPIRead_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	dep := models.Deployment{ID: 10, Title: "Automatic Deploy", Author: "ci", Diff: "diff"}
-	store.On("GetDeployment", uint64(10)).Return(dep, nil)
+	m.On("GetDeployment", uint64(10)).Return(dep, nil)
 
 	req := api.DeployementAPIReadRequestObject{Id: "10"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)
@@ -152,7 +142,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 func TestDeployementAPIRead_InvalidID(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	req := api.DeployementAPIReadRequestObject{Id: "abc"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)
@@ -163,7 +153,7 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	dep := models.Deployment{ID: 99, Title: "Automatic Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
 	m.On("SyncDeployment").Return(dep, nil)
@@ -193,7 +183,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 func TestStatusAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	stacks := map[string][]models.ContainerSummary{
 		"stack1": {{ID: "c1", Name: "c1", Image: "img1", State: container.StateRunning, Health: container.Healthy}},
@@ -217,7 +207,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 func TestStatsAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	next := time.Now().Add(1 * time.Hour)
 	stats := models.Stats{Author: "bob", Error: 1, Success: 2, LastStatus: models.DeploymentStatusError, NextDeploy: next}
@@ -243,7 +233,7 @@ func TestStatsAPIGet_Success(t *testing.T) {
 func TestDiffAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	fileDiffs := []models.FileDiff{{OldFile: "file1.txt", NewFile: "file1.txt", Diff: "d1"}}
 	m.On("GetDiff").Return(fileDiffs, nil)
@@ -265,7 +255,7 @@ func TestDiffAPIGet_Success(t *testing.T) {
 func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	errList := errors.New("db error")
 	m.On("GetDeployments", 2, uint64(0)).Return([]models.Deployment{}, errList)
@@ -288,7 +278,7 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 0}}
 	resp, err := h.DeployementAPIList(context.Background(), req)
@@ -299,10 +289,10 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	errGet := errors.New("not found")
-	store.On("GetDeployment", uint64(10)).Return(models.Deployment{}, errGet)
+	m.On("GetDeployment", uint64(10)).Return(models.Deployment{}, errGet)
 
 	req := api.DeployementAPIReadRequestObject{Id: "10"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)
@@ -316,7 +306,7 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 func TestStatusAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	errStacks := errors.New("failed to get stacks")
 	m.On("GetManagedStacks").Return(map[string][]models.ContainerSummary{}, errStacks)
@@ -331,7 +321,7 @@ func TestStatusAPIGet_Error(t *testing.T) {
 func TestStatsAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	errStats := errors.New("stats error")
 	m.On("GetCurrentStats", 7).Return(models.Stats{}, errStats)
@@ -347,7 +337,7 @@ func TestStatsAPIGet_Error(t *testing.T) {
 func TestDiffAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	errDiff := errors.New("diff error")
 	m.On("GetDiff").Return([]models.FileDiff{}, errDiff)
@@ -362,7 +352,7 @@ func TestDiffAPIGet_Error(t *testing.T) {
 func TestConfigAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.DisplayConfig = true
 
 	config := models.Config{
@@ -388,7 +378,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 func TestConfigAPIGet_Disabled(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.DisplayConfig = false
 
 	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
@@ -406,7 +396,7 @@ func TestConfigAPIGet_Disabled(t *testing.T) {
 func TestConfigAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.DisplayConfig = true
 
 	errConfig := errors.New("config error")
@@ -422,7 +412,7 @@ func TestConfigAPIGet_Error(t *testing.T) {
 func TestFeaturesAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	resp, err := h.FeaturesAPIGet(context.Background(), api.FeaturesAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -438,7 +428,7 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 func TestSettingsAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	settings := models.Settings{
 		Repo:     "test-repo",
@@ -469,7 +459,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 func TestSettingsAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 
 	errSettings := errors.New("settings error")
 	store.On("Get").Return(models.Config{}, errSettings)
@@ -484,7 +474,7 @@ func TestSettingsAPIGet_Error(t *testing.T) {
 func TestSettingsAPISet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.EditSettings = true
 
 	oldConfig := models.Config{
@@ -546,7 +536,7 @@ func TestSettingsAPISet_Success(t *testing.T) {
 func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.EditSettings = true
 
 	oldConfig := models.Config{
@@ -596,7 +586,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 func TestSettingsAPISet_Disabled(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.EditSettings = false
 
 	settings := api.Settings{
@@ -623,7 +613,7 @@ func TestSettingsAPISet_Disabled(t *testing.T) {
 func TestSettingsAPISet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, store, m)
+	h := NewHandler(store, m, m)
 	h.features.EditSettings = true
 
 	settings := api.Settings{
@@ -647,4 +637,274 @@ func TestSettingsAPISet_Error(t *testing.T) {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+func TestConfigAPISet_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+	h.features.EditConfig = true
+
+	oldConfig := models.Config{
+		Environment: models.Environment{
+			"ENV": "VALUE",
+		},
+		Services: map[string]models.ServiceConfig{
+			"service1": {"key1": "value1"},
+		},
+		Settings: models.Settings{
+			Repo:     "old-repo",
+			Branch:   "old-branch",
+			Cron:     "old-cron",
+			Token:    "123456789",
+			Username: "old-user",
+		},
+	}
+	newConfig := api.Config{
+		GlobalVariables: map[string]string{
+			"NEW_ENV": "NEW_VALUE",
+		},
+		Services: map[string]map[string]string{
+			"service2": {"key2": "value2"},
+		},
+	}
+
+	store.On("Get").Return(oldConfig, nil)
+	store.On("Update", mock.MatchedBy(func(newCfg models.Config) bool {
+		// Check that only environment and services are updated
+		assert.Equal(t, models.Environment{"NEW_ENV": "NEW_VALUE"}, newCfg.Environment)
+		assert.Equal(t, map[string]models.ServiceConfig{
+			"service2": {"key2": "value2"},
+		}, newCfg.Services)
+		assert.Equal(t, oldConfig.Settings, newCfg.Settings)
+		return true
+	})).Return(nil)
+
+	req := api.ConfigAPISetRequestObject{Body: &newConfig}
+	resp, err := h.ConfigAPISet(context.Background(), req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.ConfigAPISet200JSONResponse:
+		assert.Equal(t, "NEW_VALUE", r.GlobalVariables["NEW_ENV"])
+		assert.Equal(t, "value2", r.Services["service2"]["key2"])
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	store.AssertExpectations(t)
+}
+
+func TestConfigAPISet_Disabled(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+	h.features.EditConfig = false
+
+	config := api.Config{
+		GlobalVariables: map[string]string{
+			"ENV": "VALUE",
+		},
+		Services: map[string]map[string]string{
+			"service1": {"key1": "value1"},
+		},
+	}
+
+	req := api.ConfigAPISetRequestObject{Body: &config}
+	resp, err := h.ConfigAPISet(context.Background(), req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.ConfigAPISetdefaultJSONResponse:
+		assert.Equal(t, http.StatusMethodNotAllowed, r.StatusCode)
+		assert.Equal(t, "DISABLED", r.Body.Message)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestConfigAPISet_Error(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+	h.features.EditConfig = true
+
+	config := api.Config{
+		GlobalVariables: map[string]string{
+			"ENV": "VALUE",
+		},
+		Services: map[string]map[string]string{
+			"service1": {"key1": "value1"},
+		},
+	}
+
+	errConfig := errors.New("config error")
+	store.On("Get").Return(models.Config{}, errConfig)
+
+	req := api.ConfigAPISetRequestObject{Body: &config}
+	resp, err := h.ConfigAPISet(context.Background(), req)
+	assert.Nil(t, resp)
+	assert.Equal(t, errConfig, err)
+
+	store.AssertExpectations(t)
+}
+
+func TestUserAPIGet_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	user := models.User{Username: "testuser"}
+	ctx := middlewares.ContextWithUser(context.Background(), user)
+
+	resp, err := h.UserAPIGet(ctx, api.UserAPIGetRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.UserAPIGet200JSONResponse:
+		assert.Equal(t, "testuser", r.Username)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestUserAPIGet_NoUser(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	resp, err := h.UserAPIGet(context.Background(), api.UserAPIGetRequestObject{})
+	assert.NoError(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestUserAPIDelete_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	user := models.User{Username: "testuser"}
+	ctx := middlewares.ContextWithUser(context.Background(), user)
+	m.On("DeleteUser", "testuser").Return(true, nil)
+
+	resp, err := h.UserAPIDelete(ctx, api.UserAPIDeleteRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.UserAPIDelete200JSONResponse:
+		assert.True(t, r.Success)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	m.AssertExpectations(t)
+}
+
+func TestUserAPIDelete_NoUser(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	resp, err := h.UserAPIDelete(context.Background(), api.UserAPIDeleteRequestObject{})
+	assert.Error(t, err)
+	assert.Equal(t, errUserNotFound, err)
+
+	switch resp.(type) {
+	case api.UserAPIDeletedefaultJSONResponse:
+		// No specific assertions needed for default response
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestUserAPIDelete_Error(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	user := models.User{Username: "testuser"}
+	ctx := middlewares.ContextWithUser(context.Background(), user)
+	errDelete := errors.New("delete error")
+	m.On("DeleteUser", "testuser").Return(false, errDelete)
+
+	resp, err := h.UserAPIDelete(ctx, api.UserAPIDeleteRequestObject{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to delete user")
+
+	switch r := resp.(type) {
+	case api.UserAPIDelete200JSONResponse:
+		assert.False(t, r.Success)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	m.AssertExpectations(t)
+}
+
+func TestRegisterAPIRegistered(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	resp, err := h.RegisterAPIRegistered(context.Background(), api.RegisterAPIRegisteredRequestObject{})
+	assert.Error(t, err)
+	assert.Equal(t, errShouldntReach, err)
+
+	switch resp.(type) {
+	case api.RegisterAPIRegistereddefaultJSONResponse:
+		// No specific assertions needed for default response
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestLogoutAPILogout(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	resp, err := h.LogoutAPILogout(context.Background(), api.LogoutAPILogoutRequestObject{})
+	assert.Error(t, err)
+	assert.Equal(t, errShouldntReach, err)
+
+	switch resp.(type) {
+	case api.LogoutAPILogout200JSONResponse:
+		// No specific assertions needed for 200 response
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestAuthAPILogin(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	resp, err := h.AuthAPILogin(context.Background(), api.AuthAPILoginRequestObject{})
+	assert.Error(t, err)
+	assert.Equal(t, errShouldntReach, err)
+
+	switch resp.(type) {
+	case api.AuthAPILogin200JSONResponse:
+		// No specific assertions needed for 200 response
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestRegisterAPIRegister(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	resp, err := h.RegisterAPIRegister(context.Background(), api.RegisterAPIRegisterRequestObject{})
+	assert.Error(t, err)
+	assert.Equal(t, errShouldntReach, err)
+
+	switch resp.(type) {
+	case api.RegisterAPIRegister200JSONResponse:
+		// No specific assertions needed for 200 response
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
 }

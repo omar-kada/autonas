@@ -1,0 +1,215 @@
+package middlewares
+
+import (
+	"context"
+	"encoding/json"
+	"log/slog"
+	"net/http"
+	"omar-kada/autonas/api"
+	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/models"
+	"slices"
+	"strings"
+	"time"
+)
+
+type contextKey string
+
+const _tokenKey = "token"
+const _userKey contextKey = "user"
+
+func ContextWithUser(ctx context.Context, user models.User) context.Context {
+	return context.WithValue(ctx, _userKey, user)
+}
+
+func UserFromContext(ctx context.Context) (models.User, bool) {
+	user, ok := ctx.Value(_userKey).(models.User)
+	return user, ok
+}
+
+func AuthMiddleware(next http.Handler, authService user.AuthService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url, ok := strings.CutPrefix(r.URL.Path, "/api/")
+		if !ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+		switch url {
+		case "register":
+			registerHandler(w, r, authService)
+			return
+		case "login":
+			loginHandler(w, r, authService)
+			return
+		case "logout":
+			logoutHandler(w, r, authService)
+			return
+		}
+
+		cookie, err := r.Cookie(_tokenKey)
+		if err != nil || cookie.Value == "" {
+			if !isWhitelisted(url, r.Method) {
+				slog.Error(err.Error())
+				http.Error(w, "No auth info found", http.StatusUnauthorized)
+				return
+			}
+		} else {
+
+			user, err := authService.GetUserByToken(cookie.Value)
+			if err != nil {
+				slog.Error(err.Error())
+				http.Error(w, "", http.StatusUnauthorized)
+				return
+			}
+			r = r.WithContext(ContextWithUser(r.Context(), user))
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+var _whitelisted = map[string][]string{
+	"user": {"GET"},
+}
+
+func isWhitelisted(url, method string) bool {
+	if methods, ok := _whitelisted[url]; ok {
+		return slices.Contains(methods, method)
+	}
+	return false
+}
+
+func registerHandler(w http.ResponseWriter, r *http.Request, authService user.AuthService) {
+	switch r.Method {
+	case http.MethodPost:
+		var req api.Credentials
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			slog.Error(err.Error())
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		if req.Username == "" || req.Password == "" {
+			http.Error(w, "Username and password are required", http.StatusBadRequest)
+			return
+		}
+
+		auth, err := authService.Register(models.Credentials{
+			Username: req.Username,
+			Password: req.Password,
+		})
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, "Registration failed", http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     _tokenKey,
+			Value:    auth.Token,
+			Expires:  auth.ExpiresIn,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+			Secure:   true,
+		})
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(api.BooleanResponse{
+			Success: true,
+		})
+		return
+	case http.MethodGet:
+		hasUsers, err := authService.IsRegistered()
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, "testing", http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(api.RegisterAPIRegistered200JSONResponse{
+			Registered: hasUsers,
+		})
+		return
+	default:
+		http.Error(w, "invalid method", http.StatusUnauthorized)
+		return
+	}
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request, authService user.AuthService) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid method", http.StatusBadRequest)
+		return
+	}
+
+	var req api.Credentials
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Password == "" {
+		http.Error(w, "Username and password are required", http.StatusBadRequest)
+		return
+	}
+
+	auth, err := authService.Login(models.Credentials{
+		Username: req.Username,
+		Password: req.Password,
+	})
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Login failed", http.StatusUnauthorized)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     _tokenKey,
+		Value:    auth.Token,
+		Expires:  auth.ExpiresIn,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(api.BooleanResponse{
+		Success: true,
+	})
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request, authService user.AuthService) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid method", http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := r.Cookie(_tokenKey)
+	if err != nil || cookie.Value == "" {
+		slog.Error(err.Error())
+		http.Error(w, "Logout failed", http.StatusUnauthorized)
+	}
+
+	err = authService.Logout(cookie.Value)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Logout failed", http.StatusUnauthorized)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     _tokenKey,
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(api.BooleanResponse{
+		Success: true,
+	})
+}

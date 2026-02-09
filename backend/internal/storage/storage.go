@@ -9,6 +9,7 @@ import (
 type Storage interface {
 	DeploymentStorage
 	EventStorage
+	UserStorage
 }
 
 // DeploymentStorage is an abstraction of all deployment database operations
@@ -24,4 +25,12 @@ type DeploymentStorage interface {
 type EventStorage interface {
 	StoreEvent(event models.Event) error
 	GetEvents(objectID uint64) ([]models.Event, error)
+}
+
+type UserStorage interface {
+	HasUsers() (bool, error)
+	UserByToken(token string) (models.User, error)
+	UserByUsername(username string) (models.User, error)
+	UpsertUser(user models.User) (models.User, error)
+	DeleteUserByUserName(username string) (bool, error)
 }

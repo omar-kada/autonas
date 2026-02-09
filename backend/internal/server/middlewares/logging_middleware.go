@@ -1,4 +1,4 @@
-package server
+package middlewares
 
 import (
 	"log/slog"
@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// loggingMiddleware logs each HTTP request using slog with method, path, status, remote addr, duration and bytes.
-func loggingMiddleware(next http.Handler) http.Handler {
+// LoggingMiddleware logs each HTTP request using slog with method, path, status, remote addr, duration and bytes.
+func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rec := &statusRecorder{ResponseWriter: w}
@@ -16,6 +16,11 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			rec.status = http.StatusOK
 		}
 		dur := time.Since(start)
+		username := ""
+		user, ok := UserFromContext(r.Context())
+		if ok {
+			username = user.Username
+		}
 		slog.Debug("[HTTP] request",
 			"method", r.Method,
 			"path", r.URL.Path,
@@ -23,6 +28,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			"remote", r.RemoteAddr,
 			"duration", dur,
 			"bytes", rec.bytes,
+			"user", username,
 		)
 	})
 }

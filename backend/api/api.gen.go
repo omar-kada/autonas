@@ -20,6 +20,10 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
+const (
+	BearerAuthScopes = "BearerAuth.Scopes"
+)
+
 // Defines values for ContainerHealth.
 const (
 	ContainerHealthHealthy   ContainerHealth = "healthy"
@@ -68,6 +72,11 @@ const (
 	VersionsN10 Versions = "1.0"
 )
 
+// BooleanResponse defines model for BooleanResponse.
+type BooleanResponse struct {
+	Success bool `json:"success"`
+}
+
 // Config defines model for Config.
 type Config struct {
 	GlobalVariables map[string]string            `json:"globalVariables"`
@@ -91,6 +100,12 @@ type ContainerStatusHealth string
 
 // ContainerStatusState defines model for ContainerStatus.State.
 type ContainerStatusState string
+
+// Credentials defines model for Credentials.
+type Credentials struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
 
 // Deployment defines model for Deployment.
 type Deployment struct {
@@ -183,6 +198,11 @@ type Stats struct {
 	Success    int32            `json:"success"`
 }
 
+// User defines model for User.
+type User struct {
+	Username string `json:"username"`
+}
+
 // Versions defines model for Versions.
 type Versions string
 
@@ -194,6 +214,12 @@ type DeployementAPIListParams struct {
 
 // ConfigAPISetJSONRequestBody defines body for ConfigAPISet for application/json ContentType.
 type ConfigAPISetJSONRequestBody = Config
+
+// AuthAPILoginJSONRequestBody defines body for AuthAPILogin for application/json ContentType.
+type AuthAPILoginJSONRequestBody = Credentials
+
+// RegisterAPIRegisterJSONRequestBody defines body for RegisterAPIRegister for application/json ContentType.
+type RegisterAPIRegisterJSONRequestBody = Credentials
 
 // SettingsAPISetJSONRequestBody defines body for SettingsAPISet for application/json ContentType.
 type SettingsAPISetJSONRequestBody = Settings
@@ -294,6 +320,22 @@ type ClientInterface interface {
 	// FeaturesAPIGet request
 	FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AuthAPILoginWithBody request with any body
+	AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AuthAPILogin(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LogoutAPILogout request
+	LogoutAPILogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RegisterAPIRegistered request
+	RegisterAPIRegistered(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RegisterAPIRegisterWithBody request with any body
+	RegisterAPIRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	RegisterAPIRegister(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SettingsAPIGet request
 	SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -307,6 +349,12 @@ type ClientInterface interface {
 
 	// StatusAPIGet request
 	StatusAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UserAPIDelete request
+	UserAPIDelete(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UserAPIGet request
+	UserAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ConfigAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -405,6 +453,78 @@ func (c *Client) FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
+func (c *Client) AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPILoginRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPILogin(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPILoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) LogoutAPILogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutAPILogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RegisterAPIRegistered(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterAPIRegisteredRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RegisterAPIRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterAPIRegisterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RegisterAPIRegister(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterAPIRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSettingsAPIGetRequest(c.Server)
 	if err != nil {
@@ -455,6 +575,30 @@ func (c *Client) StatsAPIGet(ctx context.Context, days int32, reqEditors ...Requ
 
 func (c *Client) StatusAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewStatusAPIGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UserAPIDelete(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUserAPIDeleteRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UserAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUserAPIGetRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -708,6 +852,140 @@ func NewFeaturesAPIGetRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewAuthAPILoginRequest calls the generic AuthAPILogin builder with application/json body
+func NewAuthAPILoginRequest(server string, body AuthAPILoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAuthAPILoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAuthAPILoginRequestWithBody generates requests for AuthAPILogin with any type of body
+func NewAuthAPILoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewLogoutAPILogoutRequest generates requests for LogoutAPILogout
+func NewLogoutAPILogoutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/logout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRegisterAPIRegisteredRequest generates requests for RegisterAPIRegistered
+func NewRegisterAPIRegisteredRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRegisterAPIRegisterRequest calls the generic RegisterAPIRegister builder with application/json body
+func NewRegisterAPIRegisterRequest(server string, body RegisterAPIRegisterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRegisterAPIRegisterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewRegisterAPIRegisterRequestWithBody generates requests for RegisterAPIRegister with any type of body
+func NewRegisterAPIRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewSettingsAPIGetRequest generates requests for SettingsAPIGet
 func NewSettingsAPIGetRequest(server string) (*http.Request, error) {
 	var err error
@@ -836,6 +1114,60 @@ func NewStatusAPIGetRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewUserAPIDeleteRequest generates requests for UserAPIDelete
+func NewUserAPIDeleteRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/user")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUserAPIGetRequest generates requests for UserAPIGet
+func NewUserAPIGetRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/user")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -902,6 +1234,22 @@ type ClientWithResponsesInterface interface {
 	// FeaturesAPIGetWithResponse request
 	FeaturesAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FeaturesAPIGetResponse, error)
 
+	// AuthAPILoginWithBodyWithResponse request with any body
+	AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error)
+
+	AuthAPILoginWithResponse(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error)
+
+	// LogoutAPILogoutWithResponse request
+	LogoutAPILogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutAPILogoutResponse, error)
+
+	// RegisterAPIRegisteredWithResponse request
+	RegisterAPIRegisteredWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RegisterAPIRegisteredResponse, error)
+
+	// RegisterAPIRegisterWithBodyWithResponse request with any body
+	RegisterAPIRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error)
+
+	RegisterAPIRegisterWithResponse(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error)
+
 	// SettingsAPIGetWithResponse request
 	SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error)
 
@@ -915,6 +1263,12 @@ type ClientWithResponsesInterface interface {
 
 	// StatusAPIGetWithResponse request
 	StatusAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StatusAPIGetResponse, error)
+
+	// UserAPIDeleteWithResponse request
+	UserAPIDeleteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UserAPIDeleteResponse, error)
+
+	// UserAPIGetWithResponse request
+	UserAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UserAPIGetResponse, error)
 }
 
 type ConfigAPIGetResponse struct {
@@ -1081,6 +1435,100 @@ func (r FeaturesAPIGetResponse) StatusCode() int {
 	return 0
 }
 
+type AuthAPILoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthAPILoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthAPILoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type LogoutAPILogoutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r LogoutAPILogoutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LogoutAPILogoutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RegisterAPIRegisteredResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Registered bool `json:"registered"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r RegisterAPIRegisteredResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RegisterAPIRegisteredResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RegisterAPIRegisterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r RegisterAPIRegisterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RegisterAPIRegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SettingsAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1173,6 +1621,52 @@ func (r StatusAPIGetResponse) StatusCode() int {
 	return 0
 }
 
+type UserAPIDeleteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UserAPIDeleteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UserAPIDeleteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UserAPIGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UserAPIGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UserAPIGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ConfigAPIGetWithResponse request returning *ConfigAPIGetResponse
 func (c *ClientWithResponses) ConfigAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigAPIGetResponse, error) {
 	rsp, err := c.ConfigAPIGet(ctx, reqEditors...)
@@ -1244,6 +1738,58 @@ func (c *ClientWithResponses) FeaturesAPIGetWithResponse(ctx context.Context, re
 	return ParseFeaturesAPIGetResponse(rsp)
 }
 
+// AuthAPILoginWithBodyWithResponse request with arbitrary body returning *AuthAPILoginResponse
+func (c *ClientWithResponses) AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
+	rsp, err := c.AuthAPILoginWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPILoginResponse(rsp)
+}
+
+func (c *ClientWithResponses) AuthAPILoginWithResponse(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
+	rsp, err := c.AuthAPILogin(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPILoginResponse(rsp)
+}
+
+// LogoutAPILogoutWithResponse request returning *LogoutAPILogoutResponse
+func (c *ClientWithResponses) LogoutAPILogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutAPILogoutResponse, error) {
+	rsp, err := c.LogoutAPILogout(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLogoutAPILogoutResponse(rsp)
+}
+
+// RegisterAPIRegisteredWithResponse request returning *RegisterAPIRegisteredResponse
+func (c *ClientWithResponses) RegisterAPIRegisteredWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RegisterAPIRegisteredResponse, error) {
+	rsp, err := c.RegisterAPIRegistered(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterAPIRegisteredResponse(rsp)
+}
+
+// RegisterAPIRegisterWithBodyWithResponse request with arbitrary body returning *RegisterAPIRegisterResponse
+func (c *ClientWithResponses) RegisterAPIRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error) {
+	rsp, err := c.RegisterAPIRegisterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterAPIRegisterResponse(rsp)
+}
+
+func (c *ClientWithResponses) RegisterAPIRegisterWithResponse(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error) {
+	rsp, err := c.RegisterAPIRegister(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterAPIRegisterResponse(rsp)
+}
+
 // SettingsAPIGetWithResponse request returning *SettingsAPIGetResponse
 func (c *ClientWithResponses) SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error) {
 	rsp, err := c.SettingsAPIGet(ctx, reqEditors...)
@@ -1286,6 +1832,24 @@ func (c *ClientWithResponses) StatusAPIGetWithResponse(ctx context.Context, reqE
 		return nil, err
 	}
 	return ParseStatusAPIGetResponse(rsp)
+}
+
+// UserAPIDeleteWithResponse request returning *UserAPIDeleteResponse
+func (c *ClientWithResponses) UserAPIDeleteWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UserAPIDeleteResponse, error) {
+	rsp, err := c.UserAPIDelete(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUserAPIDeleteResponse(rsp)
+}
+
+// UserAPIGetWithResponse request returning *UserAPIGetResponse
+func (c *ClientWithResponses) UserAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UserAPIGetResponse, error) {
+	rsp, err := c.UserAPIGet(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUserAPIGetResponse(rsp)
 }
 
 // ParseConfigAPIGetResponse parses an HTTP response from a ConfigAPIGetWithResponse call
@@ -1522,6 +2086,140 @@ func ParseFeaturesAPIGetResponse(rsp *http.Response) (*FeaturesAPIGetResponse, e
 	return response, nil
 }
 
+// ParseAuthAPILoginResponse parses an HTTP response from a AuthAPILoginWithResponse call
+func ParseAuthAPILoginResponse(rsp *http.Response) (*AuthAPILoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthAPILoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseLogoutAPILogoutResponse parses an HTTP response from a LogoutAPILogoutWithResponse call
+func ParseLogoutAPILogoutResponse(rsp *http.Response) (*LogoutAPILogoutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LogoutAPILogoutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRegisterAPIRegisteredResponse parses an HTTP response from a RegisterAPIRegisteredWithResponse call
+func ParseRegisterAPIRegisteredResponse(rsp *http.Response) (*RegisterAPIRegisteredResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RegisterAPIRegisteredResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Registered bool `json:"registered"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRegisterAPIRegisterResponse parses an HTTP response from a RegisterAPIRegisterWithResponse call
+func ParseRegisterAPIRegisterResponse(rsp *http.Response) (*RegisterAPIRegisterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RegisterAPIRegisterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSettingsAPIGetResponse parses an HTTP response from a SettingsAPIGetWithResponse call
 func ParseSettingsAPIGetResponse(rsp *http.Response) (*SettingsAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1654,6 +2352,72 @@ func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error
 	return response, nil
 }
 
+// ParseUserAPIDeleteResponse parses an HTTP response from a UserAPIDeleteWithResponse call
+func ParseUserAPIDeleteResponse(rsp *http.Response) (*UserAPIDeleteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UserAPIDeleteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUserAPIGetResponse parses an HTTP response from a UserAPIGetWithResponse call
+func ParseUserAPIGetResponse(rsp *http.Response) (*UserAPIGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UserAPIGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -1678,6 +2442,18 @@ type ServerInterface interface {
 	// (GET /api/features)
 	FeaturesAPIGet(w http.ResponseWriter, r *http.Request)
 
+	// (POST /api/login)
+	AuthAPILogin(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/logout)
+	LogoutAPILogout(w http.ResponseWriter, r *http.Request)
+
+	// (GET /api/register)
+	RegisterAPIRegistered(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/register)
+	RegisterAPIRegister(w http.ResponseWriter, r *http.Request)
+
 	// (GET /api/settings)
 	SettingsAPIGet(w http.ResponseWriter, r *http.Request)
 
@@ -1689,6 +2465,12 @@ type ServerInterface interface {
 
 	// (GET /api/status)
 	StatusAPIGet(w http.ResponseWriter, r *http.Request)
+
+	// (DELETE /api/user)
+	UserAPIDelete(w http.ResponseWriter, r *http.Request)
+
+	// (GET /api/user)
+	UserAPIGet(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1703,6 +2485,12 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // ConfigAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) ConfigAPIGet(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ConfigAPIGet(w, r)
 	}))
@@ -1716,6 +2504,12 @@ func (siw *ServerInterfaceWrapper) ConfigAPIGet(w http.ResponseWriter, r *http.R
 
 // ConfigAPISet operation middleware
 func (siw *ServerInterfaceWrapper) ConfigAPISet(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ConfigAPISet(w, r)
@@ -1732,6 +2526,12 @@ func (siw *ServerInterfaceWrapper) ConfigAPISet(w http.ResponseWriter, r *http.R
 func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeployementAPIListParams
@@ -1773,6 +2573,12 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 // DeployementAPISync operation middleware
 func (siw *ServerInterfaceWrapper) DeployementAPISync(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployementAPISync(w, r)
 	}))
@@ -1798,6 +2604,12 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeployementAPIRead(w, r, id)
 	}))
@@ -1811,6 +2623,12 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 
 // DiffAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) DiffAPIGet(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DiffAPIGet(w, r)
@@ -1826,6 +2644,12 @@ func (siw *ServerInterfaceWrapper) DiffAPIGet(w http.ResponseWriter, r *http.Req
 // FeaturesAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) FeaturesAPIGet(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FeaturesAPIGet(w, r)
 	}))
@@ -1837,8 +2661,76 @@ func (siw *ServerInterfaceWrapper) FeaturesAPIGet(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// AuthAPILogin operation middleware
+func (siw *ServerInterfaceWrapper) AuthAPILogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthAPILogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LogoutAPILogout operation middleware
+func (siw *ServerInterfaceWrapper) LogoutAPILogout(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LogoutAPILogout(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RegisterAPIRegistered operation middleware
+func (siw *ServerInterfaceWrapper) RegisterAPIRegistered(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RegisterAPIRegistered(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RegisterAPIRegister operation middleware
+func (siw *ServerInterfaceWrapper) RegisterAPIRegister(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RegisterAPIRegister(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SettingsAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) SettingsAPIGet(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SettingsAPIGet(w, r)
@@ -1853,6 +2745,12 @@ func (siw *ServerInterfaceWrapper) SettingsAPIGet(w http.ResponseWriter, r *http
 
 // SettingsAPISet operation middleware
 func (siw *ServerInterfaceWrapper) SettingsAPISet(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SettingsAPISet(w, r)
@@ -1879,6 +2777,12 @@ func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.StatsAPIGet(w, r, days)
 	}))
@@ -1893,8 +2797,54 @@ func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Re
 // StatusAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) StatusAPIGet(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.StatusAPIGet(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UserAPIDelete operation middleware
+func (siw *ServerInterfaceWrapper) UserAPIDelete(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UserAPIDelete(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UserAPIGet operation middleware
+func (siw *ServerInterfaceWrapper) UserAPIGet(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UserAPIGet(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2031,10 +2981,16 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
 	m.HandleFunc("GET "+options.BaseURL+"/api/diff", wrapper.DiffAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/features", wrapper.FeaturesAPIGet)
+	m.HandleFunc("POST "+options.BaseURL+"/api/login", wrapper.AuthAPILogin)
+	m.HandleFunc("POST "+options.BaseURL+"/api/logout", wrapper.LogoutAPILogout)
+	m.HandleFunc("GET "+options.BaseURL+"/api/register", wrapper.RegisterAPIRegistered)
+	m.HandleFunc("POST "+options.BaseURL+"/api/register", wrapper.RegisterAPIRegister)
 	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
+	m.HandleFunc("DELETE "+options.BaseURL+"/api/user", wrapper.UserAPIDelete)
+	m.HandleFunc("GET "+options.BaseURL+"/api/user", wrapper.UserAPIGet)
 
 	return m
 }
@@ -2241,6 +3197,122 @@ func (response FeaturesAPIGetdefaultJSONResponse) VisitFeaturesAPIGetResponse(w 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type AuthAPILoginRequestObject struct {
+	Body *AuthAPILoginJSONRequestBody
+}
+
+type AuthAPILoginResponseObject interface {
+	VisitAuthAPILoginResponse(w http.ResponseWriter) error
+}
+
+type AuthAPILogin200JSONResponse BooleanResponse
+
+func (response AuthAPILogin200JSONResponse) VisitAuthAPILoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthAPILogindefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response AuthAPILogindefaultJSONResponse) VisitAuthAPILoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type LogoutAPILogoutRequestObject struct {
+}
+
+type LogoutAPILogoutResponseObject interface {
+	VisitLogoutAPILogoutResponse(w http.ResponseWriter) error
+}
+
+type LogoutAPILogout200JSONResponse BooleanResponse
+
+func (response LogoutAPILogout200JSONResponse) VisitLogoutAPILogoutResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LogoutAPILogoutdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response LogoutAPILogoutdefaultJSONResponse) VisitLogoutAPILogoutResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type RegisterAPIRegisteredRequestObject struct {
+}
+
+type RegisterAPIRegisteredResponseObject interface {
+	VisitRegisterAPIRegisteredResponse(w http.ResponseWriter) error
+}
+
+type RegisterAPIRegistered200JSONResponse struct {
+	Registered bool `json:"registered"`
+}
+
+func (response RegisterAPIRegistered200JSONResponse) VisitRegisterAPIRegisteredResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegisterAPIRegistereddefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response RegisterAPIRegistereddefaultJSONResponse) VisitRegisterAPIRegisteredResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type RegisterAPIRegisterRequestObject struct {
+	Body *RegisterAPIRegisterJSONRequestBody
+}
+
+type RegisterAPIRegisterResponseObject interface {
+	VisitRegisterAPIRegisterResponse(w http.ResponseWriter) error
+}
+
+type RegisterAPIRegister200JSONResponse BooleanResponse
+
+func (response RegisterAPIRegister200JSONResponse) VisitRegisterAPIRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegisterAPIRegisterdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response RegisterAPIRegisterdefaultJSONResponse) VisitRegisterAPIRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type SettingsAPIGetRequestObject struct {
 }
 
@@ -2355,6 +3427,62 @@ func (response StatusAPIGetdefaultJSONResponse) VisitStatusAPIGetResponse(w http
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type UserAPIDeleteRequestObject struct {
+}
+
+type UserAPIDeleteResponseObject interface {
+	VisitUserAPIDeleteResponse(w http.ResponseWriter) error
+}
+
+type UserAPIDelete200JSONResponse BooleanResponse
+
+func (response UserAPIDelete200JSONResponse) VisitUserAPIDeleteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UserAPIDeletedefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response UserAPIDeletedefaultJSONResponse) VisitUserAPIDeleteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type UserAPIGetRequestObject struct {
+}
+
+type UserAPIGetResponseObject interface {
+	VisitUserAPIGetResponse(w http.ResponseWriter) error
+}
+
+type UserAPIGet200JSONResponse User
+
+func (response UserAPIGet200JSONResponse) VisitUserAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UserAPIGetdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response UserAPIGetdefaultJSONResponse) VisitUserAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -2379,6 +3507,18 @@ type StrictServerInterface interface {
 	// (GET /api/features)
 	FeaturesAPIGet(ctx context.Context, request FeaturesAPIGetRequestObject) (FeaturesAPIGetResponseObject, error)
 
+	// (POST /api/login)
+	AuthAPILogin(ctx context.Context, request AuthAPILoginRequestObject) (AuthAPILoginResponseObject, error)
+
+	// (POST /api/logout)
+	LogoutAPILogout(ctx context.Context, request LogoutAPILogoutRequestObject) (LogoutAPILogoutResponseObject, error)
+
+	// (GET /api/register)
+	RegisterAPIRegistered(ctx context.Context, request RegisterAPIRegisteredRequestObject) (RegisterAPIRegisteredResponseObject, error)
+
+	// (POST /api/register)
+	RegisterAPIRegister(ctx context.Context, request RegisterAPIRegisterRequestObject) (RegisterAPIRegisterResponseObject, error)
+
 	// (GET /api/settings)
 	SettingsAPIGet(ctx context.Context, request SettingsAPIGetRequestObject) (SettingsAPIGetResponseObject, error)
 
@@ -2390,6 +3530,12 @@ type StrictServerInterface interface {
 
 	// (GET /api/status)
 	StatusAPIGet(ctx context.Context, request StatusAPIGetRequestObject) (StatusAPIGetResponseObject, error)
+
+	// (DELETE /api/user)
+	UserAPIDelete(ctx context.Context, request UserAPIDeleteRequestObject) (UserAPIDeleteResponseObject, error)
+
+	// (GET /api/user)
+	UserAPIGet(ctx context.Context, request UserAPIGetRequestObject) (UserAPIGetResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -2600,6 +3746,116 @@ func (sh *strictHandler) FeaturesAPIGet(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// AuthAPILogin operation middleware
+func (sh *strictHandler) AuthAPILogin(w http.ResponseWriter, r *http.Request) {
+	var request AuthAPILoginRequestObject
+
+	var body AuthAPILoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthAPILogin(ctx, request.(AuthAPILoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthAPILogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthAPILoginResponseObject); ok {
+		if err := validResponse.VisitAuthAPILoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LogoutAPILogout operation middleware
+func (sh *strictHandler) LogoutAPILogout(w http.ResponseWriter, r *http.Request) {
+	var request LogoutAPILogoutRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LogoutAPILogout(ctx, request.(LogoutAPILogoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LogoutAPILogout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LogoutAPILogoutResponseObject); ok {
+		if err := validResponse.VisitLogoutAPILogoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegisterAPIRegistered operation middleware
+func (sh *strictHandler) RegisterAPIRegistered(w http.ResponseWriter, r *http.Request) {
+	var request RegisterAPIRegisteredRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RegisterAPIRegistered(ctx, request.(RegisterAPIRegisteredRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegisterAPIRegistered")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegisterAPIRegisteredResponseObject); ok {
+		if err := validResponse.VisitRegisterAPIRegisteredResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegisterAPIRegister operation middleware
+func (sh *strictHandler) RegisterAPIRegister(w http.ResponseWriter, r *http.Request) {
+	var request RegisterAPIRegisterRequestObject
+
+	var body RegisterAPIRegisterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RegisterAPIRegister(ctx, request.(RegisterAPIRegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegisterAPIRegister")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegisterAPIRegisterResponseObject); ok {
+		if err := validResponse.VisitRegisterAPIRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SettingsAPIGet operation middleware
 func (sh *strictHandler) SettingsAPIGet(w http.ResponseWriter, r *http.Request) {
 	var request SettingsAPIGetRequestObject
@@ -2698,6 +3954,54 @@ func (sh *strictHandler) StatusAPIGet(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(StatusAPIGetResponseObject); ok {
 		if err := validResponse.VisitStatusAPIGetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UserAPIDelete operation middleware
+func (sh *strictHandler) UserAPIDelete(w http.ResponseWriter, r *http.Request) {
+	var request UserAPIDeleteRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UserAPIDelete(ctx, request.(UserAPIDeleteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UserAPIDelete")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UserAPIDeleteResponseObject); ok {
+		if err := validResponse.VisitUserAPIDeleteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UserAPIGet operation middleware
+func (sh *strictHandler) UserAPIGet(w http.ResponseWriter, r *http.Request) {
+	var request UserAPIGetRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UserAPIGet(ctx, request.(UserAPIGetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UserAPIGet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UserAPIGetResponseObject); ok {
+		if err := validResponse.VisitUserAPIGetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -1,4 +1,4 @@
-package mapper
+package mappers
 
 // Mapper is a generic interface for mapping between types T and V.
 // It provides methods to convert single instances and slices of types.

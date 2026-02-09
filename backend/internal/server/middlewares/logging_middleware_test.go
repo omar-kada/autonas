@@ -1,4 +1,4 @@
-package server
+package middlewares
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func TestLoggingMiddleware_RecordsStatusAndBytes(t *testing.T) {
 		w.Write([]byte("hello"))
 	})
 
-	h := loggingMiddleware(inner)
+	h := LoggingMiddleware(inner)
 	r := httptest.NewRequest("GET", "/testpath", http.NoBody)
 	r.RemoteAddr = "1.2.3.4:1234"
 	rw := httptest.NewRecorder()
@@ -72,7 +72,7 @@ func TestLoggingMiddleware_DefaultStatus(t *testing.T) {
 		w.Write([]byte("ok"))
 	})
 
-	h := loggingMiddleware(inner)
+	h := LoggingMiddleware(inner)
 	r := httptest.NewRequest("POST", "/d", http.NoBody)
 	r.RemoteAddr = "4.3.2.1:4321"
 	rw := httptest.NewRecorder()

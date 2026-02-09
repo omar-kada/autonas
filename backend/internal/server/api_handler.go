@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -9,43 +10,56 @@ import (
 
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/internal/process"
-	"omar-kada/autonas/internal/server/mapper"
+	"omar-kada/autonas/internal/server/mappers"
+	"omar-kada/autonas/internal/server/middlewares"
 	"omar-kada/autonas/internal/storage"
+	"omar-kada/autonas/internal/user"
 	"omar-kada/autonas/models"
+)
+
+var disabledAPIError = api.Error{
+	Code:    http.StatusMethodNotAllowed,
+	Message: "DISABLED",
+}
+
+var (
+	errUserNotFound  = errors.New("user error")
+	errShouldntReach = errors.New("shouldn't be reachable")
 )
 
 // Handler implements the generated strict server interface
 type Handler struct {
-	store            storage.DeploymentStorage
-	configStore      storage.ConfigStore
-	processSvc       process.Service
-	depMapper        mapper.DeploymentMapper
-	depDetailsMapper mapper.DeploymentDetailsMapper
-	diffMapper       mapper.DiffMapper
-	statusMapper     mapper.StatusMapper
-	statsMapper      mapper.StatsMapper
-	configMapper     mapper.ConfigMapper
-	settingsMapper   mapper.SettingsMapper
-	featuresMapper   mapper.FeaturesMapper
+	configStore    storage.ConfigStore
+	processService process.Service
+	accountService user.AccountService
+
+	depMapper        mappers.DeploymentMapper
+	depDetailsMapper mappers.DeploymentDetailsMapper
+	diffMapper       mappers.DiffMapper
+	statusMapper     mappers.StatusMapper
+	statsMapper      mappers.StatsMapper
+	configMapper     mappers.ConfigMapper
+	settingsMapper   mappers.SettingsMapper
+	featuresMapper   mappers.FeaturesMapper
 
 	features models.Features
 }
 
 // NewHandler creates a new Handler
-func NewHandler(store storage.DeploymentStorage, configStore storage.ConfigStore, service process.Service) *Handler {
-	diffMapper := mapper.DiffMapper{}
-	eventMapper := mapper.EventMapper{}
+func NewHandler(configStore storage.ConfigStore, processService process.Service, userService user.AccountService) *Handler {
+	diffMapper := mappers.DiffMapper{}
+	eventMapper := mappers.EventMapper{}
 
 	return &Handler{
-		store:            store,
 		configStore:      configStore,
-		processSvc:       service,
-		depMapper:        mapper.NewDeploymentMapper(),
-		depDetailsMapper: mapper.NewDeploymentDetailsMapper(diffMapper, eventMapper),
+		processService:   processService,
+		accountService:   userService,
+		depMapper:        mappers.NewDeploymentMapper(),
+		depDetailsMapper: mappers.NewDeploymentDetailsMapper(diffMapper, eventMapper),
 		diffMapper:       diffMapper,
-		statusMapper:     mapper.StatusMapper{},
-		statsMapper:      mapper.StatsMapper{},
-		configMapper:     mapper.ConfigMapper{},
+		statusMapper:     mappers.StatusMapper{},
+		statsMapper:      mappers.StatsMapper{},
+		configMapper:     mappers.ConfigMapper{},
 		features:         models.LoadFeatures(),
 	}
 }
@@ -61,7 +75,7 @@ func (h *Handler) DeployementAPIList(_ context.Context, request api.DeployementA
 		return nil, fmt.Errorf("invalid first value")
 	}
 
-	deps, err := h.processSvc.GetDeployments(int(request.Params.Limit), offset)
+	deps, err := h.processService.GetDeployments(int(request.Params.Limit), offset)
 
 	return api.DeployementAPIList200JSONResponse{
 		Items:    models.ListMapper(h.depMapper.Map)(deps),
@@ -84,7 +98,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	if err != nil {
 		return nil, err
 	}
-	dep, err := h.store.GetDeployment(id)
+	dep, err := h.processService.GetDeployment(id)
 	if err != nil {
 		return nil, err
 	} else if dep.ID == 0 {
@@ -102,7 +116,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 
 // DeployementAPISync implements the StrictServerInterface interface
 func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
-	dep, err := h.processSvc.SyncDeployment()
+	dep, err := h.processService.SyncDeployment()
 	if err != nil {
 		slog.Error(err.Error())
 	}
@@ -111,7 +125,7 @@ func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISync
 
 // StatusAPIGet implements the StrictServerInterface interface
 func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
-	stacks, err := h.processSvc.GetManagedStacks()
+	stacks, err := h.processService.GetManagedStacks()
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +147,7 @@ func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObjec
 
 // StatsAPIGet implements the StrictServerInterface interface
 func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObject) (api.StatsAPIGetResponseObject, error) {
-	stats, err := h.processSvc.GetCurrentStats(int(req.Days))
+	stats, err := h.processService.GetCurrentStats(int(req.Days))
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +156,7 @@ func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObjec
 
 // DiffAPIGet implements the StrictServerInterface interface
 func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
-	fileDiffs, err := h.processSvc.GetDiff()
+	fileDiffs, err := h.processService.GetDiff()
 	if err != nil {
 		return nil, err
 	}
@@ -153,10 +167,7 @@ func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (
 func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
 	if !h.features.DisplayConfig {
 		return api.ConfigAPIGetdefaultJSONResponse{
-			Body: api.Error{
-				Code:    http.StatusMethodNotAllowed,
-				Message: "DISABLED",
-			},
+			Body:       disabledAPIError,
 			StatusCode: http.StatusMethodNotAllowed,
 		}, nil
 	}
@@ -171,10 +182,7 @@ func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObjec
 func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
 	if !h.features.EditConfig {
 		return api.ConfigAPISetdefaultJSONResponse{
-			Body: api.Error{
-				Code:    http.StatusMethodNotAllowed,
-				Message: "DISABLED",
-			},
+			Body:       disabledAPIError,
 			StatusCode: http.StatusMethodNotAllowed,
 		}, nil
 	}
@@ -204,11 +212,9 @@ func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestO
 // SettingsAPISet implements the StrictServerInterface interface
 func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
 	if !h.features.EditSettings {
+
 		return api.SettingsAPISetdefaultJSONResponse{
-			Body: api.Error{
-				Code:    http.StatusMethodNotAllowed,
-				Message: "DISABLED",
-			},
+			Body:       disabledAPIError,
 			StatusCode: http.StatusMethodNotAllowed,
 		}, nil
 	}
@@ -232,4 +238,58 @@ func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestO
 // FeaturesAPIGet implements the StrictServerInterface interface
 func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
 	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil
+}
+
+// RegisterAPIRegister implements the StrictServerInterface interface
+func (h *Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
+
+	// should be done in the auth middleware so if we react this return an error
+	return api.RegisterAPIRegister200JSONResponse{}, errShouldntReach
+}
+
+// AuthAPILogin implements the StrictServerInterface interface
+func (h *Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
+
+	// should be done in the auth middleware so if we react this return an error
+	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
+}
+
+// LogoutAPILogout implements the StrictServerInterface interface
+func (h *Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
+
+	// should be done in the auth middleware so if we react this return an error
+	return api.LogoutAPILogout200JSONResponse{}, errShouldntReach
+}
+
+// RegisterAPIRegistered implements the StrictServerInterface interface
+func (h *Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegisteredRequestObject) (api.RegisterAPIRegisteredResponseObject, error) {
+	// should be done in the auth middleware so if we react this return an error
+	return api.RegisterAPIRegistereddefaultJSONResponse{}, errShouldntReach
+}
+
+func (h *Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
+	user, exists := middlewares.UserFromContext(ctx)
+	if !exists {
+		return nil, nil
+	}
+
+	return api.UserAPIGet200JSONResponse{
+		Username: user.Username,
+	}, nil
+}
+
+func (h *Handler) UserAPIDelete(ctx context.Context, request api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
+	user, exists := middlewares.UserFromContext(ctx)
+	if !exists {
+		return api.UserAPIDeletedefaultJSONResponse{}, errUserNotFound
+	}
+	ok, err := h.accountService.DeleteUser(user.Username)
+	if err != nil || !ok {
+		return api.UserAPIDelete200JSONResponse{
+			Success: false,
+		}, fmt.Errorf("failed to delete user: %w", err)
+	}
+	return api.UserAPIDelete200JSONResponse{
+		Success: true,
+	}, nil
 }

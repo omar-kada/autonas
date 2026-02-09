@@ -1,5 +1,4 @@
-// Package mapper provides functionality for mapping between different data models.
-package mapper
+package mappers
 
 import (
 	"fmt"
