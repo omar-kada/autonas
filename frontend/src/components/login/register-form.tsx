@@ -4,7 +4,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { cn } from '@/lib';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeOffIcon, Lock, User as UserIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -42,6 +42,9 @@ export function RegisterForm({
     },
   });
   const [showPassword, setShowPassword] = useState(false);
+  const toggleShowPassword = useCallback(() => {
+    setShowPassword(!showPassword);
+  }, [showPassword, setShowPassword]);
 
   return (
     <form className={cn('space-y-4', className)} onSubmit={handleSubmit(onSubmit)}>
@@ -88,7 +91,7 @@ export function RegisterForm({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={toggleShowPassword}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}

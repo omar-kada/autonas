@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// ErrEmptyUsername is returned when an empty username is provided
 var ErrEmptyUsername = errors.New("empty username")
 
 // gormStorage implements the Storage interface using GORM
