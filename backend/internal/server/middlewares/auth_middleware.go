@@ -6,18 +6,21 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/internal/user"
-	"omar-kada/autonas/models"
 	"slices"
 	"strings"
 	"time"
+
+	"omar-kada/autonas/api"
+	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/models"
 )
 
 type contextKey string
 
-const _tokenKey = "token"
-const _userKey contextKey = "user"
+const (
+	_tokenKey            = "token"
+	_userKey  contextKey = "user"
+)
 
 // ContextWithUser adds user information to the context.
 // @param ctx context.Context - the context to add user information to

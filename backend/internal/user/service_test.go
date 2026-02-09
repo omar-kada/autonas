@@ -1,10 +1,11 @@
 package user
 
 import (
-	"omar-kada/autonas/models"
-	"omar-kada/autonas/testutil"
 	"testing"
 	"time"
+
+	"omar-kada/autonas/models"
+	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
 )

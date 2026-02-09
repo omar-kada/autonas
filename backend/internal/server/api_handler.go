@@ -212,7 +212,6 @@ func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestO
 // SettingsAPISet updates the current settings
 func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
 	if !h.features.EditSettings {
-
 		return api.SettingsAPISetdefaultJSONResponse{
 			Body:       disabledAPIError,
 			StatusCode: http.StatusMethodNotAllowed,
@@ -242,21 +241,18 @@ func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestO
 
 // RegisterAPIRegister registers a new user
 func (h *Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
-
 	// should be done in the auth middleware so if we react this return an error
 	return api.RegisterAPIRegister200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPILogin logs in a user
 func (h *Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
-
 	// should be done in the auth middleware so if we react this return an error
 	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
 }
 
 // LogoutAPILogout logs out a user
 func (h *Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
-
 	// should be done in the auth middleware so if we react this return an error
 	return api.LogoutAPILogout200JSONResponse{}, errShouldntReach
 }

@@ -40,4 +40,3 @@ func (m depDetailsMapper) Map(dep models.Deployment) api.DeploymentWithDetails {
 		Files:   models.ListMapper(m.diffMapper.Map)(dep.Files),
 	}
 }
-
