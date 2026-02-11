@@ -1,4 +1,4 @@
-import { useRelativeTime } from '@/hooks/use-relative-time';
+import { useRelativeTime } from '@/hooks';
 import { cn } from '@/lib';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 

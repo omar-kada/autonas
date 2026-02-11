@@ -9,8 +9,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { getFeaturesQueryOptions, getSettingsQueryOptions } from '@/hooks';
-import { useUpdateSettings } from '@/hooks/use-update-settings';
+import { getFeaturesQueryOptions, getSettingsQueryOptions, useUpdateSettings } from '@/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, type ReactNode } from 'react';
@@ -66,7 +65,7 @@ export function SettingsSheet({
             </SheetDescription>
           )}
         </SheetHeader>
-        <ScrollArea className="h-1 flex-1">
+        <ScrollArea className="h-1 flex-1 gap-2">
           <div className=" grid auto-rows-min gap-6 px-4 mb-25">
             {mergedError && (
               <ErrorAlert

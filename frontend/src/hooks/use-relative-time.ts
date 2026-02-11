@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export function humanizeFromNow(
+function humanizeFromNow(
   date: Date | string,
   t: TFunction<'translation', undefined>,
   locale = 'en',
