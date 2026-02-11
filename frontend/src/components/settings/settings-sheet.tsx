@@ -13,7 +13,7 @@ import { getFeaturesQueryOptions, getSettingsQueryOptions } from '@/hooks';
 import { useUpdateSettings } from '@/hooks/use-update-settings';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ScrollArea } from '../ui/scroll-area';
@@ -22,7 +22,15 @@ import { ErrorAlert } from '../view';
 import { SettingsForm } from './settings-form';
 import { formSchema, fromSettings, toSettings, type FormValues } from './settings-form-schema';
 
-export function SettingsSheet({ children }: { children: ReactNode }) {
+export function SettingsSheet({
+  children,
+  open,
+  setOpen,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  children?: ReactNode;
+}) {
   const { t } = useTranslation();
   const { data: features, error: featuresError } = useQuery(getFeaturesQueryOptions());
   const disabled = !features?.editSettings;
@@ -39,7 +47,6 @@ export function SettingsSheet({ children }: { children: ReactNode }) {
   }, [settings, form]);
 
   const { updateSettings } = useUpdateSettings();
-  const [open, setOpen] = useState(false);
 
   const onSubmit = useCallback(() => {
     updateSettings(toSettings(form.getValues()));
@@ -48,11 +55,9 @@ export function SettingsSheet({ children }: { children: ReactNode }) {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent
-        className="w-full md:w-none flex flex-col h-full"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
+      <SheetDescription className="hidden">{t('SETTINGS.DESCRIPTION')}</SheetDescription>
+      {children && <SheetTrigger asChild>{children}</SheetTrigger>}
+      <SheetContent className="w-full md:w-none flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>{t('SETTINGS.SETTINGS')}</SheetTitle>
           {disabled && (

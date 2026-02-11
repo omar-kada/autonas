@@ -1,6 +1,6 @@
 import { type Deployment } from '@/api/api';
 import { getDeploymentsQueryOptions, useIsMobile, useSync } from '@/hooks';
-import { ArrowLeft, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, CloudSync } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -44,7 +44,7 @@ export function DeploymentsPage() {
         details="DEPLOYMENTS.NO_DEPLOYMENTS_DESCRIPTION"
       >
         <Button variant="outline" size="sm" onClick={sync}>
-          <RefreshCcw />
+          <CloudSync />
           {t('ACTION.SYNC_NOW')}
         </Button>
       </InfoEmpty>

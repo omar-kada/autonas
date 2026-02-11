@@ -11,7 +11,7 @@ import (
 	"omar-kada/autonas/internal/server"
 	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/internal/users"
 	"omar-kada/autonas/models"
 
 	"github.com/spf13/cobra"
@@ -87,7 +87,7 @@ func (run *runCommand) doRun() error {
 		configStore,
 		dispatcher,
 		scheduler)
-	userService := user.NewService(store)
+	userService := users.NewService(store)
 	go func() {
 		_, err = scheduler.Schedule(func() {
 			_, err := service.SyncDeployment()

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import {
   ConfigPage,
@@ -20,6 +20,12 @@ function RouteBasedTopBar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [showTopBar, setShowTopBar] = useState(true);
+
+  useEffect(() => {
+    setShowTopBar(isPending || userPending || (!!isRegistered && !!user));
+  }, [setShowTopBar, isPending, userPending, isRegistered, user]);
+
   useEffect(() => {
     if (isPending) {
       return;
@@ -27,7 +33,7 @@ function RouteBasedTopBar() {
       navigate(ROUTES.REGISTER);
     } else {
       if ((location.pathname = ROUTES.REGISTER)) {
-        navigate(ROUTES.ROOT);
+        navigate(ROUTES.DEPLOYMENTS);
       }
       if (userPending) {
         return;
@@ -35,7 +41,7 @@ function RouteBasedTopBar() {
         navigate(ROUTES.LOGIN);
       } else {
         if ((location.pathname = ROUTES.LOGIN)) {
-          navigate(ROUTES.ROOT);
+          navigate(ROUTES.DEPLOYMENTS);
         }
       }
     }
@@ -44,8 +50,7 @@ function RouteBasedTopBar() {
   const mergedError = error ?? userError;
   return (
     <>
-      <ErrorAlert title={mergedError?.message ?? null} />
-      {isRegistered && user && (
+      {showTopBar && (
         <>
           <Topbar>
             {/* Top navigation bar, on big screens */}
@@ -58,6 +63,7 @@ function RouteBasedTopBar() {
           <NavBar className="flex md:hidden bg-sidebar h-12 border-t w-full fixed items-center justify-around bottom-0 left-0 right-0 z-50" />
         </>
       )}
+      <ErrorAlert title={mergedError?.message ?? null} />
     </>
   );
 }

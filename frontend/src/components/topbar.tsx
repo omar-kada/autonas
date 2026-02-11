@@ -1,10 +1,27 @@
-import { Bell, Settings } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { User } from '@/api/api';
+import { useLogout, useUser } from '@/hooks';
+import { useTheme } from '@/hooks/theme-provider';
+import { Bell, LogOutIcon, Moon, Settings, UserIcon } from 'lucide-react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SettingsSheet } from './settings';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
-import { ThemeToggle } from './view/theme-toggle';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { Field, FieldLabel } from './ui/field';
+import { Switch } from './ui/switch';
 
 export function Topbar({ children }: { children?: ReactNode }) {
+  const { data: user } = useUser();
+
   return (
     <header className="h-14 min-h-14 border-b w-full flex items-center justify-between px-4 bg-sidebar sticky top-0 z-50">
       {/* Logo */}
@@ -12,18 +29,80 @@ export function Topbar({ children }: { children?: ReactNode }) {
       <div className="flex-1 w-1 max-w-10">{/*gap*/}</div>
       <div className="flex flex-2 justify-between">{children}</div>
 
-      {/* Settings + Notifications */}
-      <div className="flex items-center gap-2">
-        <SettingsSheet>
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
+      {user && (
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="rounded-full" disabled>
+            <Bell className="h-5 w-5" />
           </Button>
-        </SettingsSheet>
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <ThemeToggle />
-      </div>
+          <UserDropDown user={user} />
+        </div>
+      )}
     </header>
+  );
+}
+
+function UserDropDown({ user }: { user: User }) {
+  const { t } = useTranslation();
+
+  const [initial, setInitial] = useState(user?.username ?? '');
+
+  useEffect(() => {
+    if (user) {
+      setInitial(user.username.charAt(0).toUpperCase());
+    }
+  }, [user]);
+
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
+
+  const [openSettings, setOpenSettings] = useState(false);
+  const openSettingsSheet = useCallback(() => setOpenSettings(true), [setOpenSettings]);
+
+  const { logout } = useLogout();
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
+            <Avatar>
+              <AvatarFallback className="select-none">{initial}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>
+              {t('MENU.LOGGED_AS')} : {user?.username ?? ''}
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem onClick={toggleTheme}>
+              <Field className="" orientation="horizontal">
+                <Moon></Moon>
+                <FieldLabel className="font-normal pe-2">{t('MENU.DARK_MODE')}</FieldLabel>
+                <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+              </Field>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem disabled>
+              <UserIcon />
+              {t('MENU.ACCOUNT')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={openSettingsSheet}>
+              <Settings />
+              {t('MENU.SETTINGS')}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={logout}>
+            <LogOutIcon />
+            {t('ACTION.SIGN_OUT')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <SettingsSheet open={openSettings} setOpen={setOpenSettings}></SettingsSheet>
+    </>
   );
 }

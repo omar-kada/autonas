@@ -1,7 +1,7 @@
 import { getDiffQueryOptions, getStatsQueryOptions, useIsMobile, useSync } from '@/hooks';
 import { cn } from '@/lib';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircleIcon, FileDiff, History, RefreshCcw, TriangleAlert } from 'lucide-react';
+import { AlertCircleIcon, CloudSync, FileDiff, History, TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -94,7 +94,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
           </Button>
         </DeploymentDiffDialog>
         <Button variant="outline" onClick={sync} disabled={isSyncLoading}>
-          {isSyncLoading ? <Spinner /> : <RefreshCcw />}
+          {isSyncLoading ? <Spinner /> : <CloudSync />}
           {!isMobile && t('ACTION.SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
         </Button>

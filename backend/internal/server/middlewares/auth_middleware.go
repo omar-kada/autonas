@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"omar-kada/autonas/api"
-	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/internal/users"
 	"omar-kada/autonas/models"
 )
 
@@ -43,7 +43,7 @@ func UserFromContext(ctx context.Context) (models.User, bool) {
 // @param next http.Handler - the next handler in the chain
 // @param authService user.AuthService - the authentication service
 // @return http.Handler - the authentication middleware
-func AuthMiddleware(next http.Handler, authService user.AuthService) http.Handler {
+func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url, ok := strings.CutPrefix(r.URL.Path, "/api/")
 		if !ok {
@@ -95,7 +95,7 @@ func isWhitelisted(url, method string) bool {
 	return false
 }
 
-func registerHandler(w http.ResponseWriter, r *http.Request, authService user.AuthService) {
+func registerHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	switch r.Method {
 	case http.MethodPost:
 		var req api.Credentials
@@ -153,7 +153,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService user.Au
 	}
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request, authService user.AuthService) {
+func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid method", http.StatusBadRequest)
 		return
@@ -197,7 +197,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService user.AuthS
 	})
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request, authService user.AuthService) {
+func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid method", http.StatusBadRequest)
 		return
