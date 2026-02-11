@@ -1,6 +1,7 @@
+import type { User } from '@/api/api';
 import { useLogout, useUser } from '@/hooks';
 import { useTheme } from '@/hooks/theme-provider';
-import { Bell, LogOutIcon, Moon, Settings, User } from 'lucide-react';
+import { Bell, LogOutIcon, Moon, Settings, UserIcon } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsSheet } from './settings';
@@ -19,8 +20,29 @@ import { Field, FieldLabel } from './ui/field';
 import { Switch } from './ui/switch';
 
 export function Topbar({ children }: { children?: ReactNode }) {
-  const { t } = useTranslation();
   const { data: user } = useUser();
+
+  return (
+    <header className="h-14 min-h-14 border-b w-full flex items-center justify-between px-4 bg-sidebar sticky top-0 z-50">
+      {/* Logo */}
+      <div className="text-xl font-semibold mr-5">AirCompose</div>
+      <div className="flex-1 w-1 max-w-10">{/*gap*/}</div>
+      <div className="flex flex-2 justify-between">{children}</div>
+
+      {user && (
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="rounded-full" disabled>
+            <Bell className="h-5 w-5" />
+          </Button>
+          <UserDropDown user={user} />
+        </div>
+      )}
+    </header>
+  );
+}
+
+function UserDropDown({ user }: { user: User }) {
+  const { t } = useTranslation();
 
   const [initial, setInitial] = useState(user?.username ?? '');
 
@@ -40,62 +62,47 @@ export function Topbar({ children }: { children?: ReactNode }) {
   const openSettingsSheet = useCallback(() => setOpenSettings(true), [setOpenSettings]);
 
   const { logout } = useLogout();
-
   return (
-    <header className="h-14 min-h-14 border-b w-full flex items-center justify-between px-4 bg-sidebar sticky top-0 z-50">
-      {/* Logo */}
-      <div className="text-xl font-semibold mr-5">AirCompose</div>
-      <div className="flex-1 w-1 max-w-10">{/*gap*/}</div>
-      <div className="flex flex-2 justify-between">{children}</div>
-
-      {/* Settings + Notifications */}
-      {user && (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="rounded-full" disabled>
-            <Bell className="h-5 w-5" />
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
+            <Avatar>
+              <AvatarFallback className="select-none">{initial}</AvatarFallback>
+            </Avatar>
           </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>
+              {t('MENU.LOGGED_AS')} : {user?.username ?? ''}
+            </DropdownMenuLabel>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
-                <Avatar>
-                  <AvatarFallback className="select-none">{initial}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>
-                  {t('MENU.LOGGED_AS')} : {user?.username ?? ''}
-                </DropdownMenuLabel>
+            <DropdownMenuItem onClick={toggleTheme}>
+              <Field className="" orientation="horizontal">
+                <Moon></Moon>
+                <FieldLabel className="font-normal pe-2">{t('MENU.DARK_MODE')}</FieldLabel>
+                <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+              </Field>
+            </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={toggleTheme}>
-                  <Field className="" orientation="horizontal">
-                    <Moon></Moon>
-                    <FieldLabel className="font-normal pe-2">{t('MENU.DARK_MODE')}</FieldLabel>
-                    <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
-                  </Field>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem disabled>
-                  <User />
-                  {t('MENU.ACCOUNT')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={openSettingsSheet}>
-                  <Settings />
-                  {t('MENU.SETTINGS')}
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={logout}>
-                <LogOutIcon />
-                {t('ACTION.SIGN_OUT')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <SettingsSheet open={openSettings} setOpen={setOpenSettings}></SettingsSheet>
-        </div>
-      )}
-    </header>
+            <DropdownMenuItem disabled>
+              <UserIcon />
+              {t('MENU.ACCOUNT')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={openSettingsSheet}>
+              <Settings />
+              {t('MENU.SETTINGS')}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={logout}>
+            <LogOutIcon />
+            {t('ACTION.SIGN_OUT')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <SettingsSheet open={openSettings} setOpen={setOpenSettings}></SettingsSheet>
+    </>
   );
 }

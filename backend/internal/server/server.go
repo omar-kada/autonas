@@ -12,7 +12,7 @@ import (
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/server/middlewares"
 	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/internal/users"
 
 	"github.com/rs/cors"
 )
@@ -28,13 +28,13 @@ type HTTPServer struct {
 	store            storage.Storage
 	configStore      storage.ConfigStore
 	processSvc       process.Service
-	userSvc          user.Service
+	userSvc          users.Service
 	websocketHandler *WebsocketHandler
 	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.Storage, configStore storage.ConfigStore, service process.Service, userService user.Service) Server {
+func NewServer(store storage.Storage, configStore storage.ConfigStore, service process.Service, userService users.Service) Server {
 	return &HTTPServer{
 		store:            store,
 		configStore:      configStore,

@@ -1,5 +1,5 @@
-// Package user provides user management and authentication services.
-package user
+// Package users provides user management and authentication services.
+package users
 
 import (
 	"crypto/rand"

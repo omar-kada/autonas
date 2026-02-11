@@ -13,7 +13,7 @@ import (
 	"omar-kada/autonas/internal/server/mappers"
 	"omar-kada/autonas/internal/server/middlewares"
 	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/internal/user"
+	"omar-kada/autonas/internal/users"
 	"omar-kada/autonas/models"
 )
 
@@ -31,7 +31,7 @@ var (
 type Handler struct {
 	configStore    storage.ConfigStore
 	processService process.Service
-	accountService user.AccountService
+	accountService users.AccountService
 
 	depMapper        mappers.DeploymentMapper
 	depDetailsMapper mappers.DeploymentDetailsMapper
@@ -46,7 +46,7 @@ type Handler struct {
 }
 
 // NewHandler creates a new Handler
-func NewHandler(configStore storage.ConfigStore, processService process.Service, userService user.AccountService) *Handler {
+func NewHandler(configStore storage.ConfigStore, processService process.Service, userService users.AccountService) *Handler {
 	diffMapper := mappers.DiffMapper{}
 	eventMapper := mappers.EventMapper{}
 
