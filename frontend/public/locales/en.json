@@ -6,6 +6,13 @@
     "NO_STACKS_FOUND": "No stacks found",
     "NO_STACKS_FOUND_DESCRIPTION": "Check the deployment page for more information"
   },
+  "MENU": {
+    "SETTINGS": "Settings",
+    "DARK_MODE": "Dark mode",
+    "LOGGED_AS": "Logged as",
+    "NOTIFICATION": "Notifications",
+    "ACCOUNT": "Account"
+  },
   "REGISTER": {
     "REGISTER": "Register",
     "FORM": {
@@ -56,6 +63,7 @@
   },
   "SETTINGS": {
     "SETTINGS": "Settings",
+    "DESCRIPTION": "Update the app settings",
     "DISABLED_TITLE": "Settings are disabled",
     "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AUTONAS_EDIT_SETTINGS' to 'true'",
     "FORM": {
@@ -78,6 +86,7 @@
   "LOGS": "Logs",
   "ACTION": {
     "BACK": "Back",
+    "SIGN_OUT": "Sign out",
     "CLOSE": "Close",
     "SAVE": "Save",
     "RESET": "Reset",
