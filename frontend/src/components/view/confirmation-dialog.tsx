@@ -20,7 +20,7 @@ export function ConfirmationDialog({
   description,
 }: {
   children?: ReactNode;
-  onConfirm: () => Promise<unknown> | void;
+  onConfirm: () => Promise<unknown> | undefined;
   title: string;
   description: string;
 }) {

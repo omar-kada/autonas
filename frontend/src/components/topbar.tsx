@@ -1,7 +1,7 @@
 import type { User } from '@/api/api';
 import { useLogout, useUser } from '@/hooks';
 import { useTheme } from '@/hooks/theme-provider';
-import { Bell, LogOutIcon, Moon, Settings, UserIcon } from 'lucide-react';
+import { Bell, LogOutIcon, Moon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsSheet } from './settings';
@@ -86,10 +86,6 @@ function UserDropDown({ user }: { user: User }) {
               </Field>
             </DropdownMenuItem>
 
-            <DropdownMenuItem disabled>
-              <UserIcon />
-              {t('MENU.ACCOUNT')}
-            </DropdownMenuItem>
             <DropdownMenuItem onSelect={openSettingsSheet}>
               <Settings />
               {t('MENU.SETTINGS')}
