@@ -3,7 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
 import App from './App.tsx';
-import { ThemeProvider } from './hooks/theme-provider.tsx';
+import { ThemeProvider } from './hooks';
 import './i18n';
 import './index.css';
 import { Devtools } from './query-client/query-client-dev-tools.tsx';

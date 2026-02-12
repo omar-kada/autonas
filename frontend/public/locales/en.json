@@ -80,12 +80,21 @@
       "AUTO_SYNC": "Auto sync",
       "cron": "Cron period",
       "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
-      "cron_PLACEHOLDER": "disabled when empty"
+      "cron_PLACEHOLDER": "disabled when empty",
+      "ACCOUNT": "Account",
+      "DELETE_ACCOUNT": "Delete account",
+      "CHANGE_PASSWORD": "Change password",
+      "DELETE_ACCOUNT_DIALOG": {
+        "TITLE": "Are you sure ?",
+        "DESCRIPTION": "Do you really want to delete your account ?"
+      }
     }
   },
   "LOGS": "Logs",
   "ACTION": {
     "BACK": "Back",
+    "CONFIRM": "Confirm",
+    "CANCEL": "Cancel",
     "SIGN_OUT": "Sign out",
     "CLOSE": "Close",
     "SAVE": "Save",
@@ -123,6 +132,7 @@
     "LOAD_SETTINGS_ERROR": "Error while loading settings",
     "COPIED": "Copied",
     "LOGIN_ERROR": "Login error",
-    "USER_CREATION_ERROR": "register error"
+    "USER_CREATION_ERROR": "register error",
+    "DELETE_ACCOUNT_ERROR": "Error while deleting your account"
   }
 }

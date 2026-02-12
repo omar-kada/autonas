@@ -1,51 +1,90 @@
-import { GitBranch, Timer } from 'lucide-react';
+import { useDeleteAccount } from '@/hooks';
+import { GitBranch, KeyRound, Timer, Trash, UserIcon, type LucideProps } from 'lucide-react';
+import { type ComponentType, type ReactNode } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
-  FieldLegend,
   FieldSeparator,
   FieldSet,
   FieldTitle,
 } from '../ui/field';
 import { Input } from '../ui/input';
+import { ConfirmationDialog } from '../view/confirmation-dialog';
 import { type FormValues } from './settings-form-schema';
 
 export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
   const { t } = useTranslation();
 
+  const { deleteAccount } = useDeleteAccount();
+
   return (
     <form>
-      <FieldGroup>
-        <FieldSet>
-          <FieldLegend className="flex items-center gap-2">
-            <GitBranch className="size-4" />
-            {t('SETTINGS.FORM.GIT')}
-          </FieldLegend>
+      <FieldGroup className="mt-2">
+        <SettingsSection title={t('SETTINGS.FORM.ACCOUNT')} Icon={UserIcon} className="flex gap-2">
+          <Button type="button" disabled>
+            <KeyRound />
+            {t('SETTINGS.FORM.CHANGE_PASSWORD')}
+          </Button>
+          <ConfirmationDialog
+            title={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.TITLE')}
+            description={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.DESCRIPTION')}
+            onConfirm={deleteAccount}
+          >
+            <Button variant="destructive" type="button">
+              <Trash />
+              {t('SETTINGS.FORM.DELETE_ACCOUNT')}
+            </Button>
+          </ConfirmationDialog>
+        </SettingsSection>
+        <SettingsSection title={t('SETTINGS.FORM.GIT')} Icon={GitBranch}>
+          <FieldSet>
+            <SettingsField form={form} name="repo" />
+            <SettingsField form={form} name="branch" />
 
-          <SettingsField form={form} name="repo" />
-          <SettingsField form={form} name="branch" />
+            <SettingsField form={form} name="username" />
+            <SettingsField form={form} name="token" />
+          </FieldSet>
+        </SettingsSection>
 
-          <SettingsField form={form} name="username" />
-          <SettingsField form={form} name="token" />
-        </FieldSet>
-        <FieldSeparator />
-
-        <FieldSet>
-          <FieldLegend className="flex items-center gap-2">
-            <Timer className="size-4" />
-            {t('SETTINGS.FORM.AUTO_SYNC')}
-          </FieldLegend>
-
-          <SettingsField form={form} name="cron" withDescription />
-        </FieldSet>
+        <SettingsSection title={t('SETTINGS.FORM.AUTO_SYNC')} Icon={Timer}>
+          <FieldSet>
+            <SettingsField form={form} name="cron" withDescription />
+          </FieldSet>
+        </SettingsSection>
       </FieldGroup>
     </form>
   );
 }
+
+function SettingsSection({
+  title,
+  Icon,
+  children,
+  className,
+}: {
+  title: string;
+  Icon?: ComponentType<LucideProps>;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <>
+      <FieldSeparator>
+        <span className="flex items-center">
+          {Icon && <Icon className="size-4 mx-1" />}
+          {title}
+        </span>
+      </FieldSeparator>
+      <div className={className}>{children}</div>
+    </>
+  );
+}
+
 function SettingsField({
   form,
   name,
