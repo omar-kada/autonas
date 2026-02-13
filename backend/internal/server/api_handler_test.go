@@ -60,6 +60,11 @@ func (m *MockProcess) DeleteUser(username string) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockProcess) ChangePassword(username string, oldPass, newPass string) (bool, error) {
+	args := m.Called(username, oldPass, newPass)
+	return args.Bool(0), args.Error(1)
+}
+
 type MockStore struct {
 	mock.Mock
 }
@@ -907,4 +912,90 @@ func TestRegisterAPIRegister(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
+}
+
+func TestUserAPIChangePassword_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	user := models.User{Username: "testuser"}
+	ctx := middlewares.ContextWithUser(context.Background(), user)
+
+	m.On("ChangePassword", "testuser", "oldpass", "newpass").Return(true, nil)
+
+	req := api.UserAPIChangePasswordRequestObject{
+		Body: &api.UserAPIChangePasswordJSONRequestBody{
+			OldPass: "oldpass",
+			NewPass: "newpass",
+		},
+	}
+
+	resp, err := h.UserAPIChangePassword(ctx, req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.UserAPIChangePassword200JSONResponse:
+		assert.True(t, r.Success)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	m.AssertExpectations(t)
+}
+
+func TestUserAPIChangePassword_NoUser(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	req := api.UserAPIChangePasswordRequestObject{
+		Body: &api.UserAPIChangePasswordJSONRequestBody{
+			OldPass: "oldpass",
+			NewPass: "newpass",
+		},
+	}
+
+	resp, err := h.UserAPIChangePassword(context.Background(), req)
+	assert.Error(t, err)
+	assert.Equal(t, errUserNotFound, err)
+
+	switch resp.(type) {
+	case api.UserAPIChangePassworddefaultJSONResponse:
+		// No specific assertions needed for default response
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+}
+
+func TestUserAPIChangePassword_Error(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	user := models.User{Username: "testuser"}
+	ctx := middlewares.ContextWithUser(context.Background(), user)
+
+	errChange := errors.New("change error")
+	m.On("ChangePassword", "testuser", "oldpass", "newpass").Return(false, errChange)
+
+	req := api.UserAPIChangePasswordRequestObject{
+		Body: &api.UserAPIChangePasswordJSONRequestBody{
+			OldPass: "oldpass",
+			NewPass: "newpass",
+		},
+	}
+
+	resp, err := h.UserAPIChangePassword(ctx, req)
+	assert.Error(t, err)
+	assert.Equal(t, errChange, err)
+
+	switch r := resp.(type) {
+	case api.UserAPIChangePassword200JSONResponse:
+		assert.False(t, r.Success)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	m.AssertExpectations(t)
 }

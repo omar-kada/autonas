@@ -73,11 +73,14 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 
 			user, err := authService.GetUserByToken(cookie.Value)
 			if err != nil {
-				slog.Error(err.Error())
-				http.Error(w, "", http.StatusUnauthorized)
-				return
+				if !isWhitelisted(url, r.Method) {
+					slog.Error(err.Error())
+					http.Error(w, "", http.StatusUnauthorized)
+					return
+				}
+			} else {
+				r = r.WithContext(ContextWithUser(r.Context(), user))
 			}
-			r = r.WithContext(ContextWithUser(r.Context(), user))
 		}
 
 		next.ServeHTTP(w, r)

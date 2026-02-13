@@ -18,8 +18,8 @@ const registerSchema = z.object({
     })
     .min(3, { error: 'REGISTER.FORM.username_MIN_3' }),
   password: z
-    .string({ error: 'REGISTER.FORM.password_MIN_12' })
-    .min(12, { error: 'REGISTER.FORM.password_MIN_12' }),
+    .string({ error: 'REGISTER.FORM.password_MIN_10' })
+    .min(10, { error: 'REGISTER.FORM.password_MIN_10' }),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
