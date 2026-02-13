@@ -215,6 +215,11 @@ export type RegisterAPIRegistered200 = {
   registered: boolean;
 };
 
+export type UserAPIChangePasswordBody = {
+  oldPass: string;
+  newPass: string;
+};
+
 export const configAPIGet = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<Config>> => {
@@ -1461,6 +1466,62 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       > => {
 
       const mutationOptions = getUserAPIDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+export const userAPIChangePassword = (
+    userAPIChangePasswordBody: UserAPIChangePasswordBody, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<BooleanResponse>> => {
+    
+    
+    return axios.default.post(
+      `/api/user/change-password`,
+      userAPIChangePasswordBody,options
+    );
+  }
+
+
+
+export const getUserAPIChangePasswordMutationOptions = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userAPIChangePassword>>, TError,{data: UserAPIChangePasswordBody}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof userAPIChangePassword>>, TError,{data: UserAPIChangePasswordBody}, TContext> => {
+
+const mutationKey = ['userAPIChangePassword'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof userAPIChangePassword>>, {data: UserAPIChangePasswordBody}> = (props) => {
+          const {data} = props ?? {};
+
+          return  userAPIChangePassword(data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UserAPIChangePasswordMutationResult = NonNullable<Awaited<ReturnType<typeof userAPIChangePassword>>>
+    export type UserAPIChangePasswordMutationBody = UserAPIChangePasswordBody
+    export type UserAPIChangePasswordMutationError = AxiosError<Error>
+
+    export const useUserAPIChangePassword = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userAPIChangePassword>>, TError,{data: UserAPIChangePasswordBody}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof userAPIChangePassword>>,
+        TError,
+        {data: UserAPIChangePasswordBody},
+        TContext
+      > => {
+
+      const mutationOptions = getUserAPIChangePasswordMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

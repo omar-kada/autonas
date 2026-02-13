@@ -212,6 +212,12 @@ type DeployementAPIListParams struct {
 	Offset *string `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// UserAPIChangePasswordJSONBody defines parameters for UserAPIChangePassword.
+type UserAPIChangePasswordJSONBody struct {
+	NewPass string `json:"newPass"`
+	OldPass string `json:"oldPass"`
+}
+
 // ConfigAPISetJSONRequestBody defines body for ConfigAPISet for application/json ContentType.
 type ConfigAPISetJSONRequestBody = Config
 
@@ -223,6 +229,9 @@ type RegisterAPIRegisterJSONRequestBody = Credentials
 
 // SettingsAPISetJSONRequestBody defines body for SettingsAPISet for application/json ContentType.
 type SettingsAPISetJSONRequestBody = Settings
+
+// UserAPIChangePasswordJSONRequestBody defines body for UserAPIChangePassword for application/json ContentType.
+type UserAPIChangePasswordJSONRequestBody UserAPIChangePasswordJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -355,6 +364,11 @@ type ClientInterface interface {
 
 	// UserAPIGet request
 	UserAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UserAPIChangePasswordWithBody request with any body
+	UserAPIChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UserAPIChangePassword(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ConfigAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -599,6 +613,30 @@ func (c *Client) UserAPIDelete(ctx context.Context, reqEditors ...RequestEditorF
 
 func (c *Client) UserAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUserAPIGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UserAPIChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUserAPIChangePasswordRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UserAPIChangePassword(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUserAPIChangePasswordRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1168,6 +1206,46 @@ func NewUserAPIGetRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewUserAPIChangePasswordRequest calls the generic UserAPIChangePassword builder with application/json body
+func NewUserAPIChangePasswordRequest(server string, body UserAPIChangePasswordJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUserAPIChangePasswordRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUserAPIChangePasswordRequestWithBody generates requests for UserAPIChangePassword with any type of body
+func NewUserAPIChangePasswordRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/user/change-password")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1269,6 +1347,11 @@ type ClientWithResponsesInterface interface {
 
 	// UserAPIGetWithResponse request
 	UserAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UserAPIGetResponse, error)
+
+	// UserAPIChangePasswordWithBodyWithResponse request with any body
+	UserAPIChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error)
+
+	UserAPIChangePasswordWithResponse(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error)
 }
 
 type ConfigAPIGetResponse struct {
@@ -1667,6 +1750,29 @@ func (r UserAPIGetResponse) StatusCode() int {
 	return 0
 }
 
+type UserAPIChangePasswordResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UserAPIChangePasswordResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UserAPIChangePasswordResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ConfigAPIGetWithResponse request returning *ConfigAPIGetResponse
 func (c *ClientWithResponses) ConfigAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigAPIGetResponse, error) {
 	rsp, err := c.ConfigAPIGet(ctx, reqEditors...)
@@ -1850,6 +1956,23 @@ func (c *ClientWithResponses) UserAPIGetWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseUserAPIGetResponse(rsp)
+}
+
+// UserAPIChangePasswordWithBodyWithResponse request with arbitrary body returning *UserAPIChangePasswordResponse
+func (c *ClientWithResponses) UserAPIChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error) {
+	rsp, err := c.UserAPIChangePasswordWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUserAPIChangePasswordResponse(rsp)
+}
+
+func (c *ClientWithResponses) UserAPIChangePasswordWithResponse(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error) {
+	rsp, err := c.UserAPIChangePassword(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUserAPIChangePasswordResponse(rsp)
 }
 
 // ParseConfigAPIGetResponse parses an HTTP response from a ConfigAPIGetWithResponse call
@@ -2418,6 +2541,39 @@ func ParseUserAPIGetResponse(rsp *http.Response) (*UserAPIGetResponse, error) {
 	return response, nil
 }
 
+// ParseUserAPIChangePasswordResponse parses an HTTP response from a UserAPIChangePasswordWithResponse call
+func ParseUserAPIChangePasswordResponse(rsp *http.Response) (*UserAPIChangePasswordResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UserAPIChangePasswordResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -2471,6 +2627,9 @@ type ServerInterface interface {
 
 	// (GET /api/user)
 	UserAPIGet(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/user/change-password)
+	UserAPIChangePassword(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2854,6 +3013,26 @@ func (siw *ServerInterfaceWrapper) UserAPIGet(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// UserAPIChangePassword operation middleware
+func (siw *ServerInterfaceWrapper) UserAPIChangePassword(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UserAPIChangePassword(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -2991,6 +3170,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/user", wrapper.UserAPIDelete)
 	m.HandleFunc("GET "+options.BaseURL+"/api/user", wrapper.UserAPIGet)
+	m.HandleFunc("POST "+options.BaseURL+"/api/user/change-password", wrapper.UserAPIChangePassword)
 
 	return m
 }
@@ -3483,6 +3663,35 @@ func (response UserAPIGetdefaultJSONResponse) VisitUserAPIGetResponse(w http.Res
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type UserAPIChangePasswordRequestObject struct {
+	Body *UserAPIChangePasswordJSONRequestBody
+}
+
+type UserAPIChangePasswordResponseObject interface {
+	VisitUserAPIChangePasswordResponse(w http.ResponseWriter) error
+}
+
+type UserAPIChangePassword200JSONResponse BooleanResponse
+
+func (response UserAPIChangePassword200JSONResponse) VisitUserAPIChangePasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UserAPIChangePassworddefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response UserAPIChangePassworddefaultJSONResponse) VisitUserAPIChangePasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -3536,6 +3745,9 @@ type StrictServerInterface interface {
 
 	// (GET /api/user)
 	UserAPIGet(ctx context.Context, request UserAPIGetRequestObject) (UserAPIGetResponseObject, error)
+
+	// (POST /api/user/change-password)
+	UserAPIChangePassword(ctx context.Context, request UserAPIChangePasswordRequestObject) (UserAPIChangePasswordResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -4002,6 +4214,37 @@ func (sh *strictHandler) UserAPIGet(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UserAPIGetResponseObject); ok {
 		if err := validResponse.VisitUserAPIGetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UserAPIChangePassword operation middleware
+func (sh *strictHandler) UserAPIChangePassword(w http.ResponseWriter, r *http.Request) {
+	var request UserAPIChangePasswordRequestObject
+
+	var body UserAPIChangePasswordJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UserAPIChangePassword(ctx, request.(UserAPIChangePasswordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UserAPIChangePassword")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UserAPIChangePasswordResponseObject); ok {
+		if err := validResponse.VisitUserAPIChangePasswordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -5,7 +5,7 @@ export function useUser() {
   return useQuery(
     getUserAPIGetQueryOptions({
       query: {
-        select: (data) => data.data,
+        select: (data) => (data.data?.username ? data.data : undefined),
       },
     }),
   );

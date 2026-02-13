@@ -20,7 +20,7 @@
       "username": "Username",
       "username_MIN_3": "Username should be at least 3 characters",
       "password": "Password",
-      "password_MIN_12": "Password should be at least 12 characters",
+      "password_MIN_10": "Password should be at least 10 characters",
       "SUBMIT": "Create"
     }
   },
@@ -31,7 +31,7 @@
       "username": "Username",
       "username_MIN_3": "Username should be at least 3 characters",
       "password": "Password",
-      "password_MIN_12": "Password should be at least 12 characters",
+      "password_MIN_10": "Password should be at least 10 characters",
       "SUBMIT": "Login"
     }
   },
@@ -88,6 +88,14 @@
         "TITLE": "Are you sure ?",
         "DESCRIPTION": "Do you really want to delete your account ?"
       }
+    },
+    "CHANGE_PASS_DIALOG": {
+      "TITLE": "Change your password",
+      "DESCRIPTION": "Please provide your old password, and the new password",
+      "oldPass": "Old password",
+      "oldPass_MIN_10": "Password should be at least 10 characters",
+      "newPass": "New password",
+      "newPass_MIN_10": "Password should be at least 10 characters"
     }
   },
   "LOGS": "Logs",
@@ -132,7 +140,9 @@
     "LOAD_SETTINGS_ERROR": "Error while loading settings",
     "COPIED": "Copied",
     "LOGIN_ERROR": "Login error",
+    "LOGOUT_ERROR": "Logout error",
     "USER_CREATION_ERROR": "register error",
+    "CHANGE_PASS_ERROR": "Error while changing password",
     "DELETE_ACCOUNT_ERROR": "Error while deleting your account"
   }
 }

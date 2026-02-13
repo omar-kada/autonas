@@ -162,6 +162,10 @@ interface LogoutAPI {
 interface UserAPI {
   @get get(): User | Error;
   //@post update(user: User): BooleanResponse | Error;
+  @post @route("change-password") changePassword(
+    oldPass: string,
+    newPass: string,
+  ): BooleanResponse | Error;
   @delete delete(): BooleanResponse | Error;
 }
 

@@ -257,3 +257,65 @@ func TestDeleteUser_UserNotFound(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, deleted)
 }
+
+func TestChangePassword_Success(t *testing.T) {
+	store := testutil.NewMemoryStorage()
+	service := NewService(store)
+
+	username := "testuser"
+	oldPassword := "oldpassword"
+	newPassword := "newpassword"
+
+	hashedPassword, _ := hashPassword(oldPassword)
+	mockUser := models.User{
+		Username:       username,
+		HashedPassword: hashedPassword,
+	}
+	store.UpsertUser(mockUser)
+
+	success, err := service.ChangePassword(username, oldPassword, newPassword)
+
+	assert.NoError(t, err)
+	assert.True(t, success)
+
+	updatedUser, _ := store.UserByUsername(username)
+	assert.True(t, checkPasswordHash(newPassword, updatedUser.HashedPassword))
+}
+
+func TestChangePassword_UserNotFound(t *testing.T) {
+	store := testutil.NewMemoryStorage()
+	service := NewService(store)
+
+	username := "nonexistentuser"
+	oldPassword := "oldpassword"
+	newPassword := "newpassword"
+
+	success, err := service.ChangePassword(username, oldPassword, newPassword)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrUserNotFound)
+	assert.False(t, success)
+}
+
+func TestChangePassword_InvalidOldPassword(t *testing.T) {
+	store := testutil.NewMemoryStorage()
+	service := NewService(store)
+
+	username := "testuser"
+	oldPassword := "oldpassword"
+	newPassword := "newpassword"
+	wrongOldPassword := "wrongpassword"
+
+	hashedPassword, _ := hashPassword(oldPassword)
+	mockUser := models.User{
+		Username:       username,
+		HashedPassword: hashedPassword,
+	}
+	store.UpsertUser(mockUser)
+
+	success, err := service.ChangePassword(username, wrongOldPassword, newPassword)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidPassword)
+	assert.False(t, success)
+}

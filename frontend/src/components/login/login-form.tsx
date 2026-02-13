@@ -19,9 +19,9 @@ const loginSchema = z.object({
     .min(3, { message: 'LOGIN.FORM.username_MIN_3' }),
   password: z
     .string({
-      error: 'LOGIN.FORM.password_MIN_12',
+      error: 'LOGIN.FORM.password_MIN_10',
     })
-    .min(12, { message: 'LOGIN.FORM.password_MIN_12' }),
+    .min(10, { message: 'LOGIN.FORM.password_MIN_10' }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;

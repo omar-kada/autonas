@@ -291,3 +291,14 @@ func (h *Handler) UserAPIDelete(ctx context.Context, _ api.UserAPIDeleteRequestO
 		Success: true,
 	}, nil
 }
+
+func (h *Handler) UserAPIChangePassword(ctx context.Context, r api.UserAPIChangePasswordRequestObject) (api.UserAPIChangePasswordResponseObject, error) {
+	user, exists := middlewares.UserFromContext(ctx)
+	if !exists {
+		return api.UserAPIChangePassworddefaultJSONResponse{}, errUserNotFound
+	}
+	ok, err := h.accountService.ChangePassword(user.Username, r.Body.OldPass, r.Body.NewPass)
+	return api.UserAPIChangePassword200JSONResponse{
+		Success: ok,
+	}, err
+}

@@ -42,6 +42,7 @@ type AuthService interface {
 type AccountService interface {
 	GetUser(username string) (models.User, error)
 	DeleteUser(username string) (bool, error)
+	ChangePassword(username string, oldPass string, newPass string) (bool, error)
 }
 
 type service struct {
@@ -171,6 +172,34 @@ func (a *service) GetUser(username string) (models.User, error) {
 // DeleteUser removes a user from the system by their username.
 func (a *service) DeleteUser(username string) (bool, error) {
 	return a.userStore.DeleteUserByUserName(username)
+}
+
+// ChangePassword updates a user's password after verifying the old password.
+func (a *service) ChangePassword(username string, oldPass string, newPass string) (bool, error) {
+	user, err := a.userStore.UserByUsername(username)
+	if err != nil {
+		return false, fmt.Errorf("error finding user: %w", err)
+	}
+
+	if user.Username == "" {
+		return false, ErrUserNotFound
+	}
+
+	if !checkPasswordHash(oldPass, user.HashedPassword) {
+		return false, ErrInvalidPassword
+	}
+
+	hashedPassword, err := hashPassword(newPass)
+	if err != nil {
+		return false, fmt.Errorf("error hashing new password: %w", err)
+	}
+
+	user.HashedPassword = hashedPassword
+	if _, err := a.userStore.UpsertUser(user); err != nil {
+		return false, fmt.Errorf("error updating user: %w", err)
+	}
+
+	return true, nil
 }
 
 // Helper functions

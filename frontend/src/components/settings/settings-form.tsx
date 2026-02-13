@@ -15,6 +15,7 @@ import {
 } from '../ui/field';
 import { Input } from '../ui/input';
 import { ConfirmationDialog } from '../view/confirmation-dialog';
+import { ChangePasswordDialog } from './change-password-dialog';
 import { type FormValues } from './settings-form-schema';
 
 export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
@@ -26,10 +27,12 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
     <form>
       <FieldGroup className="mt-2">
         <SettingsSection title={t('SETTINGS.FORM.ACCOUNT')} Icon={UserIcon} className="flex gap-2">
-          <Button type="button" disabled>
-            <KeyRound />
-            {t('SETTINGS.FORM.CHANGE_PASSWORD')}
-          </Button>
+          <ChangePasswordDialog>
+            <Button type="button">
+              <KeyRound />
+              {t('SETTINGS.FORM.CHANGE_PASSWORD')}
+            </Button>
+          </ChangePasswordDialog>
           <ConfirmationDialog
             title={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.TITLE')}
             description={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.DESCRIPTION')}
