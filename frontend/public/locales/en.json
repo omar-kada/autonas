@@ -95,7 +95,8 @@
       "oldPass": "Old password",
       "oldPass_MIN_10": "Password should be at least 10 characters",
       "newPass": "New password",
-      "newPass_MIN_10": "Password should be at least 10 characters"
+      "newPass_MIN_10": "Password should be at least 10 characters",
+      "CHANGE_PASS_SUCCESS": "Password changed successfully"
     }
   },
   "LOGS": "Logs",

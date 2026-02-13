@@ -292,6 +292,7 @@ func (h *Handler) UserAPIDelete(ctx context.Context, _ api.UserAPIDeleteRequestO
 	}, nil
 }
 
+// UserAPIChangePassword changes the password for the authenticated user
 func (h *Handler) UserAPIChangePassword(ctx context.Context, r api.UserAPIChangePasswordRequestObject) (api.UserAPIChangePasswordResponseObject, error) {
 	user, exists := middlewares.UserFromContext(ctx)
 	if !exists {

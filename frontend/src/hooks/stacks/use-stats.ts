@@ -4,7 +4,7 @@ import type { AxiosError, AxiosResponse } from 'axios';
 
 export const getStatsQueryOptions = (
   queryOptions?: Partial<
-    UseQueryOptions<AxiosResponse<Stats, unknown, {}>, AxiosError<ApiError>, Stats>
+    UseQueryOptions<AxiosResponse<Stats, unknown>, AxiosError<ApiError>, Stats>
   >,
 ) => {
   return getStatsAPIGetQueryOptions(30, {

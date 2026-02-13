@@ -3,8 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { DialogClose } from '@radix-ui/react-dialog';
 import { Check, EyeIcon, EyeOffIcon, Lock, X } from 'lucide-react';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import z from 'zod';
 import { Button } from '../ui/button';
 import {
@@ -48,6 +49,7 @@ export function ChangePasswordDialog({ children }: { children: ReactNode }) {
   const onChangePass = useCallback(() => {
     return changePass({ data: getValues() }).then(() => {
       setOpen(false);
+      toast.success(t('SETTINGS.CHANGE_PASS_DIALOG.CHANGE_PASS_SUCCESS'));
     });
   }, [setOpen, changePass, getValues]);
 
@@ -83,7 +85,13 @@ export function ChangePasswordDialog({ children }: { children: ReactNode }) {
   );
 }
 
-function PasswordField({ control, name }: { control: any; name: string }) {
+function PasswordField({
+  control,
+  name,
+}: {
+  control: Control<ChangePassFormValues>;
+  name: keyof ChangePassFormValues;
+}) {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const toggleShowPassword = useCallback(() => {
