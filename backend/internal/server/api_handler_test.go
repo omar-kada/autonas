@@ -913,6 +913,7 @@ func TestRegisterAPIRegister(t *testing.T) {
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
 }
+
 func TestUserAPIChangePassword_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
