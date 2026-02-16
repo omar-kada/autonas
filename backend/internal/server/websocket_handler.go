@@ -4,19 +4,15 @@ import (
 	"log/slog"
 	"net/http"
 
-	"omar-kada/autonas/internal/storage"
-
 	"github.com/gorilla/websocket"
 )
 
 // WebsocketHandler processes websocker requests
 type WebsocketHandler struct {
-	store storage.DeploymentStorage
 }
 
-func newWebsocketHandler(store storage.DeploymentStorage) *WebsocketHandler {
+func newWebsocketHandler() *WebsocketHandler {
 	return &WebsocketHandler{
-		store: store,
 	}
 }
 

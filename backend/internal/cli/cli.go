@@ -8,6 +8,7 @@ import (
 	"omar-kada/autonas/internal/storage"
 
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 // NewRootCmd creates a new command with default dependencies
@@ -16,8 +17,8 @@ func NewRootCmd(executor shell.Executor) *cobra.Command {
 		Use:   "autonas",
 		Short: "AutoNAS CLI",
 	}
-	rootCmd.AddCommand(NewRunCommand(executor, func(params RunParams) (storage.Storage, error) {
-		return storage.NewGormStorage(
+	rootCmd.AddCommand(NewRunCommand(executor, func(params RunParams) (*gorm.DB, error) {
+		return storage.NewGormDb(
 			filepath.Join(params.GetDBDir(), "autonas.db"),
 			params.GetAddWritePerm(),
 		)

@@ -16,14 +16,17 @@ var deploymentID uint64
 
 func newStore() storage.EventStorage {
 	store := testutil.NewMemoryStorage()
-	dep, _ := store.InitDeployment("test", "author", "", []models.FileDiff{})
+	depStore, _ := storage.NewDeploymentStorage(store)
+	eventStore, _ := storage.NewEventStorage(store)
+	dep, _ := depStore.InitDeployment("test", "author", "", []models.FileDiff{})
 	deploymentID = dep.ID
-	return store
+
+	return eventStore
 }
 
 func TestNewDefaultDispatcher(t *testing.T) {
-	store := testutil.NewMemoryStorage()
-	dispatcher := NewDefaultDispatcher(store)
+	eventStore, _ := storage.NewEventStorage(testutil.NewMemoryStorage())
+	dispatcher := NewDefaultDispatcher(eventStore)
 
 	if dispatcher == nil {
 		t.Error("Expected non-nil dispatcher")
@@ -31,8 +34,8 @@ func TestNewDefaultDispatcher(t *testing.T) {
 }
 
 func TestDispatchLevel(t *testing.T) {
-	store := newStore()
-	dispatcher := NewDefaultDispatcher(store).(*dispatcher)
+	eventStore := newStore()
+	dispatcher := NewDefaultDispatcher(eventStore).(*dispatcher)
 
 	ctx := context.WithValue(context.Background(), ObjectID, deploymentID)
 	msg := "test message"
@@ -40,7 +43,7 @@ func TestDispatchLevel(t *testing.T) {
 
 	dispatcher.dispatchLevel(ctx, slog.LevelInfo, msg, args...)
 
-	storedEvents, err := store.GetEvents(deploymentID)
+	storedEvents, err := eventStore.GetEvents(deploymentID)
 	assert.NoError(t, err)
 	if len(storedEvents) != 1 {
 		t.Errorf("Expected 1 event, got %d", len(storedEvents))

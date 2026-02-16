@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"omar-kada/autonas/internal/users"
 	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/assert"
@@ -19,14 +20,14 @@ type MockAuthService struct {
 	mock.Mock
 }
 
-func (m *MockAuthService) Login(credentials models.Credentials) (models.Auth, error) {
+func (m *MockAuthService) Login(credentials models.Credentials) (users.Token, error) {
 	args := m.Called(credentials)
-	return args.Get(0).(models.Auth), args.Error(1)
+	return args.Get(0).(users.Token), args.Error(1)
 }
 
-func (m *MockAuthService) Register(credentials models.Credentials) (models.Auth, error) {
+func (m *MockAuthService) Register(credentials models.Credentials) (users.Token, error) {
 	args := m.Called(credentials)
-	return args.Get(0).(models.Auth), args.Error(1)
+	return args.Get(0).(users.Token), args.Error(1)
 }
 
 func (m *MockAuthService) IsRegistered() (bool, error) {
@@ -46,9 +47,9 @@ func (m *MockAuthService) GetUserByToken(token string) (models.User, error) {
 
 func TestAuthMiddleware_Register(t *testing.T) {
 	mockAuthService := new(MockAuthService)
-	expectedAuth := models.Auth{
-		Token:     "testtoken",
-		ExpiresIn: time.Now().Add(24 * time.Hour),
+	expectedAuth := users.Token{
+		Value:   "testtoken",
+		Expires: time.Now().Add(24 * time.Hour),
 	}
 
 	mockAuthService.On("Register", models.Credentials{
@@ -93,9 +94,9 @@ func TestAuthMiddleware_RegisterGet(t *testing.T) {
 
 func TestAuthMiddleware_Login(t *testing.T) {
 	mockAuthService := new(MockAuthService)
-	expectedAuth := models.Auth{
-		Token:     "testtoken",
-		ExpiresIn: time.Now().Add(24 * time.Hour),
+	expectedAuth := users.Token{
+		Value:   "testtoken",
+		Expires: time.Now().Add(24 * time.Hour),
 	}
 
 	mockAuthService.On("Login", models.Credentials{
@@ -264,7 +265,7 @@ func TestAuthMiddleware_RegisterFailure(t *testing.T) {
 	mockAuthService.On("Register", models.Credentials{
 		Username: "testuser",
 		Password: "testpass",
-	}).Return(models.Auth{}, errors.New("registration failed"))
+	}).Return(users.Token{}, errors.New("registration failed"))
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
@@ -339,7 +340,7 @@ func TestAuthMiddleware_LoginFailure(t *testing.T) {
 	mockAuthService.On("Login", models.Credentials{
 		Username: "testuser",
 		Password: "testpass",
-	}).Return(models.Auth{}, errors.New("login failed"))
+	}).Return(users.Token{}, errors.New("login failed"))
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called

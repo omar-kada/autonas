@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"gorm.io/gorm"
 )
 
 type Mocker struct {
@@ -24,7 +24,7 @@ func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
 	return args.Error(0)
 }
 
-func initMemoryStorage(_ RunParams) (storage.Storage, error) {
+func initMemoryStorage(_ RunParams) (*gorm.DB, error) {
 	return testutil.NewMemoryStorage(), nil
 }
 
@@ -162,7 +162,7 @@ func TestRunCommand_EnvParams(t *testing.T) {
 
 func TestRunCommand_WithInvalidConfig(t *testing.T) {
 	mocker := &Mocker{}
-	cmd := NewRunCommand(mocker, func(_ RunParams) (storage.Storage, error) {
+	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
 		return nil, errors.New("mock error")
 	})
 

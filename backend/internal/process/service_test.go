@@ -115,6 +115,7 @@ var (
 	}
 )
 
+
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
 	configStore.Update(currentCfg)
@@ -123,7 +124,7 @@ func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.Dep
 		mocker,
 		mocker,
 		mocker,
-		testutil.NewMemoryStorage(),
+		testutil.NewDeploymentStorage(t),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -405,7 +406,7 @@ func TestSync_ErrorGettingConfig(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		testutil.NewMemoryStorage(),
+		testutil.NewDeploymentStorage(t),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -607,7 +608,7 @@ func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		testutil.NewMemoryStorage(),
+		testutil.NewDeploymentStorage(t),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -635,7 +636,7 @@ func TestGetDiff_ErrorGettingConfigFromStore(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		testutil.NewMemoryStorage(),
+		testutil.NewDeploymentStorage(t),
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
