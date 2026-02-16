@@ -24,7 +24,6 @@ func NewIDCursor(limit int, offset uint64) Cursor[uint64] {
 	}
 }
 
-
 // Paginate returns a GORM scope function that applies pagination based on the given cursor.
 // It uses the id field for cursor-based pagination with the condition "id < offset".
 func Paginate[T any](c Cursor[T]) func(db *gorm.DB) *gorm.DB {

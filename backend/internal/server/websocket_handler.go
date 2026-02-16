@@ -8,12 +8,10 @@ import (
 )
 
 // WebsocketHandler processes websocker requests
-type WebsocketHandler struct {
-}
+type WebsocketHandler struct{}
 
 func newWebsocketHandler() *WebsocketHandler {
-	return &WebsocketHandler{
-	}
+	return &WebsocketHandler{}
 }
 
 func (*WebsocketHandler) handle(w http.ResponseWriter, r *http.Request) {

@@ -115,7 +115,6 @@ var (
 	}
 )
 
-
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
 	configStore.Update(currentCfg)

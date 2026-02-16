@@ -209,11 +209,13 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-type TokenValue string
-type Token struct {
-	Value   TokenValue
-	Expires time.Time
-}
+type (
+	TokenValue string
+	Token      struct {
+		Value   TokenValue
+		Expires time.Time
+	}
+)
 
 func generateToken() (Token, error) {
 	token := make([]byte, 32)

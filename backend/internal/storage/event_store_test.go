@@ -54,6 +54,7 @@ func TestStoreEventAndGetEvents(t *testing.T) {
 	assert.Len(t, events, 1)
 	assert.Equal(t, "ok", events[0].Msg)
 }
+
 func TestStoreEvent_NoDeployment(t *testing.T) {
 	s, _ := setupEventStorage(t)
 
