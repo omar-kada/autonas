@@ -6,16 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
-
-func setupStorage(t *testing.T) *gorm.DB {
-	db, err := NewGormDb(":memory:", 0o000)
-	if err != nil {
-		t.Fatalf("new storage: %v", err)
-	}
-	return db
-}
 
 func TestNewGormStorage_FileCreation(t *testing.T) {
 	// Create a temporary directory for the test

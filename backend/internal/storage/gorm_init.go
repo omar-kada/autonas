@@ -1,3 +1,4 @@
+// Package storage provides functionality for database operations and storage management.
 package storage
 
 import (

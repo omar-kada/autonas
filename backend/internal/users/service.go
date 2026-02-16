@@ -138,7 +138,7 @@ func (*service) insertToken(token Token, user models.User) {
 }
 
 // Logout invalidates the user's authentication token.
-func (a *service) Logout(tokenValue string) error {
+func (*service) Logout(tokenValue string) error {
 	if _, exists := usersToken[TokenValue(tokenValue)]; !exists {
 		return ErrUserNotFound
 	}
@@ -210,8 +210,10 @@ func checkPasswordHash(password, hash string) bool {
 }
 
 type (
+	// TokenValue represents a unique authentication token value
 	TokenValue string
-	Token      struct {
+	// Token represents an authentication token with an expiration time
+	Token struct {
 		Value   TokenValue
 		Expires time.Time
 	}

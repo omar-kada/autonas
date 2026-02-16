@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"log/slog"
-	"testing"
 
 	"omar-kada/autonas/internal/storage"
 
@@ -16,12 +15,4 @@ func NewMemoryStorage() *gorm.DB {
 		slog.Error("couldn't init memory store")
 	}
 	return db
-}
-
-func NewDeploymentStorage(t *testing.T) storage.DeploymentStorage {
-	depStore, err := storage.NewDeploymentStorage(NewMemoryStorage())
-	if err != nil {
-		t.Fatalf("error creating deployment storage : %v", err)
-	}
-	return depStore
 }

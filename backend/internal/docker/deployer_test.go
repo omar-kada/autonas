@@ -38,7 +38,7 @@ func (m *Mocker) Copy(src, dest string) error {
 	return args.Error(0)
 }
 
-func newDeployerWithMocks(t *testing.T, mocker *Mocker) *deployer {
+func newDeployerWithMocks(mocker *Mocker) *deployer {
 	db := testutil.NewMemoryStorage()
 	depStore, _ := storage.NewDeploymentStorage(db)
 	dep, _ := depStore.InitDeployment("test commit", "Test", "", []models.FileDiff{})
@@ -69,7 +69,7 @@ var mockConfig = models.Config{
 
 func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	mocker := &Mocker{}
-	deployer := newDeployerWithMocks(t, mocker)
+	deployer := newDeployerWithMocks(mocker)
 
 	baseDir := t.TempDir()
 	envFilePath := filepath.Join(baseDir, "svc1", ".env")
@@ -106,7 +106,7 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker := &Mocker{}
 	baseDir := t.TempDir()
 
-	deployer := newDeployerWithMocks(t, mocker)
+	deployer := newDeployerWithMocks(mocker)
 	mocker.On(
 		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
 	).Return(nil)
@@ -153,7 +153,7 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			deployer := newDeployerWithMocks(t, mocker)
+			deployer := newDeployerWithMocks(mocker)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("Exec", "docker", mock.Anything).Return(tc.errors.runCmdErr)
 			errs := deployer.DeployServices(mockConfig, "/services")
@@ -166,7 +166,7 @@ func TestDeployServices_Errors(t *testing.T) {
 
 func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	mocker := &Mocker{}
-	deployer := newDeployerWithMocks(t, mocker)
+	deployer := newDeployerWithMocks(mocker)
 
 	mock.InOrder(
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
@@ -218,7 +218,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			deployer := newDeployerWithMocks(t, mocker)
+			deployer := newDeployerWithMocks(mocker)
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
