@@ -2,17 +2,19 @@ package models
 
 import "time"
 
-// Auth represents authentication information including token and expiration time
-type Auth struct {
-	Token     string
-	ExpiresIn time.Time
+// Session represents a user session with authentication details
+type Session struct {
+	SessionID        uint64 `gorm:"primaryKey;autoGenerate"`
+	RefreshToken     string `gorm:"index"`
+	RefreshExpiresIn time.Time
+	Revoked          bool
+	Username         string `gorm:"not null"`
 }
 
 // User represents a user with credentials and authentication details
 type User struct {
 	Username       string `gorm:"primaryKey"`
 	HashedPassword string
-	Auth
 }
 
 // Credentials represents user login credentials

@@ -2,8 +2,8 @@ package users
 
 import (
 	"testing"
-	"time"
 
+	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 	"omar-kada/autonas/testutil"
 
@@ -11,7 +11,8 @@ import (
 )
 
 func TestLogin_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -27,15 +28,15 @@ func TestLogin_Success(t *testing.T) {
 
 	store.UpsertUser(mockUser)
 
-	auth, err := service.Login(credentials)
+	token, err := service.Login(credentials)
 
 	assert.NoError(t, err)
-	assert.NotEmpty(t, auth.Token)
-	assert.NotZero(t, auth.ExpiresIn)
+	assert.NotNil(t, token)
 }
 
 func TestLogin_UserNotFound(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -43,15 +44,16 @@ func TestLogin_UserNotFound(t *testing.T) {
 		Password: "password",
 	}
 
-	auth, err := service.Login(credentials)
+	token, err := service.Login(credentials)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrUserNotFound)
-	assert.Empty(t, auth.Token)
+	assert.Zero(t, token)
 }
 
 func TestLogin_InvalidPassword(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -67,15 +69,16 @@ func TestLogin_InvalidPassword(t *testing.T) {
 
 	store.UpsertUser(mockUser)
 
-	auth, err := service.Login(credentials)
+	token, err := service.Login(credentials)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrInvalidPassword)
-	assert.Empty(t, auth.Token)
+	assert.Zero(t, token)
 }
 
 func TestIsRegistered_HasUsers(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	mockUser := models.User{
@@ -91,7 +94,8 @@ func TestIsRegistered_HasUsers(t *testing.T) {
 }
 
 func TestIsRegistered_NoUsers(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	isRegistered, err := service.IsRegistered()
@@ -101,7 +105,8 @@ func TestIsRegistered_NoUsers(t *testing.T) {
 }
 
 func TestRegister_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -109,15 +114,15 @@ func TestRegister_Success(t *testing.T) {
 		Password: "password",
 	}
 
-	auth, err := service.Register(credentials)
+	token, err := service.Register(credentials)
 
 	assert.NoError(t, err)
-	assert.NotEmpty(t, auth.Token)
-	assert.NotZero(t, auth.ExpiresIn)
+	assert.NotZero(t, token)
 }
 
 func TestRegister_AlreadyRegistered(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -131,77 +136,87 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 
 	store.UpsertUser(mockUser)
 
-	auth, err := service.Register(credentials)
+	token, err := service.Register(credentials)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrAlreadyRegistered)
-	assert.Empty(t, auth.Token)
+	assert.Zero(t, token)
 }
 
 func TestLogout_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
-	token := "validtoken"
+	pass, _ := hashPassword("password")
 	mockUser := models.User{
-		Username: "testuser",
-		Auth:     models.Auth{Token: token, ExpiresIn: time.Now().Add(24 * time.Hour)},
+		Username:       "testuser",
+		HashedPassword: pass,
 	}
 
 	store.UpsertUser(mockUser)
 
-	err := service.Logout(token)
-
+	token, err := service.Login(models.Credentials{
+		Username: "testuser",
+		Password: "password",
+	})
 	assert.NoError(t, err)
 
-	user, _ := store.UserByToken(token)
-	assert.Empty(t, user.Token)
+	err = service.Logout(string(token.Value))
+	assert.NoError(t, err)
+
+	user, _ := service.GetUserByToken(string(token.Value))
+	assert.Zero(t, user)
 }
 
 func TestLogout_UserNotFound(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
-	token := "invalidtoken"
-
-	err := service.Logout(token)
+	err = service.Logout("invalidtoken")
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrUserNotFound)
 }
 
 func TestGetUserByToken_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
-	token := "validtoken"
+	pass, _ := hashPassword("password")
 	mockUser := models.User{
-		Username: "testuser",
-		Auth:     models.Auth{Token: token, ExpiresIn: time.Now().Add(24 * time.Hour)},
+		Username:       "testuser",
+		HashedPassword: pass,
 	}
 
 	store.UpsertUser(mockUser)
-
-	user, err := service.GetUserByToken(token)
+	token, err := service.Login(models.Credentials{
+		Username: "testuser",
+		Password: "password",
+	})
+	assert.NoError(t, err)
+	user, err := service.GetUserByToken(string(token.Value))
 
 	assert.NoError(t, err)
 	assert.Equal(t, mockUser.Username, user.Username)
 }
 
 func TestGetUserByToken_UserNotFound(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
-	token := "invalidtoken"
-
-	user, err := service.GetUserByToken(token)
+	user, err := service.GetUserByToken("invalidtoken")
 
 	assert.ErrorIs(t, err, ErrUserNotFound)
-	assert.Empty(t, user.Username)
+	assert.Zero(t, user)
 }
 
 func TestGetUser_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "testuser"
@@ -218,7 +233,8 @@ func TestGetUser_Success(t *testing.T) {
 }
 
 func TestGetUser_UserNotFound(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "nonexistentuser"
@@ -230,7 +246,8 @@ func TestGetUser_UserNotFound(t *testing.T) {
 }
 
 func TestDeleteUser_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "testuser"
@@ -247,7 +264,8 @@ func TestDeleteUser_Success(t *testing.T) {
 }
 
 func TestDeleteUser_UserNotFound(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "nonexistentuser"
@@ -259,7 +277,8 @@ func TestDeleteUser_UserNotFound(t *testing.T) {
 }
 
 func TestChangePassword_Success(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "testuser"
@@ -283,7 +302,8 @@ func TestChangePassword_Success(t *testing.T) {
 }
 
 func TestChangePassword_UserNotFound(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "nonexistentuser"
@@ -298,7 +318,8 @@ func TestChangePassword_UserNotFound(t *testing.T) {
 }
 
 func TestChangePassword_InvalidOldPassword(t *testing.T) {
-	store := testutil.NewMemoryStorage()
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
 	service := NewService(store)
 
 	username := "testuser"

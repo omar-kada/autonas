@@ -25,7 +25,6 @@ type Server interface {
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	store            storage.Storage
 	configStore      storage.ConfigStore
 	processSvc       process.Service
 	userSvc          users.Service
@@ -34,13 +33,12 @@ type HTTPServer struct {
 }
 
 // NewServer creates a new http server
-func NewServer(store storage.Storage, configStore storage.ConfigStore, service process.Service, userService users.Service) Server {
+func NewServer(configStore storage.ConfigStore, service process.Service, userService users.Service) Server {
 	return &HTTPServer{
-		store:            store,
 		configStore:      configStore,
 		processSvc:       service,
 		userSvc:          userService,
-		websocketHandler: newWebsocketHandler(store),
+		websocketHandler: newWebsocketHandler(),
 	}
 }
 

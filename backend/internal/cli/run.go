@@ -15,22 +15,23 @@ import (
 	"omar-kada/autonas/models"
 
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 type runCommand struct {
-	executor     shell.Executor
-	storeCreator func(params RunParams) (storage.Storage, error)
+	executor  shell.Executor
+	dbCreator func(params RunParams) (*gorm.DB, error)
 
 	cmd    *cobra.Command
 	params RunParams
 }
 
 // NewRunCommand creates a new run
-func NewRunCommand(executor shell.Executor, storeCreator func(params RunParams) (storage.Storage, error)) *cobra.Command {
+func NewRunCommand(executor shell.Executor, storeCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
 	run := runCommand{
-		params:       RunParams{},
-		executor:     executor,
-		storeCreator: storeCreator,
+		params:    RunParams{},
+		executor:  executor,
+		dbCreator: storeCreator,
 	}
 
 	run.cmd = &cobra.Command{
@@ -60,12 +61,25 @@ func NewRunCommand(executor shell.Executor, storeCreator func(params RunParams) 
 
 func (run *runCommand) doRun() error {
 	params := getParamsWithDefaults(run.params)
-	store, err := run.storeCreator(params)
+	db, err := run.dbCreator(params)
 	if err != nil {
 		return fmt.Errorf("couldn't init storage %w", err)
 	}
 
-	dispatcher := events.NewDefaultDispatcher(store)
+	eventStore, err := storage.NewEventStorage(db)
+	if err != nil {
+		return fmt.Errorf("couldn't init EventStorage %w", err)
+	}
+	deploymentStore, err := storage.NewDeploymentStorage(db)
+	if err != nil {
+		return fmt.Errorf("couldn't init DeploymentStorage %w", err)
+	}
+	userStore, err := storage.NewUsersStorage(db)
+	if err != nil {
+		return fmt.Errorf("couldn't init UserStorage %w", err)
+	}
+
+	dispatcher := events.NewDefaultDispatcher(eventStore)
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	scheduler := process.NewConfigScheduler(configStore)
 	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
@@ -83,11 +97,11 @@ func (run *runCommand) doRun() error {
 		docker.NewDeployer(dispatcher, run.executor),
 		inspector,
 		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir()),
-		store,
+		deploymentStore,
 		configStore,
 		dispatcher,
 		scheduler)
-	userService := users.NewService(store)
+	userService := users.NewService(userStore)
 	go func() {
 		_, err = scheduler.Schedule(func() {
 			_, err := service.SyncDeployment()
@@ -99,6 +113,6 @@ func (run *runCommand) doRun() error {
 			slog.Warn(err.Error())
 		}
 	}()
-	server := server.NewServer(store, configStore, service, userService)
+	server := server.NewServer(configStore, service, userService)
 	return server.Serve(params.Port)
 }

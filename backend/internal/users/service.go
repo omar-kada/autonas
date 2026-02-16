@@ -23,6 +23,11 @@ var (
 	ErrInvalidPassword = errors.New("invalid password")
 )
 
+// use in memory storage for token , and user a timer to remove it from the map once expired,
+//
+
+var usersToken = make(map[TokenValue]string)
+
 // Service abstracts authorization operations
 type Service interface {
 	AuthService
@@ -31,8 +36,8 @@ type Service interface {
 
 // AuthService abstracts authentication operations
 type AuthService interface {
-	Login(credentials models.Credentials) (models.Auth, error)
-	Register(credentials models.Credentials) (models.Auth, error)
+	Login(credentials models.Credentials) (Token, error)
+	Register(credentials models.Credentials) (Token, error)
 	IsRegistered() (bool, error)
 	Logout(token string) error
 	GetUserByToken(token string) (models.User, error)
@@ -57,33 +62,28 @@ func NewService(userStore storage.UserStorage) Service {
 }
 
 // Login authenticates a user and returns their authentication token.
-func (a *service) Login(credentials models.Credentials) (models.Auth, error) {
+func (a *service) Login(credentials models.Credentials) (Token, error) {
 	user, err := a.userStore.UserByUsername(credentials.Username)
 	if err != nil {
-		return models.Auth{}, fmt.Errorf("error finding user: %w", err)
+		return Token{}, fmt.Errorf("error finding user: %w", err)
 	}
 
 	if user.Username == "" {
-		return models.Auth{}, ErrUserNotFound
+		return Token{}, ErrUserNotFound
 	}
 
 	if !checkPasswordHash(credentials.Password, user.HashedPassword) {
-		return models.Auth{}, ErrInvalidPassword
+		return Token{}, ErrInvalidPassword
 	}
 
 	token, err := generateToken()
 	if err != nil {
-		return models.Auth{}, fmt.Errorf("error generating token: %w", err)
+		return Token{}, fmt.Errorf("error generating token: %w", err)
 	}
 
-	user.Token = token
-	user.ExpiresIn = time.Now().Add(24 * time.Hour)
-	savedUsed, err := a.userStore.UpsertUser(user)
-	if err != nil {
-		return models.Auth{}, fmt.Errorf("error updating user: %w", err)
-	}
+	a.insertToken(token, user)
 
-	return savedUsed.Auth, nil
+	return token, nil
 }
 
 // IsRegistered checks if any users are registered in the system.
@@ -96,64 +96,60 @@ func (a *service) IsRegistered() (bool, error) {
 }
 
 // Register creates a new user account with the provided credentials
-func (a *service) Register(credentials models.Credentials) (models.Auth, error) {
+func (a *service) Register(credentials models.Credentials) (Token, error) {
 	hasUsers, err := a.userStore.HasUsers()
 	if err != nil {
-		return models.Auth{}, err
+		return Token{}, err
 	}
 	if hasUsers {
-		return models.Auth{}, ErrAlreadyRegistered
+		return Token{}, ErrAlreadyRegistered
 	}
 	hashedPassword, err := hashPassword(credentials.Password)
 	if err != nil {
-		return models.Auth{}, fmt.Errorf("error hashing password: %w", err)
+		return Token{}, fmt.Errorf("error hashing password: %w", err)
 	}
 
 	token, err := generateToken()
 	if err != nil {
-		return models.Auth{}, fmt.Errorf("error generating token: %w", err)
+		return Token{}, fmt.Errorf("error generating token: %w", err)
 	}
 
 	user := models.User{
 		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
-		Auth: models.Auth{
-			Token:     token,
-			ExpiresIn: time.Now().Add(24 * time.Hour),
-		},
 	}
-	savedUser, err := a.userStore.UpsertUser(user)
+	_, err = a.userStore.UpsertUser(user)
 	if err != nil {
-		return models.Auth{}, fmt.Errorf("error creating user: %w", err)
+		return Token{}, fmt.Errorf("error creating user: %w", err)
 	}
 
-	return savedUser.Auth, nil
+	a.insertToken(token, user)
+
+	return token, nil
+}
+
+func (*service) insertToken(token Token, user models.User) {
+	usersToken[token.Value] = user.Username
+	go func() {
+		time.AfterFunc(time.Until(token.Expires), func() {
+			delete(usersToken, token.Value)
+		})
+	}()
 }
 
 // Logout invalidates the user's authentication token.
-func (a *service) Logout(token string) error {
-	user, err := a.userStore.UserByToken(token)
-	if err != nil {
-		return fmt.Errorf("error finding user: %w", err)
-	}
-
-	if user.Username == "" {
+func (*service) Logout(tokenValue string) error {
+	if _, exists := usersToken[TokenValue(tokenValue)]; !exists {
 		return ErrUserNotFound
 	}
 
-	user.Token = ""
-	user.ExpiresIn = time.Time{}
-
-	if _, err := a.userStore.UpsertUser(user); err != nil {
-		return fmt.Errorf("error updating user: %w", err)
-	}
-
+	delete(usersToken, TokenValue(tokenValue))
 	return nil
 }
 
 // GetUserByToken retrieves a user by their authentication token.
-func (a *service) GetUserByToken(token string) (models.User, error) {
-	user, err := a.userStore.UserByToken(token)
+func (a *service) GetUserByToken(tokenValue string) (models.User, error) {
+	user, err := a.userStore.UserByUsername(usersToken[TokenValue(tokenValue)])
 	if err == nil && user.Username == "" {
 		return user, ErrUserNotFound
 	}
@@ -213,11 +209,24 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func generateToken() (string, error) {
+type (
+	// TokenValue represents a unique authentication token value
+	TokenValue string
+	// Token represents an authentication token with an expiration time
+	Token struct {
+		Value   TokenValue
+		Expires time.Time
+	}
+)
+
+func generateToken() (Token, error) {
 	token := make([]byte, 32)
 	_, err := rand.Read(token)
 	if err != nil {
-		return "", err
+		return Token{}, err
 	}
-	return hex.EncodeToString(token), nil
+	return Token{
+		Value:   TokenValue(hex.EncodeToString(token)),
+		Expires: time.Now().Add(30 * time.Minute),
+	}, nil
 }

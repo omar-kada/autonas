@@ -71,7 +71,7 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 			}
 		} else {
 
-			user, err := authService.GetUserByToken(cookie.Value)
+			user, err := authService.GetUserByToken((cookie.Value))
 			if err != nil {
 				if !isWhitelisted(url, r.Method) {
 					slog.Error(err.Error())
@@ -126,8 +126,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     _tokenKey,
-			Value:    auth.Token,
-			Expires:  auth.ExpiresIn,
+			Value:    string(auth.Value),
+			Expires:  auth.Expires,
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 			Secure:   true,
@@ -187,8 +187,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     _tokenKey,
-		Value:    auth.Token,
-		Expires:  auth.ExpiresIn,
+		Value:    string(auth.Value),
+		Expires:  auth.Expires,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
@@ -213,7 +213,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.Aut
 		return
 	}
 
-	err = authService.Logout(cookie.Value)
+	err = authService.Logout((cookie.Value))
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "Logout failed", http.StatusUnauthorized)

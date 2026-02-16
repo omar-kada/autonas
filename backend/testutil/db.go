@@ -4,13 +4,15 @@ import (
 	"log/slog"
 
 	"omar-kada/autonas/internal/storage"
+
+	"gorm.io/gorm"
 )
 
 // NewMemoryStorage instanciates a new memory storage
-func NewMemoryStorage() storage.Storage {
-	store, err := storage.NewGormStorage(":memory:", 0o000)
+func NewMemoryStorage() *gorm.DB {
+	db, err := storage.NewGormDb(":memory:", 0o000)
 	if err != nil {
 		slog.Error("couldn't init memory store")
 	}
-	return store
+	return db
 }
