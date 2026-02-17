@@ -128,7 +128,6 @@ func (a *service) insertNewToken(username string) (models.Token, error) {
 }
 
 func (a *service) RefreshToken(token models.Token) (models.Token, error) {
-
 	session, err := a.userStore.SessionByRefreshToken(token.RefreshToken)
 	if err != nil {
 		return models.Token{}, err

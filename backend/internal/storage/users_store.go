@@ -81,7 +81,7 @@ func (s *gormUserStorage) DeleteUserByUserName(username string) (bool, error) {
 }
 
 func (s *gormUserStorage) NewSession(token models.Token, username string) (models.Session, error) {
-	var session = models.Session{
+	session := models.Session{
 		RefreshToken:   string(token.RefreshToken),
 		RefreshExpires: token.RefreshExpires,
 		Revoked:        false,

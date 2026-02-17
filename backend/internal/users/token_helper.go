@@ -3,14 +3,17 @@ package users
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"omar-kada/autonas/models"
 	"time"
+
+	"omar-kada/autonas/models"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-const tokenExpiryDuration = 30 * time.Minute
-const refreshTokenExpiryDuration = 30 * 24 * time.Hour
+const (
+	tokenExpiryDuration        = 30 * time.Minute
+	refreshTokenExpiryDuration = 30 * 24 * time.Hour
+)
 
 // Helper functions
 func hashPassword(password string) (string, error) {

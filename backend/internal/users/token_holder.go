@@ -1,9 +1,10 @@
 package users
 
 import (
-	"omar-kada/autonas/models"
 	"sync"
 	"time"
+
+	"omar-kada/autonas/models"
 )
 
 // TokenHolder manages a map of tokens with automatic expiration handling
