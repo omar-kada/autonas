@@ -2,16 +2,12 @@
 package users
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
 
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -21,12 +17,12 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	// ErrInvalidPassword indicates that the provided password is incorrect
 	ErrInvalidPassword = errors.New("invalid password")
+	// ErrInvalidRefreshToken indicates that the provided refreshtoken is incorrect
+	ErrInvalidRefreshToken = errors.New("invalid refresh token")
 )
 
 // use in memory storage for token , and user a timer to remove it from the map once expired,
 //
-
-var usersToken = make(map[TokenValue]string)
 
 // Service abstracts authorization operations
 type Service interface {
@@ -36,11 +32,12 @@ type Service interface {
 
 // AuthService abstracts authentication operations
 type AuthService interface {
-	Login(credentials models.Credentials) (Token, error)
-	Register(credentials models.Credentials) (Token, error)
+	Login(credentials models.Credentials) (models.Token, error)
+	Register(credentials models.Credentials) (models.Token, error)
 	IsRegistered() (bool, error)
-	Logout(token string) error
-	GetUserByToken(token string) (models.User, error)
+	Logout(token models.Token) error
+	GetUsernameByToken(token models.Token) (string, error)
+	RefreshToken(token models.Token) (models.Token, error)
 }
 
 // AccountService abstracts account management operations
@@ -51,39 +48,34 @@ type AccountService interface {
 }
 
 type service struct {
-	userStore storage.UserStorage
+	userStore   storage.UserStorage
+	tokenHolder TokenHolder
 }
 
 // NewService creates a new userService
 func NewService(userStore storage.UserStorage) Service {
 	return &service{
-		userStore: userStore,
+		userStore:   userStore,
+		tokenHolder: *NewTokenHolder(),
 	}
 }
 
 // Login authenticates a user and returns their authentication token.
-func (a *service) Login(credentials models.Credentials) (Token, error) {
+func (a *service) Login(credentials models.Credentials) (models.Token, error) {
 	user, err := a.userStore.UserByUsername(credentials.Username)
 	if err != nil {
-		return Token{}, fmt.Errorf("error finding user: %w", err)
+		return models.Token{}, fmt.Errorf("error finding user: %w", err)
 	}
 
 	if user.Username == "" {
-		return Token{}, ErrUserNotFound
+		return models.Token{}, ErrUserNotFound
 	}
 
 	if !checkPasswordHash(credentials.Password, user.HashedPassword) {
-		return Token{}, ErrInvalidPassword
+		return models.Token{}, ErrInvalidPassword
 	}
 
-	token, err := generateToken()
-	if err != nil {
-		return Token{}, fmt.Errorf("error generating token: %w", err)
-	}
-
-	a.insertToken(token, user)
-
-	return token, nil
+	return a.insertNewToken(user.Username)
 }
 
 // IsRegistered checks if any users are registered in the system.
@@ -96,22 +88,17 @@ func (a *service) IsRegistered() (bool, error) {
 }
 
 // Register creates a new user account with the provided credentials
-func (a *service) Register(credentials models.Credentials) (Token, error) {
+func (a *service) Register(credentials models.Credentials) (models.Token, error) {
 	hasUsers, err := a.userStore.HasUsers()
 	if err != nil {
-		return Token{}, err
+		return models.Token{}, err
 	}
 	if hasUsers {
-		return Token{}, ErrAlreadyRegistered
+		return models.Token{}, ErrAlreadyRegistered
 	}
 	hashedPassword, err := hashPassword(credentials.Password)
 	if err != nil {
-		return Token{}, fmt.Errorf("error hashing password: %w", err)
-	}
-
-	token, err := generateToken()
-	if err != nil {
-		return Token{}, fmt.Errorf("error generating token: %w", err)
+		return models.Token{}, fmt.Errorf("error hashing password: %w", err)
 	}
 
 	user := models.User{
@@ -120,40 +107,72 @@ func (a *service) Register(credentials models.Credentials) (Token, error) {
 	}
 	_, err = a.userStore.UpsertUser(user)
 	if err != nil {
-		return Token{}, fmt.Errorf("error creating user: %w", err)
+		return models.Token{}, fmt.Errorf("error creating user: %w", err)
 	}
 
-	a.insertToken(token, user)
-
-	return token, nil
+	return a.insertNewToken(user.Username)
 }
 
-func (*service) insertToken(token Token, user models.User) {
-	usersToken[token.Value] = user.Username
-	go func() {
-		time.AfterFunc(time.Until(token.Expires), func() {
-			delete(usersToken, token.Value)
-		})
-	}()
+func (a *service) insertNewToken(username string) (models.Token, error) {
+	token, err := generateToken()
+	if err != nil {
+		return models.Token{}, err
+	}
+
+	_, err = a.userStore.NewSession(token, username)
+	if err != nil {
+		return models.Token{}, err
+	}
+	a.tokenHolder.InsertToken(token.Value, username, token.Expires)
+	return token, err
+}
+
+func (a *service) RefreshToken(token models.Token) (models.Token, error) {
+
+	session, err := a.userStore.SessionByRefreshToken(token.RefreshToken)
+	if err != nil {
+		return models.Token{}, err
+	}
+	valid := !session.Revoked && session.RefreshExpires.After(time.Now())
+	if !valid {
+		err = a.userStore.RevokeAllUserSessions(session.Username)
+		if err != nil {
+			return models.Token{}, err
+		}
+		return models.Token{}, ErrInvalidRefreshToken
+	}
+
+	err = a.userStore.RevokeRefreshToken(token.RefreshToken)
+	if err != nil {
+		return models.Token{}, err
+	}
+
+	a.tokenHolder.RemoveToken(token.Value)
+	return a.insertNewToken(session.Username)
 }
 
 // Logout invalidates the user's authentication token.
-func (*service) Logout(tokenValue string) error {
-	if _, exists := usersToken[TokenValue(tokenValue)]; !exists {
+func (a *service) Logout(token models.Token) error {
+	if a.tokenHolder.GetUsernameFromToken(token.Value) == "" {
 		return ErrUserNotFound
 	}
 
-	delete(usersToken, TokenValue(tokenValue))
+	err := a.userStore.RevokeRefreshToken(token.RefreshToken)
+	if err != nil {
+		return err
+	}
+	a.tokenHolder.RemoveToken(token.Value)
+
 	return nil
 }
 
-// GetUserByToken retrieves a user by their authentication token.
-func (a *service) GetUserByToken(tokenValue string) (models.User, error) {
-	user, err := a.userStore.UserByUsername(usersToken[TokenValue(tokenValue)])
-	if err == nil && user.Username == "" {
-		return user, ErrUserNotFound
+// GetUsernameByToken retrieves a username by their authentication token.
+func (a *service) GetUsernameByToken(token models.Token) (string, error) {
+	username := a.tokenHolder.GetUsernameFromToken(token.Value)
+	if username == "" {
+		return "", ErrUserNotFound
 	}
-	return user, err
+	return username, nil
 }
 
 // GetUser retrieves a user by their username.
@@ -196,37 +215,4 @@ func (a *service) ChangePassword(username string, oldPass string, newPass string
 	}
 
 	return true, nil
-}
-
-// Helper functions
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-type (
-	// TokenValue represents a unique authentication token value
-	TokenValue string
-	// Token represents an authentication token with an expiration time
-	Token struct {
-		Value   TokenValue
-		Expires time.Time
-	}
-)
-
-func generateToken() (Token, error) {
-	token := make([]byte, 32)
-	_, err := rand.Read(token)
-	if err != nil {
-		return Token{}, err
-	}
-	return Token{
-		Value:   TokenValue(hex.EncodeToString(token)),
-		Expires: time.Now().Add(30 * time.Minute),
-	}, nil
 }

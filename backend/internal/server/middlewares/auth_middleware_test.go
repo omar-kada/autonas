@@ -1,65 +1,43 @@
 package middlewares
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
+	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/internal/users"
 	"omar-kada/autonas/models"
+	"omar-kada/autonas/testutil"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-// MockAuthService is a mock implementation of user.AuthService
-type MockAuthService struct {
-	mock.Mock
+var userCreds = models.Credentials{
+	Username: "username",
+	Password: "password",
 }
 
-func (m *MockAuthService) Login(credentials models.Credentials) (users.Token, error) {
-	args := m.Called(credentials)
-	return args.Get(0).(users.Token), args.Error(1)
+func newUsersService(t *testing.T) users.Service {
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
+	return users.NewService(store)
 }
 
-func (m *MockAuthService) Register(credentials models.Credentials) (users.Token, error) {
-	args := m.Called(credentials)
-	return args.Get(0).(users.Token), args.Error(1)
+func withInitUsers(t *testing.T, userService users.Service, creds models.Credentials) (users.Service, models.Token) {
+	token, err := userService.Register(creds)
+	assert.NoError(t, err)
+
+	return userService, token
 }
 
-func (m *MockAuthService) IsRegistered() (bool, error) {
-	args := m.Called()
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *MockAuthService) Logout(token string) error {
-	args := m.Called(token)
-	return args.Error(0)
-}
-
-func (m *MockAuthService) GetUserByToken(token string) (models.User, error) {
-	args := m.Called(token)
-	return args.Get(0).(models.User), args.Error(1)
-}
-
-func TestAuthMiddleware_Register(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-	expectedAuth := users.Token{
-		Value:   "testtoken",
-		Expires: time.Now().Add(24 * time.Hour),
-	}
-
-	mockAuthService.On("Register", models.Credentials{
-		Username: "testuser",
-		Password: "testpass",
-	}).Return(expectedAuth, nil)
+func TestAuthMiddleware_Register_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
 	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
@@ -69,18 +47,15 @@ func TestAuthMiddleware_Register(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterGet(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	// Mock the IsRegistered method to return true
-	mockAuthService.On("IsRegistered").Return(true, nil)
+func TestAuthMiddleware_RegisterGet_RealService(t *testing.T) {
+	userService, _ := withInitUsers(t, newUsersService(t), userCreds)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("GET", "/api/register", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -89,26 +64,18 @@ func TestAuthMiddleware_RegisterGet(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.JSONEq(t, `{"registered": true}`, rr.Body.String())
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_Login(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-	expectedAuth := users.Token{
-		Value:   "testtoken",
-		Expires: time.Now().Add(24 * time.Hour),
-	}
-
-	mockAuthService.On("Login", models.Credentials{
-		Username: "testuser",
-		Password: "testpass",
-	}).Return(expectedAuth, nil)
+func TestAuthMiddleware_Login_RealService(t *testing.T) {
+	userService := newUsersService(t)
+	userService, token := withInitUsers(t, userService, userCreds)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
-	reqBody := `{"username":"testuser","password":"testpass"}`
+	reqBody := `{"username":"username","password":"password"}`
 	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
@@ -116,103 +83,70 @@ func TestAuthMiddleware_Login(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAreNot(t, rr, string(token.Value), string(token.RefreshToken))
+	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_Logout(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	mockAuthService.On("Logout", "testtoken").Return(nil)
+func TestAuthMiddleware_Logout_RealService(t *testing.T) {
+	userService := newUsersService(t)
+	userService, token := withInitUsers(t, userService, userCreds)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
-		Name:  "token",
-		Value: "testtoken",
+		Name:    _tokenKey,
+		Value:   string(token.Value),
+		Expires: token.Expires,
+	})
+	req.AddCookie(&http.Cookie{
+		Name:    _refreshTokenKey,
+		Value:   string(token.RefreshToken),
+		Expires: token.RefreshExpires,
 	})
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_AuthorizedAccess(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-	expectedUser := models.User{
-		Username: "testuser",
-	}
-
-	mockAuthService.On("GetUserByToken", "testtoken").Return(expectedUser, nil)
+func TestAuthMiddleware_AuthorizedAccess_RealService(t *testing.T) {
+	userService := newUsersService(t)
+	userService, token := withInitUsers(t, userService, userCreds)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := UserFromContext(r.Context())
+		username, ok := UsernameFromContext(r.Context())
 		assert.True(t, ok)
-		assert.Equal(t, "testuser", user.Username)
+		assert.Equal(t, "username", username)
 		w.WriteHeader(http.StatusOK)
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
 	req.AddCookie(&http.Cookie{
-		Name:  "token",
-		Value: "testtoken",
+		Name:  _tokenKey,
+		Value: string(token.Value),
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  _refreshTokenKey,
+		Value: string(token.RefreshToken),
 	})
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	mockAuthService.AssertExpectations(t)
 }
 
-func TestAuthMiddleware_UnauthorizedAccess(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	mockAuthService.On("GetUserByToken", "invalidtoken").Return(models.User{}, errors.New("invalid token"))
+func TestAuthMiddleware_WhitelistedAccess_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}), mockAuthService)
-
-	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
-	req.AddCookie(&http.Cookie{
-		Name:  "token",
-		Value: "invalidtoken",
-	})
-	rr := httptest.NewRecorder()
-
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	mockAuthService.AssertExpectations(t)
-}
-
-func TestAuthMiddleware_UnauthorizedEmptyToken(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}), mockAuthService)
-
-	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
-	rr := httptest.NewRecorder()
-
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	mockAuthService.AssertExpectations(t)
-}
-
-func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("GET", "/api/user", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -220,15 +154,15 @@ func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterInvalidRequestBody(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_RegisterInvalidRequestBody_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	reqBody := `{"username":"testuser"}` // missing password
 	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
@@ -238,15 +172,15 @@ func TestAuthMiddleware_RegisterInvalidRequestBody(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterMissingCredentials(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_RegisterMissingCredentials_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	reqBody := `{"username":"","password":""}` // empty username and password
 	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
@@ -256,20 +190,17 @@ func TestAuthMiddleware_RegisterMissingCredentials(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterFailure(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	mockAuthService.On("Register", models.Credentials{
-		Username: "testuser",
-		Password: "testpass",
-	}).Return(users.Token{}, errors.New("registration failed"))
+func TestAuthMiddleware_RegisterFailure_RealService(t *testing.T) {
+	userService := newUsersService(t)
+	// Register first user to prevent registration
+	_, _ = withInitUsers(t, userService, userCreds)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
 	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
@@ -279,15 +210,15 @@ func TestAuthMiddleware_RegisterFailure(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_LoginInvalidMethod_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("GET", "/api/login", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -295,15 +226,15 @@ func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginInvalidRequestBody(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_LoginInvalidRequestBody_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	reqBody := `{"username":"testuser"}` // missing password
 	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
@@ -313,15 +244,15 @@ func TestAuthMiddleware_LoginInvalidRequestBody(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginMissingCredentials(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_LoginMissingCredentials_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	reqBody := `{"username":"","password":""}` // empty username and password
 	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
@@ -331,22 +262,17 @@ func TestAuthMiddleware_LoginMissingCredentials(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginFailure(t *testing.T) {
-	mockAuthService := new(MockAuthService)
-
-	mockAuthService.On("Login", models.Credentials{
-		Username: "testuser",
-		Password: "testpass",
-	}).Return(users.Token{}, errors.New("login failed"))
+func TestAuthMiddleware_LoginFailure_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
-	reqBody := `{"username":"testuser","password":"testpass"}`
+	reqBody := `{"username":"wronguser","password":"wrongpass"}`
 	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
@@ -354,15 +280,15 @@ func TestAuthMiddleware_LoginFailure(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_LogoutInvalidMethod_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("GET", "/api/logout", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -370,15 +296,15 @@ func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_LogoutMissingToken_RealService(t *testing.T) {
+	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -386,26 +312,73 @@ func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	mockAuthService.AssertExpectations(t)
+	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutFailure(t *testing.T) {
-	mockAuthService := new(MockAuthService)
+func TestAuthMiddleware_LogoutFailure_RealService(t *testing.T) {
+	userService := newUsersService(t)
+	userService, token := withInitUsers(t, userService, userCreds)
 
-	mockAuthService.On("Logout", "testtoken").Return(errors.New("logout failed"))
+	// Invalidate the token by modifying it
+	invalidToken := token
+	invalidToken.Value = "invalidtoken"
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), mockAuthService)
+	}), userService)
 
 	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
-		Name:  "token",
-		Value: "testtoken",
+		Name:  _tokenKey,
+		Value: string(invalidToken.Value),
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  _refreshTokenKey,
+		Value: string(invalidToken.RefreshToken),
 	})
 	rr := httptest.NewRecorder()
+
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	mockAuthService.AssertExpectations(t)
+}
+
+func checkCookiesAreNot(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {
+	cookies := rr.Result().Cookies()
+	var tokenCookie, refreshTokenCookie http.Cookie
+
+	for _, cookie := range cookies {
+		if cookie.Name == _tokenKey {
+			tokenCookie = *cookie
+		}
+		if cookie.Name == _refreshTokenKey {
+			refreshTokenCookie = *cookie
+		}
+	}
+
+	assert.NotNil(t, tokenCookie, "Token cookie should be set")
+	assert.NotEqual(t, expectedToken, tokenCookie.Value, "Token cookie value should match")
+
+	assert.NotNil(t, refreshTokenCookie, "Refresh token cookie should be set")
+	assert.NotEqual(t, expectedRefreshToken, refreshTokenCookie.Value, "Refresh token cookie value should match")
+}
+
+func checkCookiesAre(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {
+	cookies := rr.Result().Cookies()
+	var tokenCookie, refreshTokenCookie http.Cookie
+
+	for _, cookie := range cookies {
+		if cookie.Name == _tokenKey {
+			tokenCookie = *cookie
+		}
+		if cookie.Name == _refreshTokenKey {
+			refreshTokenCookie = *cookie
+		}
+	}
+
+	assert.NotNil(t, tokenCookie, "Token cookie should be set")
+	assert.Equal(t, expectedToken, tokenCookie.Value, "Token cookie value should match")
+
+	assert.NotNil(t, refreshTokenCookie, "Refresh token cookie should be set")
+	assert.Equal(t, expectedRefreshToken, refreshTokenCookie.Value, "Refresh token cookie value should match")
 }

@@ -265,23 +265,23 @@ func (*Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegist
 
 // UserAPIGet returns the authenticated user's information
 func (*Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
-	user, exists := middlewares.UserFromContext(ctx)
+	username, exists := middlewares.UsernameFromContext(ctx)
 	if !exists {
 		return nil, nil
 	}
 
 	return api.UserAPIGet200JSONResponse{
-		Username: user.Username,
+		Username: username,
 	}, nil
 }
 
 // UserAPIDelete deletes the authenticated user
 func (h *Handler) UserAPIDelete(ctx context.Context, _ api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
-	user, exists := middlewares.UserFromContext(ctx)
+	username, exists := middlewares.UsernameFromContext(ctx)
 	if !exists {
 		return api.UserAPIDeletedefaultJSONResponse{}, errUserNotFound
 	}
-	ok, err := h.accountService.DeleteUser(user.Username)
+	ok, err := h.accountService.DeleteUser(username)
 	if err != nil || !ok {
 		return api.UserAPIDelete200JSONResponse{
 			Success: false,
@@ -294,11 +294,11 @@ func (h *Handler) UserAPIDelete(ctx context.Context, _ api.UserAPIDeleteRequestO
 
 // UserAPIChangePassword changes the password for the authenticated user
 func (h *Handler) UserAPIChangePassword(ctx context.Context, r api.UserAPIChangePasswordRequestObject) (api.UserAPIChangePasswordResponseObject, error) {
-	user, exists := middlewares.UserFromContext(ctx)
+	username, exists := middlewares.UsernameFromContext(ctx)
 	if !exists {
 		return api.UserAPIChangePassworddefaultJSONResponse{}, errUserNotFound
 	}
-	ok, err := h.accountService.ChangePassword(user.Username, r.Body.OldPass, r.Body.NewPass)
+	ok, err := h.accountService.ChangePassword(username, r.Body.OldPass, r.Body.NewPass)
 	return api.UserAPIChangePassword200JSONResponse{
 		Success: ok,
 	}, err

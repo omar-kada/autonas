@@ -16,11 +16,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			rec.status = http.StatusOK
 		}
 		dur := time.Since(start)
-		username := ""
-		user, ok := UserFromContext(r.Context())
-		if ok {
-			username = user.Username
-		}
+		username, _ := UsernameFromContext(r.Context())
 		slog.Debug("[HTTP] request",
 			"method", r.Method,
 			"path", r.URL.Path,

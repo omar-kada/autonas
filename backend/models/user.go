@@ -2,13 +2,24 @@ package models
 
 import "time"
 
+// TokenValue represents a unique authentication token value
+type TokenValue string
+
+// Token represents an authentication token with an expiration time
+type Token struct {
+	Value          TokenValue
+	Expires        time.Time
+	RefreshToken   TokenValue
+	RefreshExpires time.Time
+}
+
 // Session represents a user session with authentication details
 type Session struct {
-	SessionID        uint64 `gorm:"primaryKey;autoGenerate"`
-	RefreshToken     string `gorm:"index"`
-	RefreshExpiresIn time.Time
-	Revoked          bool
-	Username         string `gorm:"not null"`
+	SessionID      uint64 `gorm:"primaryKey;autoGenerate"`
+	RefreshToken   string `gorm:"index"`
+	RefreshExpires time.Time
+	Revoked        bool
+	Username       string `gorm:"not null"`
 }
 
 // User represents a user with credentials and authentication details
