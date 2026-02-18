@@ -2,11 +2,12 @@ package docker
 
 import (
 	"fmt"
-	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/models"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"omar-kada/autonas/internal/files"
+	"omar-kada/autonas/models"
 
 	"github.com/elliotchance/orderedmap/v3"
 )
@@ -39,7 +40,6 @@ func (g EnvGenerator) generateEnvFile(cfg models.Config, servicesDir, service st
 				fmt.Fprintf(&content, "# %s # Overridden by AutoNAS \n", rawLine)
 			} else {
 				fmt.Fprintf(&content, "%s\n", rawLine)
-
 			}
 		}
 	}
