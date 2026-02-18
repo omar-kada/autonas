@@ -27,16 +27,16 @@ type runCommand struct {
 }
 
 // NewRunCommand creates a new run
-func NewRunCommand(executor shell.Executor, storeCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
+func NewRunCommand(executor shell.Executor, dbCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
 	run := runCommand{
 		params:    RunParams{},
 		executor:  executor,
-		dbCreator: storeCreator,
+		dbCreator: dbCreator,
 	}
 
 	run.cmd = &cobra.Command{
 		Use:   "run",
-		Short: "Run with optional config files",
+		Short: "Run with optional config file",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if err := run.doRun(); err != nil {
 				slog.Error(err.Error())
@@ -52,9 +52,9 @@ func NewRunCommand(executor shell.Executor, storeCreator func(params RunParams) 
 	run.cmd.Flags().StringVarP(&run.params.ServicesDir, string(_servicesDir), "s", "",
 		varInfoMap.GetDefaultString("directory where services compose stacks will be stored", _servicesDir))
 	run.cmd.Flags().StringVarP(&run.params.AddWritePerm, string(_addWritePerm), "w", "",
-		varInfoMap.GetDefaultString("when true, the tool adds write permission to config files", _addWritePerm))
+		varInfoMap.GetDefaultString("when true, the tool adds write permission to files it creates", _addWritePerm))
 	run.cmd.Flags().IntVarP(&run.params.Port, string(_port), "p", 0,
-		varInfoMap.GetDefaultString("port that will be used for exposing the API", _port))
+		varInfoMap.GetDefaultString("port that will be used for exposing the API/UI", _port))
 
 	return run.cmd
 }

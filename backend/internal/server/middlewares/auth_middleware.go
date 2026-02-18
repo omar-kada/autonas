@@ -4,6 +4,7 @@ package middlewares
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -18,25 +19,26 @@ import (
 type contextKey string
 
 const (
-	_tokenKey            = "token"
-	_userKey  contextKey = "user"
+	_tokenKey                   = "token"
+	_refreshTokenKey            = "refreshToken"
+	_usernameKey     contextKey = "username"
 )
 
-// ContextWithUser adds user information to the context.
+// ContextWithUsername adds user information to the context.
 // @param ctx context.Context - the context to add user information to
 // @param user models.User - the user information to add
 // @return context.Context - the context with user information added
-func ContextWithUser(ctx context.Context, user models.User) context.Context {
-	return context.WithValue(ctx, _userKey, user)
+func ContextWithUsername(ctx context.Context, username string) context.Context {
+	return context.WithValue(ctx, _usernameKey, username)
 }
 
-// UserFromContext retrieves user information from the context.
+// UsernameFromContext retrieves user information from the context.
 // @param ctx context.Context - the context to retrieve user information from
 // @return models.User - the user information retrieved
 // @return bool - true if user information was found, false otherwise
-func UserFromContext(ctx context.Context) (models.User, bool) {
-	user, ok := ctx.Value(_userKey).(models.User)
-	return user, ok
+func UsernameFromContext(ctx context.Context) (string, bool) {
+	username, ok := ctx.Value(_usernameKey).(string)
+	return username, ok
 }
 
 // AuthMiddleware provides authentication middleware.
@@ -61,30 +63,37 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 			logoutHandler(w, r, authService)
 			return
 		}
+		inWhiteList := isWhitelisted(url, r.Method)
 
-		cookie, err := r.Cookie(_tokenKey)
-		if err != nil || cookie.Value == "" {
-			if !isWhitelisted(url, r.Method) {
-				slog.Error(err.Error())
-				http.Error(w, "No auth info found", http.StatusUnauthorized)
+		username, err := getUsernameFromCookies(r, authService, w)
+		if err != nil {
+			slog.Error(err.Error())
+			if !inWhiteList {
+				http.Error(w, "", http.StatusUnauthorized)
 				return
 			}
-		} else {
-
-			user, err := authService.GetUserByToken((cookie.Value))
-			if err != nil {
-				if !isWhitelisted(url, r.Method) {
-					slog.Error(err.Error())
-					http.Error(w, "", http.StatusUnauthorized)
-					return
-				}
-			} else {
-				r = r.WithContext(ContextWithUser(r.Context(), user))
-			}
 		}
+		r = r.WithContext(ContextWithUsername(r.Context(), username))
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func getUsernameFromCookies(r *http.Request, authService users.AuthService, w http.ResponseWriter) (string, error) {
+	token := getTokenFromCookies(r)
+	if token.RefreshToken == "" {
+		return "", errors.New("no auth available")
+	}
+	username, err := authService.GetUsernameByToken(token)
+	if err == nil {
+		return username, nil
+	}
+	token, err = authService.RefreshToken(token)
+	if err != nil {
+		return "", err
+	}
+	setTokenInCookies(w, token)
+	return authService.GetUsernameByToken(token)
 }
 
 var _whitelisted = map[string][]string{
@@ -114,7 +123,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 			return
 		}
 
-		auth, err := authService.Register(models.Credentials{
+		token, err := authService.Register(models.Credentials{
 			Username: req.Username,
 			Password: req.Password,
 		})
@@ -124,14 +133,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     _tokenKey,
-			Value:    string(auth.Value),
-			Expires:  auth.Expires,
-			HttpOnly: true,
-			SameSite: http.SameSiteStrictMode,
-			Secure:   true,
-		})
+		setTokenInCookies(w, token)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(api.BooleanResponse{
@@ -185,15 +187,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     _tokenKey,
-		Value:    string(auth.Value),
-		Expires:  auth.Expires,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
-	})
-
+	setTokenInCookies(w, auth)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
 		Success: true,
@@ -205,32 +199,79 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.Aut
 		http.Error(w, "Invalid method", http.StatusBadRequest)
 		return
 	}
-
-	cookie, err := r.Cookie(_tokenKey)
-	if err != nil || cookie.Value == "" {
+	_, err := getUsernameFromCookies(r, authService, w)
+	if err != nil {
 		slog.Error(err.Error())
+		http.Error(w, "Couldn't find user", http.StatusUnauthorized)
+		return
+	}
+
+	token := getTokenFromCookies(r)
+
+	if token.Value == "" || token.RefreshToken == "" {
+		slog.Error("invalid token value")
 		http.Error(w, "Logout failed", http.StatusUnauthorized)
 		return
 	}
 
-	err = authService.Logout((cookie.Value))
+	err = authService.Logout(token)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "Logout failed", http.StatusUnauthorized)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     _tokenKey,
-		Value:    "",
-		Expires:  time.Unix(0, 0),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
+	setTokenInCookies(w, models.Token{
+		Value:          "",
+		Expires:        time.Unix(0, 0),
+		RefreshToken:   "",
+		RefreshExpires: time.Unix(0, 0),
 	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
 		Success: true,
+	})
+}
+
+func getTokenFromCookies(r *http.Request) models.Token {
+	cookie, err := r.Cookie(_tokenKey)
+	if err != nil {
+		cookie = &http.Cookie{
+			Value: "",
+		}
+	}
+	refreshCookie, err := r.Cookie(_refreshTokenKey)
+	if err != nil {
+		refreshCookie = &http.Cookie{
+			Value: "",
+		}
+	}
+	return models.Token{
+		Value:          models.TokenValue(cookie.Value),
+		Expires:        cookie.Expires,
+		RefreshToken:   models.TokenValue(refreshCookie.Value),
+		RefreshExpires: refreshCookie.Expires,
+	}
+}
+
+func setTokenInCookies(w http.ResponseWriter, token models.Token) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     _tokenKey,
+		Value:    string(token.Value),
+		Expires:  token.Expires,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		Path:     "/api",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     _refreshTokenKey,
+		Value:    string(token.RefreshToken),
+		Expires:  token.RefreshExpires,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		Path:     "/api",
 	})
 }

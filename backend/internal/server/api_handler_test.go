@@ -760,7 +760,7 @@ func TestUserAPIGet_Success(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	user := models.User{Username: "testuser"}
-	ctx := middlewares.ContextWithUser(context.Background(), user)
+	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
 
 	resp, err := h.UserAPIGet(ctx, api.UserAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -789,7 +789,7 @@ func TestUserAPIDelete_Success(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	user := models.User{Username: "testuser"}
-	ctx := middlewares.ContextWithUser(context.Background(), user)
+	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
 	m.On("DeleteUser", "testuser").Return(true, nil)
 
 	resp, err := h.UserAPIDelete(ctx, api.UserAPIDeleteRequestObject{})
@@ -828,7 +828,7 @@ func TestUserAPIDelete_Error(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	user := models.User{Username: "testuser"}
-	ctx := middlewares.ContextWithUser(context.Background(), user)
+	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
 	errDelete := errors.New("delete error")
 	m.On("DeleteUser", "testuser").Return(false, errDelete)
 
@@ -920,7 +920,7 @@ func TestUserAPIChangePassword_Success(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	user := models.User{Username: "testuser"}
-	ctx := middlewares.ContextWithUser(context.Background(), user)
+	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
 
 	m.On("ChangePassword", "testuser", "oldpass", "newpass").Return(true, nil)
 
@@ -974,7 +974,7 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	user := models.User{Username: "testuser"}
-	ctx := middlewares.ContextWithUser(context.Background(), user)
+	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
 
 	errChange := errors.New("change error")
 	m.On("ChangePassword", "testuser", "oldpass", "newpass").Return(false, errChange)

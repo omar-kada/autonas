@@ -2,6 +2,7 @@ package users
 
 import (
 	"testing"
+	"time"
 
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
@@ -162,10 +163,10 @@ func TestLogout_Success(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = service.Logout(string(token.Value))
+	err = service.Logout(token)
 	assert.NoError(t, err)
 
-	user, _ := service.GetUserByToken(string(token.Value))
+	user, _ := service.GetUsernameByToken(token)
 	assert.Zero(t, user)
 }
 
@@ -174,7 +175,7 @@ func TestLogout_UserNotFound(t *testing.T) {
 	assert.NoError(t, err)
 	service := NewService(store)
 
-	err = service.Logout("invalidtoken")
+	err = service.Logout(models.Token{Value: "invalidtoken", RefreshToken: "invalidRefreshToken"})
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrUserNotFound)
@@ -191,16 +192,18 @@ func TestGetUserByToken_Success(t *testing.T) {
 		HashedPassword: pass,
 	}
 
-	store.UpsertUser(mockUser)
+	_, err = store.UpsertUser(mockUser)
+	assert.NoError(t, err)
+
 	token, err := service.Login(models.Credentials{
 		Username: "testuser",
 		Password: "password",
 	})
 	assert.NoError(t, err)
-	user, err := service.GetUserByToken(string(token.Value))
+	user, err := service.GetUsernameByToken(token)
 
 	assert.NoError(t, err)
-	assert.Equal(t, mockUser.Username, user.Username)
+	assert.Equal(t, mockUser.Username, user)
 }
 
 func TestGetUserByToken_UserNotFound(t *testing.T) {
@@ -208,7 +211,7 @@ func TestGetUserByToken_UserNotFound(t *testing.T) {
 	assert.NoError(t, err)
 	service := NewService(store)
 
-	user, err := service.GetUserByToken("invalidtoken")
+	user, err := service.GetUsernameByToken(models.Token{Value: "invalidtoken"})
 
 	assert.ErrorIs(t, err, ErrUserNotFound)
 	assert.Zero(t, user)
@@ -339,4 +342,95 @@ func TestChangePassword_InvalidOldPassword(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrInvalidPassword)
 	assert.False(t, success)
+}
+
+func TestRefreshToken_Success(t *testing.T) {
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
+	service := NewService(store)
+
+	credentials := models.Credentials{
+		Username: "testuser",
+		Password: "password",
+	}
+
+	hashedPassword, _ := hashPassword(credentials.Password)
+	mockUser := models.User{
+		Username:       credentials.Username,
+		HashedPassword: hashedPassword,
+	}
+	store.UpsertUser(mockUser)
+
+	// Login to get initial token
+	token, err := service.Login(credentials)
+	assert.NoError(t, err)
+
+	// Refresh token
+	newToken, err := service.RefreshToken(token)
+	assert.NoError(t, err)
+	assert.NotEqual(t, token.Value, newToken.Value)
+	assert.NotEqual(t, token.RefreshToken, newToken.RefreshToken)
+	assert.NotZero(t, newToken.Value)
+	assert.NotZero(t, newToken.RefreshToken)
+
+	// Verify old token is invalid
+	user, err := service.GetUsernameByToken(token)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrUserNotFound)
+	assert.Zero(t, user)
+
+	// Verify new token works
+	user, err = service.GetUsernameByToken(newToken)
+	assert.NoError(t, err)
+	assert.Equal(t, mockUser.Username, user)
+}
+
+func TestRefreshToken_InvalidToken(t *testing.T) {
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
+	service := NewService(store)
+
+	// Create expired token
+	expiredToken := models.Token{
+		Value:          "expiredtoken",
+		RefreshToken:   "expiredrefreshtoken",
+		Expires:        time.Now().Add(-time.Hour),
+		RefreshExpires: time.Now().Add(-time.Hour),
+	}
+
+	// Try to refresh
+	newToken, err := service.RefreshToken(expiredToken)
+	assert.Error(t, err)
+	assert.Zero(t, newToken)
+}
+
+func TestRefreshToken_RevokedToken(t *testing.T) {
+	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	assert.NoError(t, err)
+	service := NewService(store)
+
+	credentials := models.Credentials{
+		Username: "testuser",
+		Password: "password",
+	}
+
+	hashedPassword, _ := hashPassword(credentials.Password)
+	mockUser := models.User{
+		Username:       credentials.Username,
+		HashedPassword: hashedPassword,
+	}
+	store.UpsertUser(mockUser)
+
+	// Login to get initial token
+	token, err := service.Login(credentials)
+	assert.NoError(t, err)
+
+	// Revoke the refresh token
+	err = store.RevokeRefreshToken(token.RefreshToken)
+	assert.NoError(t, err)
+
+	// Try to refresh
+	newToken, err := service.RefreshToken(token)
+	assert.Error(t, err)
+	assert.Zero(t, newToken)
 }

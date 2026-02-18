@@ -11,6 +11,7 @@ export const getStatsQueryOptions = (
     query: {
       select: (data) => data?.data,
       refetchInterval: 20 * 1000,
+      refetchIntervalInBackground: false,
       staleTime: 0,
       gcTime: 10 * 60 * 1000,
       ...queryOptions,
