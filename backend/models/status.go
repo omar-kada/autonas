@@ -94,5 +94,4 @@ func getCombinedStatus(oldStatus, newStatus StackStatus) StackStatus {
 		}
 	}
 	return newStatus
-
 }

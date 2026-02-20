@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"omar-kada/autonas/internal/shell"
 	"testing"
+
+	"omar-kada/autonas/internal/shell"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"

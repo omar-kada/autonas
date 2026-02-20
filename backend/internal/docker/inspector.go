@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"omar-kada/autonas/internal/shell"
-	"omar-kada/autonas/models"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"omar-kada/autonas/internal/shell"
+	"omar-kada/autonas/models"
 
 	"github.com/moby/moby/client"
 )

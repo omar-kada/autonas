@@ -142,7 +142,6 @@ func (d deployer) copyServiceFiles(serviceName string, params models.DeploymentP
 		return err
 	}
 	return nil
-
 }
 
 func getUnusedServices(oldCfg, cfg models.Config) []string {
