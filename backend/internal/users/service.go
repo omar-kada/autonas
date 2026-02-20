@@ -4,6 +4,7 @@ package users
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"omar-kada/autonas/internal/storage"
@@ -134,6 +135,7 @@ func (a *service) RefreshToken(token models.Token) (models.Token, error) {
 	}
 	valid := !session.Revoked && session.RefreshExpires.After(time.Now())
 	if !valid {
+		slog.Warn("invalid session", "session", session)
 		err = a.userStore.RevokeAllUserSessions(session.Username)
 		if err != nil {
 			return models.Token{}, err

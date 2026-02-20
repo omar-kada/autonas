@@ -64,5 +64,5 @@ func (d *dispatcher) Debug(ctx context.Context, msg string, args ...any) {
 }
 
 func (d *dispatcher) Warn(ctx context.Context, msg string, args ...any) {
-	d.dispatchLevel(ctx, slog.LevelDebug, msg, args...)
+	d.dispatchLevel(ctx, slog.LevelWarn, msg, args...)
 }

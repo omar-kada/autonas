@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"slices"
 	"sync"
 
 	"omar-kada/autonas/internal/docker"
@@ -13,13 +14,10 @@ import (
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-
-	"github.com/moby/moby/api/types/container"
 )
 
-// DeploymentID is the key used to store deployment ID in context
 const (
-	DeploymentID  = "deployment_id"
+	// WorkingBranch is the branch used for temporary deployment changes
 	WorkingBranch = "to_be_deployed"
 )
 
@@ -81,6 +79,8 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	if err != nil {
 		return models.Deployment{}, fmt.Errorf("error getting current config:  %w", err)
 	}
+	oldCfg := s.currentCfg
+	s.currentCfg = cfg
 	fetcher := s.fetcher.WithConfig(cfg)
 	slog.Info("deploying from " + cfg.Settings.Repo + "/" + cfg.GetBranch())
 
@@ -91,14 +91,22 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	}
 
 	// check if the config changed from last run
-	if patch.Diff == "" && reflect.DeepEqual(s.currentCfg, cfg) && s.areStacksHealthy(cfg) {
+	configChanged := !reflect.DeepEqual(oldCfg, cfg)
+	healthyStacks := s.areStacksHealthy(cfg)
+	if patch.Diff == "" && !configChanged && healthyStacks {
 		slog.Info("Configuration and repository are up to date. No changes detected.",
-			"oldConfig", s.currentCfg, "newConfig", cfg, "diff", patch.Diff)
+			"oldConfig", oldCfg, "newConfig", cfg, "diff", patch.Diff)
 		return models.Deployment{}, nil
 	}
 	title := patch.Title
 	if title == "" {
-		title = "Automatic Deploy"
+		if configChanged {
+			title = "Configuration changed"
+		} else if !healthyStacks {
+			title = "Unhealthy stacks"
+		} else {
+			title = "Manual Deploy"
+		}
 	}
 
 	deployment, err := s.store.InitDeployment(title, patch.Author, patch.Diff, patch.Files)
@@ -114,51 +122,71 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		}
 		s.dispatcher.Info(ctx, "Pulled new changes into working branch")
 
-		err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(s.currentCfg, cfg, s.params)
+		err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(oldCfg, cfg, s.params)
 		if err != nil {
 			s.updateDeploymentStatus(ctx, deployment, err)
 			return
 		}
-		s.dispatcher.Info(ctx, "Deployed changes to running stacks")
 
 		err = fetcher.PullBranch(cfg.GetBranch(), patch.CommitHash)
 		s.updateDeploymentStatus(ctx, deployment, err)
-
-		s.currentCfg = cfg
 	}()
 
 	return deployment, nil
 }
 
 func (s *service) areStacksHealthy(cfg models.Config) bool {
-	runningStacks, err := s.containersInspector.GetManagedStacks(s.params.ServicesDir)
+	state, err := s.getStacksState(cfg)
 	if err != nil {
 		return false
 	}
+	return state.GetGlobalHealth() == models.StackStatusHealthy || state.GetGlobalHealth() == models.StackStatusStarting
+}
+
+func (s *service) getStacksState(cfg models.Config) (models.StacksState, error) {
+	state := models.NewStacksState()
+	runningStacks, err := s.containersInspector.GetManagedStacks(s.params.ServicesDir)
+	if err != nil {
+		return state, err
+	}
 	enabledServices := cfg.GetEnabledServices()
+
+enabledServiceLoop:
 	for _, service := range enabledServices {
+
+		expectedContainers, err := s.containersInspector.GetServiceContainers(service, s.params.ServicesDir)
+		slog.Debug("expectedServices ", "service", service, "expectedServices", expectedContainers, "err", err)
+		if err != nil {
+			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
+			continue
+		}
 		serviceContainers := runningStacks[service]
-		if len(serviceContainers) == 0 {
-			return false
+		slog.Debug("running containers ", "service", service, "serviceContainers", serviceContainers)
+
+		if len(serviceContainers) != len(expectedContainers) {
+			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
+			continue
 		}
 		for _, ctr := range serviceContainers {
-			if ctr.Health == container.Unhealthy {
-				return false
+
+			if !slices.Contains(expectedContainers, ctr.Name) {
+				state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
+				continue enabledServiceLoop
 			}
+			state.CombineContainerStatus(service, ctr)
 		}
 	}
-	slog.Info("services are healthy ", "stacks", runningStacks)
-	return true
+	slog.Debug(fmt.Sprintf("all services are %+v", state))
+	return state, nil
 }
 
 func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.Deployment, err error) {
 	if err != nil {
 		s.dispatcher.Error(ctx, fmt.Sprintf("Deployment failed %v", err))
-		slog.Error(err.Error())
-		s.store.EndDeployment(deployment.ID, "error")
+		s.store.EndDeployment(deployment.ID, models.DeploymentStatusError)
 	} else {
 		s.dispatcher.Info(ctx, "Deployment done successfully")
-		s.store.EndDeployment(deployment.ID, "success")
+		s.store.EndDeployment(deployment.ID, models.DeploymentStatusSuccess)
 	}
 }
 
@@ -191,23 +219,9 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 	}
 	stats.NextDeploy = s.scheduler.GetNext()
 
-	stacks, err := s.GetManagedStacks()
-	if err != nil {
-		return models.Stats{}, err
-	}
-	stats.Health = getGlobalHealth(stacks)
+	stackstate, _ := s.getStacksState(s.currentCfg)
+	stats.Health = stackstate.GetGlobalHealth()
 	return stats, nil
-}
-
-func getGlobalHealth(stacks map[string][]models.ContainerSummary) container.HealthStatus {
-	for _, containers := range stacks {
-		for _, ctnr := range containers {
-			if container.Unhealthy == ctnr.Health {
-				return container.Unhealthy
-			}
-		}
-	}
-	return container.Healthy
 }
 
 // GetDiff returns the changed files between what's deployed and the repo

@@ -19,9 +19,9 @@ type Mocker struct {
 	mock.Mock
 }
 
-func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
+func (m *Mocker) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
 	args := m.Called(cmd, cmdArgs)
-	return args.Error(0)
+	return args.Get(0).([]byte), args.Error(1)
 }
 
 func initMemoryStorage(_ RunParams) (*gorm.DB, error) {
@@ -58,7 +58,7 @@ func TestRunCommand_CmdParams(t *testing.T) {
 	mocker.On(
 		"Exec", "docker",
 		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
-	).Return(nil)
+	).Return([]byte{}, nil)
 
 	remoteRepoPath := initConfigRepo(t)
 
@@ -112,7 +112,7 @@ func TestRunCommand_EnvParams(t *testing.T) {
 	mocker.On(
 		"Exec", "docker",
 		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
-	).Return(nil)
+	).Return([]byte{}, nil)
 
 	remoteRepoPath := initConfigRepo(t)
 

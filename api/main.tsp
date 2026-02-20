@@ -30,7 +30,7 @@ enum ContainerHealth {
   healthy: "healthy",
   unhealthy: "unhealthy",
   starting: "starting",
-  none: "none",
+  _unknown: "unknown",
 }
 
 model FileDiff {
@@ -71,7 +71,7 @@ model ContainerStatus {
     | "exited"
     | "dead";
   name: string;
-  health: "healthy" | "unhealthy" | "starting" | "none";
+  health: ContainerHealth;
   startedAt: utcDateTime;
 }
 
@@ -180,7 +180,7 @@ interface DeployementAPI {
   /** Read deployment */
   @get read(@path id: string): DeploymentWithDetails | Error;
   /** Sync and deploy if changes */
-  @post sync(): DeploymentWithDetails | Error;
+  @post sync(): DeploymentWithDetails | void | Error;
 }
 
 @route("/settings")

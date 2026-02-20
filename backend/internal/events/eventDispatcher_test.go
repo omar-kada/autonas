@@ -141,7 +141,7 @@ func TestWarn(t *testing.T) {
 	}
 
 	storedEvent := storedEvents[0]
-	if storedEvent.Level != slog.LevelDebug {
-		t.Errorf("Expected level Debug, got %v", storedEvent.Level)
+	if storedEvent.Level != slog.LevelWarn {
+		t.Errorf("Expected level Warn, got %v", storedEvent.Level)
 	}
 }

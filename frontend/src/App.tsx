@@ -20,11 +20,11 @@ function RouteBasedTopBar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [showTopBar, setShowTopBar] = useState(true);
+  const [showTopBar, setShowTopBar] = useState(!!user);
 
   useEffect(() => {
-    setShowTopBar(isPending || userPending || (!!isRegistered && !!user));
-  }, [setShowTopBar, isPending, userPending, isRegistered, user]);
+    setShowTopBar(!!isRegistered && !!user);
+  }, [setShowTopBar, isRegistered, user]);
 
   useEffect(() => {
     if (isPending) {

@@ -1,11 +1,11 @@
-import type { ContainerStatusHealth } from '@/api/api';
+import type { ContainerHealth } from '@/api/api';
 import { Badge } from '@/components/ui/badge';
 import { borderForStatus, iconForHealth, textColorForStatus } from '@/lib';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
 export function ContainerStatusBadge(props: {
-  status?: ContainerStatusHealth;
+  status?: ContainerHealth;
   label?: string;
   className?: string;
   iconOnly?: boolean;

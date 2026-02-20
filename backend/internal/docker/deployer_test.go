@@ -28,9 +28,9 @@ func (m *Mocker) WriteToFile(filePath string, content string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) Exec(cmd string, cmdArgs ...string) error {
+func (m *Mocker) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
 	args := m.Called(cmd, cmdArgs)
-	return args.Error(0)
+	return args.Get(0).([]byte), args.Error(1)
 }
 
 func (m *Mocker) Copy(src, dest string) error {
@@ -72,8 +72,9 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	deployer := newDeployerWithMocks(mocker)
 
 	baseDir := t.TempDir()
-	envFilePath := filepath.Join(baseDir, "svc1", ".env")
-	err := os.Mkdir(filepath.Join(baseDir, "svc1"), 0o750)
+	serviceDir := filepath.Join(baseDir, "svc1")
+	envFilePath := filepath.Join(serviceDir, ".env")
+	err := os.Mkdir(serviceDir, 0o750)
 	assert.NoError(t, err)
 
 	err = files.NewWriter().WriteToFile(
@@ -93,26 +94,33 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 		"PORT=8080",
 	}, "\n") + "\n"
 	mock.InOrder(
+		mocker.On("Copy", "repo/services/svc1", serviceDir).Return(nil),
 		mocker.On("WriteToFile", envFilePath, wantEnv).Return(nil),
 		mocker.On(
 			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
-		).Return(nil),
+		).Return([]byte{}, nil),
 	)
-	errs := deployer.DeployServices(mockConfig, baseDir)
+	errs := deployer.DeployServices(mockConfig, models.DeploymentParams{
+		ServicesDir: baseDir,
+	})
 	assert.Len(t, errs, 0)
 }
 
 func TestRemoveServices_MultipleServices(t *testing.T) {
 	mocker := &Mocker{}
 	baseDir := t.TempDir()
+	err := os.Mkdir(filepath.Join(baseDir, "svc1"), 0o750)
+	assert.NoError(t, err)
+	err = os.Mkdir(filepath.Join(baseDir, "svc2"), 0o750)
+	assert.NoError(t, err)
 
 	deployer := newDeployerWithMocks(mocker)
 	mocker.On(
 		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
-	).Return(nil)
+	).Return([]byte{}, nil)
 	mocker.On(
 		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
-	).Return(fmt.Errorf("mock error"))
+	).Return([]byte{}, fmt.Errorf("mock error"))
 	errs := deployer.RemoveServices([]string{"svc1", "svc2"}, baseDir)
 
 	assert.Len(t, errs, 1)
@@ -154,9 +162,12 @@ func TestDeployServices_Errors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
 			deployer := newDeployerWithMocks(mocker)
+			mocker.On("Copy", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
-			mocker.On("Exec", "docker", mock.Anything).Return(tc.errors.runCmdErr)
-			errs := deployer.DeployServices(mockConfig, "/services")
+			mocker.On("Exec", "docker", mock.Anything).Return([]byte{}, tc.errors.runCmdErr)
+			errs := deployer.DeployServices(mockConfig, models.DeploymentParams{
+				ServicesDir: "/services",
+			})
 			// TODO : add tests for aggregared errors
 			assert.Len(t, errs, 1)
 			assert.ErrorIs(t, errs["svc1"], tc.expectedError)
@@ -169,14 +180,14 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	deployer := newDeployerWithMocks(mocker)
 
 	mock.InOrder(
+		mocker.On(
+			"Copy", "configDir/repo/services/svc1", "/services/svc1",
+		).Return(nil),
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
 		mocker.On(
 			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
-		).Return(nil),
+		).Return([]byte{}, nil),
 	)
-	mocker.On(
-		"Copy", "configDir/repo/services/svc1", "/services/svc1",
-	).Return(nil)
 
 	err := deployer.RemoveAndDeployStacks(mockConfig, mockConfig, models.DeploymentParams{
 		ServicesDir: "/services",
@@ -223,7 +234,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
 					"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
-				).Return(tc.errors.runErr),
+				).Return([]byte{}, tc.errors.runErr),
 			)
 
 			mocker.On(

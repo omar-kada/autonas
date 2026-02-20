@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"omar-kada/autonas/internal/shell"
 	"omar-kada/autonas/models"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 // Inspector defined operations for info retreival on containers
 type Inspector interface {
 	GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error)
+	GetServiceContainers(serviceName string, servicesDir string) ([]string, error)
 }
 
 // Client defines the methods from the Docker client that are used by the Inspector
@@ -25,19 +28,21 @@ type Client interface {
 // inspector implements information retrieval about docker stacks
 type inspector struct {
 	log          *slog.Logger
+	executor     shell.Executor
 	dockerClient Client
 }
 
 // NewInspector creates new inspector given a docker client
 func NewInspector() (Inspector, error) {
-	dockerClient, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
+	client, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)
 		return nil, err
 	}
 	return &inspector{
 		log:          slog.Default(),
-		dockerClient: dockerClient,
+		executor:     shell.NewExecutor(),
+		dockerClient: client,
 	}, nil
 }
 
@@ -88,4 +93,9 @@ func getServiceNameFromLabel(inspect client.ContainerInspectResult, servicesDir 
 		}
 	}
 	return ""
+}
+
+func (i *inspector) GetServiceContainers(serviceName string, servicesDir string) ([]string, error) {
+	result, err := i.executor.Exec("docker", "compose", "--project-directory", filepath.Join(servicesDir, serviceName), "config", "--services")
+	return strings.Fields(string(result)), err
 }

@@ -96,10 +96,8 @@ func (f *fetcher) CheckoutBranch(branch string) error {
 	return nil
 }
 
-// PullBranch pulls changes for a local target branch from origin/main
-// (optionally resetting to a provided commit SHA). It computes the diff
-// between the local branch and origin/main and returns a Patch describing
-// those file diffs.
+// PullBranch pulls changes for a local target branch from the remote branch
+// (optionally resetting to a provided commit SHA).
 func (f *fetcher) PullBranch(branch string, commitHash string) error {
 	repo, err := f.openRepo(branch)
 	if err != nil {

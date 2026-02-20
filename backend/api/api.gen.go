@@ -27,17 +27,9 @@ const (
 // Defines values for ContainerHealth.
 const (
 	ContainerHealthHealthy   ContainerHealth = "healthy"
-	ContainerHealthNone      ContainerHealth = "none"
 	ContainerHealthStarting  ContainerHealth = "starting"
 	ContainerHealthUnhealthy ContainerHealth = "unhealthy"
-)
-
-// Defines values for ContainerStatusHealth.
-const (
-	ContainerStatusHealthHealthy   ContainerStatusHealth = "healthy"
-	ContainerStatusHealthNone      ContainerStatusHealth = "none"
-	ContainerStatusHealthStarting  ContainerStatusHealth = "starting"
-	ContainerStatusHealthUnhealthy ContainerStatusHealth = "unhealthy"
+	ContainerHealthUnknown   ContainerHealth = "unknown"
 )
 
 // Defines values for ContainerStatusState.
@@ -88,15 +80,12 @@ type ContainerHealth string
 
 // ContainerStatus defines model for ContainerStatus.
 type ContainerStatus struct {
-	ContainerId string                `json:"containerId"`
-	Health      ContainerStatusHealth `json:"health"`
-	Name        string                `json:"name"`
-	StartedAt   time.Time             `json:"startedAt"`
-	State       ContainerStatusState  `json:"state"`
+	ContainerId string               `json:"containerId"`
+	Health      ContainerHealth      `json:"health"`
+	Name        string               `json:"name"`
+	StartedAt   time.Time            `json:"startedAt"`
+	State       ContainerStatusState `json:"state"`
 }
-
-// ContainerStatusHealth defines model for ContainerStatus.Health.
-type ContainerStatusHealth string
 
 // ContainerStatusState defines model for ContainerStatus.State.
 type ContainerStatusState string
@@ -3278,6 +3267,14 @@ func (response DeployementAPISync200JSONResponse) VisitDeployementAPISyncRespons
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type DeployementAPISync204Response struct {
+}
+
+func (response DeployementAPISync204Response) VisitDeployementAPISyncResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
 }
 
 type DeployementAPISyncdefaultJSONResponse struct {

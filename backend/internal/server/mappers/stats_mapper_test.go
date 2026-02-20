@@ -7,7 +7,6 @@ import (
 	"omar-kada/autonas/api"
 	"omar-kada/autonas/models"
 
-	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +28,7 @@ func TestStatsMapper_Map(t *testing.T) {
 				LastDeploy: now,
 				NextDeploy: next,
 				LastStatus: models.DeploymentStatusRunning,
-				Health:     container.HealthStatus("healthy"),
+				Health:     models.StackStatusHealthy,
 			},
 			want: api.Stats{
 				Author:     "alice",
@@ -38,7 +37,7 @@ func TestStatsMapper_Map(t *testing.T) {
 				LastDeploy: now,
 				NextDeploy: next,
 				Status:     api.DeploymentStatus(models.DeploymentStatusRunning),
-				Health:     api.ContainerHealth("healthy"),
+				Health:     api.ContainerHealthHealthy,
 			},
 		},
 		{
@@ -50,7 +49,7 @@ func TestStatsMapper_Map(t *testing.T) {
 				LastDeploy: time.Time{},
 				NextDeploy: time.Time{},
 				LastStatus: models.DeploymentStatusPlanned,
-				Health:     container.HealthStatus("none"),
+				Health:     models.StackStatusUnknown,
 			},
 			want: api.Stats{
 				Author:     "bob",
@@ -59,7 +58,49 @@ func TestStatsMapper_Map(t *testing.T) {
 				LastDeploy: time.Time{},
 				NextDeploy: time.Time{},
 				Status:     api.DeploymentStatus(models.DeploymentStatusPlanned),
-				Health:     api.ContainerHealth(container.HealthStatus("none")),
+				Health:     api.ContainerHealthUnknown,
+			},
+		},
+		{
+			name: "zero-times-empty-health",
+			in: models.Stats{
+				Author:     "foo",
+				Error:      0,
+				Success:    0,
+				LastDeploy: time.Time{},
+				NextDeploy: time.Time{},
+				LastStatus: models.DeploymentStatusPlanned,
+				Health:     models.StackStatusStarting,
+			},
+			want: api.Stats{
+				Author:     "foo",
+				Error:      0,
+				Success:    0,
+				LastDeploy: time.Time{},
+				NextDeploy: time.Time{},
+				Status:     api.DeploymentStatus(models.DeploymentStatusPlanned),
+				Health:     api.ContainerHealthStarting,
+			},
+		},
+		{
+			name: "zero-times-empty-health",
+			in: models.Stats{
+				Author:     "bob",
+				Error:      0,
+				Success:    0,
+				LastDeploy: time.Time{},
+				NextDeploy: time.Time{},
+				LastStatus: models.DeploymentStatusPlanned,
+				Health:     models.StackStatusUnhealthy,
+			},
+			want: api.Stats{
+				Author:     "bob",
+				Error:      0,
+				Success:    0,
+				LastDeploy: time.Time{},
+				NextDeploy: time.Time{},
+				Status:     api.DeploymentStatus(models.DeploymentStatusPlanned),
+				Health:     api.ContainerHealthUnhealthy,
 			},
 		},
 	}

@@ -1,6 +1,6 @@
-import type { ContainerStatusHealth, DeploymentStatus, EventLevel } from '@/api/api';
+import type { ContainerHealth, DeploymentStatus, EventLevel } from '@/api/api';
 
-export function colorForStatus(status: ContainerStatusHealth | DeploymentStatus): string {
+export function colorForStatus(status: ContainerHealth | DeploymentStatus): string {
   switch (status) {
     case 'healthy':
     case 'success':
@@ -18,7 +18,7 @@ export function colorForStatus(status: ContainerStatusHealth | DeploymentStatus)
   }
 }
 
-export function borderForStatus(status?: ContainerStatusHealth | DeploymentStatus): string {
+export function borderForStatus(status?: ContainerHealth | DeploymentStatus): string {
   switch (status) {
     case 'healthy':
     case 'success':
@@ -35,7 +35,7 @@ export function borderForStatus(status?: ContainerStatusHealth | DeploymentStatu
       return '';
   }
 }
-export function textColorForStatus(status?: ContainerStatusHealth | DeploymentStatus): string {
+export function textColorForStatus(status?: ContainerHealth | DeploymentStatus): string {
   switch (status) {
     case 'healthy':
     case 'success':
