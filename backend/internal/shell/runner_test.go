@@ -16,8 +16,9 @@ func TestRunCommand_Success(t *testing.T) {
 		return exec.Command("echo", "success")
 	}
 
-	err := NewExecutor().Exec("go", "help")
+	out, err := NewExecutor().Exec("go", "help")
 	assert.NoError(t, err)
+	assert.NotEmpty(t, out)
 }
 
 func TestRunCommand_NoArgs(t *testing.T) {
@@ -30,7 +31,7 @@ func TestRunCommand_NoArgs(t *testing.T) {
 		return c
 	}
 
-	err := NewExecutor().Exec("go")
+	_, err := NewExecutor().Exec("go")
 	assert.ErrorContains(t, err, "exit status 1")
 }
 
@@ -42,7 +43,7 @@ func TestRunCommand_NotFound(t *testing.T) {
 		return exec.Command("non-existent-command")
 	}
 
-	err := NewExecutor().Exec("dummyCmd")
+	_, err := NewExecutor().Exec("dummyCmd")
 	assert.ErrorContains(t, err, "executable not found")
 }
 
@@ -57,6 +58,6 @@ func TestRunCommand_ExecError(t *testing.T) {
 		}
 	}
 
-	err := NewExecutor().Exec("echo")
+	_, err := NewExecutor().Exec("echo")
 	assert.ErrorContains(t, err, "exec error")
 }

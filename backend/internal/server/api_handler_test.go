@@ -126,7 +126,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	dep := models.Deployment{ID: 10, Title: "Automatic Deploy", Author: "ci", Diff: "diff"}
+	dep := models.Deployment{ID: 10, Title: "Manual Deploy", Author: "ci", Diff: "diff"}
 	m.On("GetDeployment", uint64(10)).Return(dep, nil)
 
 	req := api.DeployementAPIReadRequestObject{Id: "10"}
@@ -135,7 +135,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 
 	switch r := resp.(type) {
 	case api.DeployementAPIRead200JSONResponse:
-		assert.Equal(t, "Automatic Deploy", r.Title)
+		assert.Equal(t, "Manual Deploy", r.Title)
 		assert.Equal(t, "diff", r.Diff)
 	default:
 		t.Fatalf("unexpected response type: %T", resp)
@@ -160,7 +160,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	dep := models.Deployment{ID: 99, Title: "Automatic Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
+	dep := models.Deployment{ID: 99, Title: "Manual Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
 	m.On("SyncDeployment").Return(dep, nil)
 
 	resp, err := h.DeployementAPISync(context.Background(), api.DeployementAPISyncRequestObject{})
@@ -168,7 +168,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 
 	switch r := resp.(type) {
 	case api.DeployementAPISync200JSONResponse:
-		assert.Equal(t, "Automatic Deploy", r.Title)
+		assert.Equal(t, "Manual Deploy", r.Title)
 		assert.Equal(t, "dd", r.Diff)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)

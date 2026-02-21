@@ -2,6 +2,8 @@ package storage
 
 import (
 	"errors"
+	"fmt"
+	"log/slog"
 
 	"omar-kada/autonas/models"
 
@@ -108,6 +110,7 @@ func (s *gormUserStorage) SessionByRefreshToken(token models.TokenValue) (models
 
 func (s *gormUserStorage) RevokeRefreshToken(token models.TokenValue) error {
 	var session models.Session
+	slog.Debug("Revoking refresh token", "refresh token", token)
 	if err := s.db.Where("refresh_token = ?", token).First(&session).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrNotFound
@@ -122,6 +125,8 @@ func (s *gormUserStorage) RevokeRefreshToken(token models.TokenValue) error {
 }
 
 func (s *gormUserStorage) RevokeAllUserSessions(username string) error {
+	slog.Debug(fmt.Sprintf("Revoking all serssions for user '%s'", username))
+
 	if err := s.db.Model(&models.Session{}).Where("username = ?", username).Update("revoked", true).Error; err != nil {
 		return err
 	}

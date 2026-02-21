@@ -32,8 +32,8 @@ func (m *Mocker) RemoveServices(services []string, servicesDir string) map[strin
 	return args.Get(0).(map[string]error)
 }
 
-func (m *Mocker) DeployServices(cfg models.Config, servicesDir string) map[string]error {
-	args := m.Called(cfg, servicesDir)
+func (m *Mocker) DeployServices(cfg models.Config, params models.DeploymentParams) map[string]error {
+	args := m.Called(cfg, params)
 	return args.Get(0).(map[string]error)
 }
 
@@ -45,6 +45,11 @@ func (m *Mocker) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.
 func (m *Mocker) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	args := m.Called(servicesDir)
 	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
+}
+
+func (m *Mocker) GetServiceContainers(serviceName string, servicesDir string) ([]string, error) {
+	args := m.Called(serviceName, servicesDir)
+	return args.Get(0).([]string), args.Error(1)
 }
 
 func (m *Mocker) GetNext() time.Time {
@@ -163,6 +168,8 @@ func TestSync_Success(t *testing.T) {
 	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
 	mocker.On("RemoveAndDeployStacks", models.Config{}, wantCfg, service.params).Once().Return(nil)
 	// signal when working branch pull completes
 	done := make(chan struct{})
@@ -172,7 +179,7 @@ func TestSync_Success(t *testing.T) {
 
 	dep, err := service.SyncDeployment()
 	assert.NoError(t, err)
-	assert.Equal(t, "Automatic Deploy", dep.Title)
+	assert.Equal(t, "Configuration changed", dep.Title)
 	assert.Equal(t, "test", dep.Diff)
 	assert.Equal(t, models.DeploymentStatusRunning, dep.Status)
 
@@ -197,6 +204,9 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	service.configStore.Update(wantCfg)
 	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
+	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
+
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).Once().Return(nil)
 	// signal when working branch pull completes
@@ -206,7 +216,7 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 		Run(func(_ mock.Arguments) { close(done) })
 	dep, err := service.SyncDeployment()
 	assert.NoError(t, err)
-	assert.Equal(t, "Automatic Deploy", dep.Title)
+	assert.Equal(t, "Configuration changed", dep.Title)
 	assert.Equal(t, models.DeploymentStatusRunning, dep.Status)
 
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
@@ -229,6 +239,9 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	service.configStore.Update(wantCfg)
 	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
+	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
+
 	done := make(chan struct{})
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(ErrFetch).
 		Run(func(_ mock.Arguments) { close(done) })
@@ -253,12 +266,17 @@ func TestSync_Errors(t *testing.T) {
 	service.configStore.Update(wantCfg)
 	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
+	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
+
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.On("CheckoutBranch", "main").Once().Return(nil)
 
 	done := make(chan struct{})
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).
 		Once().Return(ErrDeploy).
 		Run(func(_ mock.Arguments) { close(done) })
+
 	dep, err := service.SyncDeployment()
 	assert.NoError(t, err)
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
@@ -445,6 +463,8 @@ func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 		"svc1": {healthyContainer},
 		"svc2": {healthyContainer},
 	}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
+
 	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 
@@ -474,6 +494,8 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 	mocker.On("GetManagedStacks", "/services").Return(map[string][]models.ContainerSummary{
 		"svc1": {unhealthyContainer},
 	}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
+
 	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
@@ -507,6 +529,7 @@ func TestSync_NoStacksRunning(t *testing.T) {
 	service.configStore.Update(mockConfigOld)
 
 	mocker.On("GetManagedStacks", "/services").Return(map[string][]models.ContainerSummary{}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
 	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
@@ -571,8 +594,11 @@ func TestGetCurrentStats_ErrorGettingStacks(t *testing.T) {
 
 	stats, err := service.GetCurrentStats(7)
 
-	assert.ErrorContains(t, err, "failed to get stacks")
-	assert.Equal(t, models.Stats{}, stats)
+	assert.NoError(t, err)
+	assert.Equal(t, models.Stats{
+		NextDeploy: next,
+		Health:     models.StackStatusUnknown,
+	}, stats)
 }
 
 func TestGetCurrentStats_MultipleDeploymentsVariousStatuses(t *testing.T) {
@@ -718,6 +744,8 @@ func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 		"svc1": {healthyContainer},
 		"svc2": {healthyContainer},
 	}, nil)
+	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
+
 	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{}, git.NoErrAlreadyUpToDate)
 

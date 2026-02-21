@@ -51,7 +51,7 @@ export const ContainerHealth = {
   healthy: 'healthy',
   unhealthy: 'unhealthy',
   starting: 'starting',
-  none: 'none',
+  unknown: 'unknown',
 } as const;
 
 export type ContainerStatusState = typeof ContainerStatusState[keyof typeof ContainerStatusState];
@@ -68,22 +68,11 @@ export const ContainerStatusState = {
   dead: 'dead',
 } as const;
 
-export type ContainerStatusHealth = typeof ContainerStatusHealth[keyof typeof ContainerStatusHealth];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ContainerStatusHealth = {
-  healthy: 'healthy',
-  unhealthy: 'unhealthy',
-  starting: 'starting',
-  none: 'none',
-} as const;
-
 export interface ContainerStatus {
   containerId: string;
   state: ContainerStatusState;
   name: string;
-  health: ContainerStatusHealth;
+  health: ContainerHealth;
   startedAt: string;
 }
 
@@ -456,7 +445,7 @@ export function useDeployementAPIList<TData = Awaited<ReturnType<typeof deployem
  */
 export const deployementAPISync = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<DeploymentWithDetails>> => {
+ ): Promise<AxiosResponse<DeploymentWithDetails | void>> => {
     
     
     return axios.default.post(

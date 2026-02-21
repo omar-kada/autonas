@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"testing"
 
+	"omar-kada/autonas/internal/shell"
+
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
@@ -27,15 +29,26 @@ func (m *MockClient) ContainerInspect(ctx context.Context, containerID string, o
 	return args.Get(0).(client.ContainerInspectResult), args.Error(1)
 }
 
-func newInspectorWithMock(client Client) *inspector {
+type MockExec struct {
+	mock.Mock
+}
+
+func (m *MockExec) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
+	args := m.Called(cmd, cmdArgs)
+	return args.Get(0).([]byte), args.Error(1)
+}
+
+func newInspectorWithMock(client Client, mockExec shell.Executor) *inspector {
 	return &inspector{
 		log:          slog.Default(),
 		dockerClient: client,
+		executor:     mockExec,
 	}
 }
 
 func TestGetManagedStacks(t *testing.T) {
 	mockClient := new(MockClient)
+	mockExec := new(MockExec)
 
 	// Test successful case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{
@@ -89,7 +102,7 @@ func TestGetManagedStacks(t *testing.T) {
 	}, errors.New("failed to inspect container"))
 
 	servicesDir := "/services"
-	inspector := newInspectorWithMock(mockClient)
+	inspector := newInspectorWithMock(mockClient, mockExec)
 	result, err := inspector.GetManagedStacks(servicesDir)
 
 	assert.NoError(t, err)
@@ -142,4 +155,30 @@ func TestGetServiceNameFromLabel(t *testing.T) {
 			assert.Equal(t, tc.expectedResult, serviceName)
 		})
 	}
+}
+
+func TestGetServiceContainers(t *testing.T) {
+	mockClient := new(MockClient)
+	mockExec := new(MockExec)
+
+	// Test successful case
+	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service1", "config", "--services"}).Once().Return([]byte("service1 service2"), nil)
+
+	servicesDir := "/services"
+	serviceName := "service1"
+	inspector := newInspectorWithMock(mockClient, mockExec)
+	result, err := inspector.GetServiceContainers(serviceName, servicesDir)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Contains(t, result, "service1")
+	assert.Contains(t, result, "service2")
+
+	// Test error case
+	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service2", "config", "--services"}).Once().Return([]byte{}, errors.New("failed to get services"))
+
+	_, err = inspector.GetServiceContainers("service2", servicesDir)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to get services")
 }

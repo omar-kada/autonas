@@ -1,4 +1,4 @@
-import type { ContainerStatusHealth, DeploymentStatus } from '@/api/api';
+import type { ContainerHealth, DeploymentStatus } from '@/api/api';
 import {
   Check,
   CircleQuestionMark,
@@ -25,7 +25,7 @@ export function iconForStatus(status?: DeploymentStatus) {
   }
 }
 
-export function iconForHealth(health?: ContainerStatusHealth) {
+export function iconForHealth(health?: ContainerHealth) {
   switch (health) {
     case 'healthy':
       return Heart;

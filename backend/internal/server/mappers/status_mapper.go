@@ -14,7 +14,7 @@ func (StatusMapper) Map(container models.ContainerSummary) api.ContainerStatus {
 		ContainerId: container.ID,
 		State:       api.ContainerStatusState(container.State),
 		Name:        container.Name,
-		Health:      api.ContainerStatusHealth(container.Health),
+		Health:      api.ContainerHealth(container.Health),
 		StartedAt:   container.StartedAt,
 	}
 }

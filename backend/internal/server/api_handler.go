@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strconv"
 
 	"omar-kada/autonas/api"
@@ -119,6 +120,8 @@ func (h *Handler) DeployementAPISync(_ context.Context, _ api.DeployementAPISync
 	dep, err := h.processService.SyncDeployment()
 	if err != nil {
 		slog.Error(err.Error())
+	} else if reflect.DeepEqual(models.Deployment{}, dep) {
+		return api.DeployementAPISync204Response{}, nil
 	}
 	return api.DeployementAPISync200JSONResponse(h.depDetailsMapper.Map(dep)), err
 }

@@ -3,8 +3,6 @@ package models
 import (
 	"log/slog"
 	"time"
-
-	"github.com/moby/moby/api/types/container"
 )
 
 // DeploymentStatus defines model for Deployment.Status.
@@ -57,15 +55,4 @@ type Event struct {
 	Msg      string
 	Time     time.Time `gorm:"autoCreateTime"`
 	ObjectID uint64    `gorm:"index"`
-}
-
-// Stats defines model for Stats.
-type Stats struct {
-	Author     string
-	Error      int32
-	LastDeploy time.Time
-	LastStatus DeploymentStatus
-	NextDeploy time.Time
-	Success    int32
-	Health     container.HealthStatus
 }
