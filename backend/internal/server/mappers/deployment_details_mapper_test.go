@@ -2,7 +2,6 @@
 package mappers
 
 import (
-	"log/slog"
 	"testing"
 	"time"
 
@@ -27,7 +26,7 @@ func TestDeploymentDetailsMapper_Map(t *testing.T) {
 		Time:    time.Now(),
 		EndTime: time.Now().Add(time.Hour),
 		Title:   "testTitle",
-		Events:  []models.Event{{Level: slog.LevelInfo, Msg: "testEvent", Time: time.Now()}},
+		Events:  []models.Event{{Type: models.EventMisc, Msg: "testEvent", Time: time.Now()}},
 		Files:   []models.FileDiff{{ID: 1, Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
 	}
 
@@ -40,7 +39,7 @@ func TestDeploymentDetailsMapper_Map(t *testing.T) {
 		Time:    deployment.Time,
 		EndTime: deployment.EndTime,
 		Title:   "testTitle",
-		Events:  []api.Event{{Level: api.EventLevelINFO, Msg: "testEvent", Time: deployment.Events[0].Time}},
+		Events:  []api.Event{{Type: api.EventTypeMISC, Msg: "testEvent", Time: deployment.Events[0].Time}},
 		Files:   []api.FileDiff{{Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
 	}
 

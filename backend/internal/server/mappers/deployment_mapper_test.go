@@ -1,7 +1,6 @@
 package mappers
 
 import (
-	"log/slog"
 	"testing"
 	"time"
 
@@ -24,7 +23,7 @@ func TestDeploymentMapper_Map(t *testing.T) {
 		Time:    time.Now(),
 		EndTime: time.Now().Add(time.Hour),
 		Title:   "testTitle",
-		Events:  []models.Event{{Level: slog.LevelInfo, Msg: "testEvent", Time: time.Now()}},
+		Events:  []models.Event{{Type: models.EventError, Msg: "testEvent", Time: time.Now()}},
 		Files:   []models.FileDiff{{ID: 1, Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
 	}
 
@@ -60,7 +59,7 @@ func TestDeploymentMapper_MapToPageInfo(t *testing.T) {
 			Time:    time.Now(),
 			EndTime: time.Now().Add(time.Hour),
 			Title:   "testTitle1",
-			Events:  []models.Event{{Level: slog.LevelInfo, Msg: "testEvent1", Time: time.Now()}},
+			Events:  []models.Event{{Type: models.EventError, Msg: "testEvent1", Time: time.Now()}},
 			Files:   []models.FileDiff{{ID: 1, Diff: "testDiff1", NewFile: "testNewFile1", OldFile: "testOldFile1"}},
 		},
 		{
@@ -71,7 +70,7 @@ func TestDeploymentMapper_MapToPageInfo(t *testing.T) {
 			Time:    time.Now(),
 			EndTime: time.Now().Add(time.Hour),
 			Title:   "testTitle2",
-			Events:  []models.Event{{Level: slog.LevelInfo, Msg: "testEvent2", Time: time.Now()}},
+			Events:  []models.Event{{Type: models.EventError, Msg: "testEvent2", Time: time.Now()}},
 			Files:   []models.FileDiff{{ID: 2, Diff: "testDiff2", NewFile: "testNewFile2", OldFile: "testOldFile2"}},
 		},
 	}

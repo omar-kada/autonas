@@ -229,6 +229,9 @@ func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestO
 	if models.IsObfuscated(settings.Token) {
 		settings.Token = oldConfig.Settings.Token // keep old token when obfuscated
 	}
+	if models.IsObfuscated(settings.NotificationURL) {
+		settings.Token = oldConfig.Settings.NotificationURL // keep old url when obfuscated
+	}
 	oldConfig.Settings = settings
 	err = h.configStore.Update(oldConfig)
 	if err != nil {

@@ -95,8 +95,9 @@ func (m *Mocker) DiffWithRemote() (git.Patch, error) {
 var (
 	mockConfigOld = models.Config{
 		Settings: models.Settings{
-			Repo:   "https://example.com/repo.git",
-			Branch: "main",
+			Repo:              "https://example.com/repo.git",
+			Branch:            "main",
+			NotificationTypes: []models.EventType{},
 		},
 		Environment: models.Environment{},
 		Services: map[string]models.ServiceConfig{
@@ -109,8 +110,9 @@ var (
 	}
 	mockConfigNew = models.Config{
 		Settings: models.Settings{
-			Repo:   "https://example.com/repo.git",
-			Branch: "main",
+			Repo:              "https://example.com/repo.git",
+			Branch:            "main",
+			NotificationTypes: []models.EventType{},
 		},
 		Environment: models.Environment{},
 		Services: map[string]models.ServiceConfig{

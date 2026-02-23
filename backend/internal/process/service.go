@@ -110,17 +110,18 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	}
 
 	deployment, err := s.store.InitDeployment(title, patch.Author, patch.Diff, patch.Files)
+	ctx := events.GetDeploymentContext(context.Background(), deployment)
+	s.dispatcher.Dispatch(ctx, models.EventDeploymentStarted, "")
 	if err != nil {
 		return deployment, err
 	}
 	go func() {
-		ctx := context.WithValue(context.Background(), events.ObjectID, deployment.ID)
 		err := fetcher.PullBranch(WorkingBranch, "")
 		if err != nil {
 			s.updateDeploymentStatus(ctx, deployment, err)
 			return
 		}
-		s.dispatcher.Info(ctx, "Pulled new changes into working branch")
+		s.dispatcher.Dispatch(ctx, models.EventMisc, "Pulled new changes into working branch")
 
 		err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(oldCfg, cfg, s.params)
 		if err != nil {
@@ -182,10 +183,10 @@ enabledServiceLoop:
 
 func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.Deployment, err error) {
 	if err != nil {
-		s.dispatcher.Error(ctx, fmt.Sprintf("Deployment failed %v", err))
+		s.dispatcher.Dispatch(ctx, models.EventDeploymentError, err.Error())
 		s.store.EndDeployment(deployment.ID, models.DeploymentStatusError)
 	} else {
-		s.dispatcher.Info(ctx, "Deployment done successfully")
+		s.dispatcher.Dispatch(ctx, models.EventDeploymentSuccess, "")
 		s.store.EndDeployment(deployment.ID, models.DeploymentStatusSuccess)
 	}
 }

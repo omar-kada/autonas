@@ -13,8 +13,8 @@ export function DeploymentEventLog({ events }: { events: Event[] }) {
       </CardHeader>
       <CardContent>
         {events.map((event) => (
-          <pre key={event.msg} className={`whitespace-pre-wrap ${logColor(event.level)}`}>
-            {formatTime(event.time, i18n.language)} : [{event.level}] {event.msg}
+          <pre key={event.ID} className={`whitespace-pre-wrap ${logColor(event.type)}`}>
+            {formatTime(event.time, i18n.language)} : [{t(`EVENT_TYPE.${event.type}`)}] {event.msg}
           </pre>
         ))}
       </CardContent>

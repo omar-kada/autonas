@@ -1,3 +1,4 @@
+import { EventType } from '@/api/api';
 import { useDeleteAccount } from '@/hooks';
 import { GitBranch, KeyRound, Timer, Trash, UserIcon, type LucideProps } from 'lucide-react';
 import { type ComponentType, type ReactNode } from 'react';
@@ -13,10 +14,31 @@ import {
   FieldSet,
   FieldTitle,
 } from '../ui/field';
+import { GroupedCheckboxes, type OptionGroup } from '../ui/grouped-checkboxes';
 import { Input } from '../ui/input';
 import { ConfirmationDialog } from '../view/confirmation-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { type FormValues } from './settings-form-schema';
+
+const notificaitonOptions = [
+  {
+    group: 'EVENT_TYPE.DEPLOYMENT',
+    items: [
+      { value: EventType.DEPLOYMENT_STARTED, label: 'EVENT_TYPE.DEPLOYMENT_STARTED' },
+      { value: EventType.DEPLOYMENT_SUCCESS, label: 'EVENT_TYPE.DEPLOYMENT_SUCCESS' },
+      { value: EventType.DEPLOYMENT_ERROR, label: 'EVENT_TYPE.DEPLOYMENT_ERROR' },
+    ],
+  },
+  {
+    group: 'EVENT_TYPE.GENERAL',
+    items: [
+      { value: EventType.ERROR, label: 'EVENT_TYPE.ERROR' },
+      { value: EventType.PASSWORD_UPDATED, label: 'EVENT_TYPE.PASSWORD_UPDATED' },
+      { value: EventType.CONFIGURATION_UPDATED, label: 'EVENT_TYPE.CONFIGURATION_UPDATED' },
+      { value: EventType.SESSION_REUSED, label: 'EVENT_TYPE.SESSION_REUSED' },
+    ],
+  },
+];
 
 export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
   const { t } = useTranslation();
@@ -57,6 +79,17 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
         <SettingsSection title={t('SETTINGS.FORM.AUTO_SYNC')} Icon={Timer}>
           <FieldSet>
             <SettingsField form={form} name="cron" withDescription />
+          </FieldSet>
+        </SettingsSection>
+
+        <SettingsSection title={t('SETTINGS.FORM.NOTIFICATION')} Icon={Timer}>
+          <FieldSet>
+            <SettingsField form={form} name="notificationURL" withDescription />
+            <NotificationMultiSelect
+              form={form}
+              withDescription
+              options={notificaitonOptions}
+            ></NotificationMultiSelect>
           </FieldSet>
         </SettingsSection>
       </FieldGroup>
@@ -116,6 +149,39 @@ function SettingsField({
             autoComplete="off"
             placeholder={withPlaceholder ? t(`SETTINGS.FORM.${name}_PLACEHOLDER`) : ''}
           />
+          {fieldState.invalid && (
+            <FieldError
+              errors={[{ ...fieldState.error, message: t(fieldState.error?.message ?? '') }]}
+            />
+          )}
+        </Field>
+      )}
+    />
+  );
+}
+
+function NotificationMultiSelect({
+  form,
+  withDescription = false,
+  options,
+}: {
+  form: UseFormReturn<FormValues>;
+  withDescription?: boolean;
+  options: OptionGroup[];
+}) {
+  const { t } = useTranslation();
+  const name = 'notificationTypes';
+  return (
+    <Controller
+      name={name}
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldTitle>{t(`SETTINGS.FORM.${name}`)}</FieldTitle>
+          {withDescription && (
+            <FieldDescription>{t(`SETTINGS.FORM.${name}_DESCRIPTION`)}</FieldDescription>
+          )}
+          <GroupedCheckboxes groups={options} value={field.value} onChange={field.onChange} />
           {fieldState.invalid && (
             <FieldError
               errors={[{ ...fieldState.error, message: t(fieldState.error?.message ?? '') }]}

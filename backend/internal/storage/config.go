@@ -15,6 +15,7 @@ import (
 type ConfigStore interface {
 	Update(cfg models.Config) error
 	Get() (models.Config, error)
+	ToYaml(cfg models.Config) ([]byte, error)
 	SetOnChange(fn func(oldConfig, newConfig models.Config))
 }
 
@@ -45,6 +46,19 @@ func (s *configStore) Update(cfg models.Config) (err error) {
 		}()
 	}
 
+	bs, err := s.ToYaml(cfg)
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(s.configFilePath, bs, 0o644); err != nil {
+		return fmt.Errorf("error writing config file %s: %w", s.configFilePath, err)
+	}
+
+	return nil
+}
+
+func (*configStore) ToYaml(cfg models.Config) ([]byte, error) {
 	var m map[string]any
 	encCfg := &mapstructure.DecoderConfig{
 		TagName:          "mapstructure",
@@ -53,22 +67,17 @@ func (s *configStore) Update(cfg models.Config) (err error) {
 	}
 	encoder, err := mapstructure.NewDecoder(encCfg)
 	if err != nil {
-		return fmt.Errorf("failed to create encoder: %w", err)
+		return nil, fmt.Errorf("failed to create encoder: %w", err)
 	}
 	if err := encoder.Decode(cfg); err != nil {
-		return fmt.Errorf("error encoding config: %w", err)
+		return nil, fmt.Errorf("error encoding config: %w", err)
 	}
 
 	bs, err := yaml.Marshal(m)
 	if err != nil {
-		return fmt.Errorf("error marshaling config: %w", err)
+		return nil, fmt.Errorf("error marshaling config: %w", err)
 	}
-
-	if err := os.WriteFile(s.configFilePath, bs, 0o644); err != nil {
-		return fmt.Errorf("error writing config file %s: %w", s.configFilePath, err)
-	}
-
-	return nil
+	return bs, nil
 }
 
 func (s *configStore) SetOnChange(fn func(oldConfig, newConfig models.Config)) {

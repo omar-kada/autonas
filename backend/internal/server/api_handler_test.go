@@ -79,6 +79,11 @@ func (m *MockStore) Update(config models.Config) error {
 	return args.Error(0)
 }
 
+func (m *MockStore) ToYaml(config models.Config) ([]byte, error) {
+	args := m.Called(config)
+	return args.Get(0).([]byte), args.Error(1)
+}
+
 func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
 	m.Called(fn)
 }
@@ -436,11 +441,12 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	settings := models.Settings{
-		Repo:     "test-repo",
-		Branch:   "main",
-		Cron:     "0 0 * * *",
-		Username: "user",
-		Token:    "123456789123456789",
+		Repo:            "test-repo",
+		Branch:          "main",
+		Cron:            "0 0 * * *",
+		Username:        "user",
+		Token:           "123456789123456789123456789",
+		NotificationURL: "gotify://123456789123456789",
 	}
 	store.On("Get").Return(models.Config{Settings: settings}, nil)
 
@@ -453,7 +459,8 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 		assert.Equal(t, "main", *r.Branch)
 		assert.Equal(t, "0 0 * * *", *r.Cron)
 		assert.Equal(t, "user", *r.Username)
-		assert.Equal(t, "*************************56789", *r.Token)
+		assert.Equal(t, "1234567891********************", *r.Token)
+		assert.Equal(t, "gotify://1********************", *r.NotificationURL)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
@@ -556,7 +563,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	newSettings := api.Settings{
 		Repo:     "new-repo",
 		Username: ptr("new-user"),
-		Token:    ptr("123456789123456789"),
+		Token:    ptr("123456789123456789123456789"),
 	}
 
 	store.On("Get").Return(oldConfig, nil)
@@ -580,7 +587,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	case api.SettingsAPISet200JSONResponse:
 		assert.Equal(t, "new-repo", r.Repo)
 		assert.Equal(t, "new-user", *r.Username)
-		assert.Equal(t, "*************************56789", *r.Token)
+		assert.Equal(t, "1234567891********************", *r.Token)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}

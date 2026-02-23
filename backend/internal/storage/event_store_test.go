@@ -47,7 +47,7 @@ func TestStoreEventAndGetEvents(t *testing.T) {
 	s, db := setupEventStorage(t)
 	dep := initDeployment(t, db, "title1")
 
-	ev := models.Event{Level: 1, Msg: "ok", ObjectID: dep.ID}
+	ev := models.Event{Type: models.EventMisc, Msg: "ok", ObjectID: dep.ID}
 	assert.NoError(t, s.StoreEvent(ev))
 	events, err := s.GetEvents(dep.ID)
 	assert.NoError(t, err)
@@ -58,7 +58,7 @@ func TestStoreEventAndGetEvents(t *testing.T) {
 func TestStoreEvent_NoDeployment(t *testing.T) {
 	s, _ := setupEventStorage(t)
 
-	ev := models.Event{Level: 1, Msg: "ok", ObjectID: 1}
+	ev := models.Event{Type: models.EventMisc, Msg: "ok", ObjectID: 1}
 	assert.Error(t, s.StoreEvent(ev))
 	events, err := s.GetEvents(1)
 	assert.NoError(t, err)

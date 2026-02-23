@@ -14,9 +14,10 @@ enum Versions {
 }
 
 model Event {
+  ID: uint64;
   time: utcDateTime;
   msg: string;
-  level: "ERROR" | "INFO" | "DEBUG" | "WARN";
+  type: EventType;
 }
 
 enum DeploymentStatus {
@@ -85,12 +86,25 @@ model Stats {
   health: ContainerHealth;
 }
 
+enum EventType {
+  Misc: "MISC",
+  Error: "ERROR",
+  DeploymentStarted: "DEPLOYMENT_STARTED",
+  DeploymentSuccess: "DEPLOYMENT_SUCCESS",
+  DeploymentError: "DEPLOYMENT_ERROR",
+  ConfigurationUpdated: "CONFIGURATION_UPDATED",
+  PasswordUpdated: "PASSWORD_UPDATED",
+  SessionReused: "SESSION_REUSED",
+}
+
 model Settings {
   repo: string;
   branch?: string;
   cron?: string;
   username?: string;
   token?: string;
+  notificationURL?: string;
+  notificationTypes: Array<EventType>;
 }
 
 model Config {
