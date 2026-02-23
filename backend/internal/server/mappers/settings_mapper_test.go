@@ -14,7 +14,9 @@ func TestSettingsMapper_Map(t *testing.T) {
 	cron := "0 0 * * *"
 	username := "user"
 	token := "123456789123456789"
-	obfuscatedToken := models.ObfuscateToken(token)
+	notificationURL := "telegram://123456789"
+	obfuscatedToken := models.Obfuscate(token)
+	obfuscatedURL := models.Obfuscate(notificationURL)
 	empty := ""
 	cases := []struct {
 		name string
@@ -24,31 +26,38 @@ func TestSettingsMapper_Map(t *testing.T) {
 		{
 			name: "basic",
 			in: models.Settings{
-				Repo:     "https://github.com/example/repo",
-				Branch:   main,
-				Cron:     cron,
-				Username: username,
-				Token:    token,
+				Repo:              "https://github.com/example/repo",
+				Branch:            main,
+				Cron:              cron,
+				Username:          username,
+				Token:             token,
+				NotificationURL:   notificationURL,
+				NotificationTypes: []models.EventType{},
 			},
 			want: api.Settings{
-				Repo:     "https://github.com/example/repo",
-				Branch:   &main,
-				Cron:     &cron,
-				Token:    &obfuscatedToken,
-				Username: &username,
+				Repo:              "https://github.com/example/repo",
+				Branch:            &main,
+				Cron:              &cron,
+				Token:             &obfuscatedToken,
+				Username:          &username,
+				NotificationURL:   &obfuscatedURL,
+				NotificationTypes: []api.EventType{},
 			},
 		},
 		{
 			name: "empty",
 			in: models.Settings{
-				Repo: "",
+				Repo:              "",
+				NotificationTypes: []models.EventType{},
 			},
 			want: api.Settings{
-				Repo:     "",
-				Branch:   &empty,
-				Cron:     &empty,
-				Token:    &empty,
-				Username: &empty,
+				Repo:              "",
+				Branch:            &empty,
+				Cron:              &empty,
+				Token:             &empty,
+				Username:          &empty,
+				NotificationURL:   &empty,
+				NotificationTypes: []api.EventType{},
 			},
 		},
 	}
@@ -68,6 +77,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 	repo := "https://github.com/example/repo"
 	username := "user"
 	token := "123456789123456789"
+	notificationURL := "telegram://123456789"
 
 	cases := []struct {
 		name string
@@ -77,35 +87,43 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 		{
 			name: "basic",
 			in: api.Settings{
-				Repo:     repo,
-				Branch:   &branch,
-				Cron:     &cron,
-				Username: &username,
-				Token:    &token,
+				Repo:              repo,
+				Branch:            &branch,
+				Cron:              &cron,
+				Username:          &username,
+				Token:             &token,
+				NotificationURL:   &notificationURL,
+				NotificationTypes: []api.EventType{},
 			},
 			want: models.Settings{
-				Repo:     repo,
-				Branch:   branch,
-				Cron:     cron,
-				Username: username,
-				Token:    token,
+				Repo:              repo,
+				Branch:            branch,
+				Cron:              cron,
+				Username:          username,
+				Token:             token,
+				NotificationURL:   notificationURL,
+				NotificationTypes: []models.EventType{},
 			},
 		},
 		{
 			name: "empty",
 			in: api.Settings{
-				Branch:   nil,
-				Cron:     nil,
-				Repo:     "",
-				Username: nil,
-				Token:    nil,
+				Branch:            nil,
+				Cron:              nil,
+				Repo:              "",
+				Username:          nil,
+				Token:             nil,
+				NotificationURL:   nil,
+				NotificationTypes: []api.EventType{},
 			},
 			want: models.Settings{
-				Repo:     "",
-				Branch:   "",
-				Cron:     "",
-				Username: "",
-				Token:    "",
+				Repo:              "",
+				Branch:            "",
+				Cron:              "",
+				Username:          "",
+				Token:             "",
+				NotificationURL:   "",
+				NotificationTypes: []models.EventType{},
 			},
 		},
 	}

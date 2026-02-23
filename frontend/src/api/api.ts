@@ -4,31 +4,31 @@
  * AutoNAS API
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
 import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
-  MutationFunction,
-  QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult
+    DataTag,
+    DefinedInitialDataOptions,
+    DefinedUseQueryResult,
+    MutationFunction,
+    QueryClient,
+    QueryFunction,
+    QueryKey,
+    UndefinedInitialDataOptions,
+    UseMutationOptions,
+    UseMutationResult,
+    UseQueryOptions,
+    UseQueryResult
+} from '@tanstack/react-query';
+import {
+    useMutation,
+    useQuery
 } from '@tanstack/react-query';
 
-import * as axios from 'axios';
 import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
+    AxiosError,
+    AxiosRequestConfig,
+    AxiosResponse
 } from 'axios';
+import * as axios from 'axios';
 
 export interface BooleanResponse {
   success: boolean;
@@ -119,22 +119,27 @@ export interface Error {
   message: string;
 }
 
-export type EventLevel = typeof EventLevel[keyof typeof EventLevel];
+export interface Event {
+  ID: number;
+  time: string;
+  msg: string;
+  type: EventType;
+}
+
+export type EventType = typeof EventType[keyof typeof EventType];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const EventLevel = {
+export const EventType = {
+  MISC: 'MISC',
   ERROR: 'ERROR',
-  INFO: 'INFO',
-  DEBUG: 'DEBUG',
-  WARN: 'WARN',
+  DEPLOYMENT_STARTED: 'DEPLOYMENT_STARTED',
+  DEPLOYMENT_SUCCESS: 'DEPLOYMENT_SUCCESS',
+  DEPLOYMENT_ERROR: 'DEPLOYMENT_ERROR',
+  CONFIGURATION_UPDATED: 'CONFIGURATION_UPDATED',
+  PASSWORD_UPDATED: 'PASSWORD_UPDATED',
+  SESSION_REUSED: 'SESSION_REUSED',
 } as const;
-
-export interface Event {
-  time: string;
-  msg: string;
-  level: EventLevel;
-}
 
 export interface Features {
   displayConfig: boolean;
@@ -160,6 +165,8 @@ export interface Settings {
   cron?: string;
   username?: string;
   token?: string;
+  notificationURL?: string;
+  notificationTypes: EventType[];
 }
 
 export interface StackStatus {

@@ -87,7 +87,12 @@
       "DELETE_ACCOUNT_DIALOG": {
         "TITLE": "Are you sure ?",
         "DESCRIPTION": "Do you really want to delete your account ?"
-      }
+      },
+      "NOTIFICATION": "Notifications",
+      "notificationURL": "Notification URL",
+      "notificationURL_DESCRIPTION": "Check Shoutrrr docs for format",
+      "notificationTypes": "Enabled Notifications",
+      "notificationTypes_DESCRIPTION": "Choose which types of notification to enable"
     },
     "CHANGE_PASS_DIALOG": {
       "TITLE": "Change your password",
@@ -111,7 +116,9 @@
     "TOGGLE_THEME": "Toggle Theme",
     "SYNC_NOW": "Sync now",
     "VIEW_FILE": "View file",
-    "HIDE_FILE": "Hide file"
+    "HIDE_FILE": "Hide file",
+    "SELECT_ALL": "Select all",
+    "CLEAR_ALL": "Clear all"
   },
   "TIME": {
     "JUST_NOW": "Just now",
@@ -145,5 +152,18 @@
     "USER_CREATION_ERROR": "register error",
     "CHANGE_PASS_ERROR": "Error while changing password",
     "DELETE_ACCOUNT_ERROR": "Error while deleting your account"
+  },
+  "EVENT_TYPE": {
+    "GENERAL": "General",
+    "MISC": "Misc",
+    "ERROR": "Error",
+    "DEPLOYMENT": "Deployment",
+    "DEPLOYMENT_STARTED": "Deployment started",
+    "DEPLOYMENT_SUCCESS": "Deployment success",
+    "DEPLOYMENT_ERROR": "Deployment error",
+    "SETTINGS": "Settings",
+    "PASSWORD_UPDATED": "Password updated",
+    "CONFIGURATION_UPDATED": "Configuration updated",
+    "SESSION_REUSED": "Session reused"
   }
 }

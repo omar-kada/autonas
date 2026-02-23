@@ -3,32 +3,35 @@ package events
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
-	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
 )
 
-// ObjectID represent a contextkey for objectID
-const ObjectID models.ContextKey = "OBJECT_ID"
+// objectIDCtxKey represent a contextkey for objectID
+const objectIDCtxKey models.ContextKey = "OBJECT_ID"
+
+// objectNameCtxKey represents a context key for object name
+const objectNameCtxKey models.ContextKey = "OBJECT_NAME"
 
 // Dispatcher is responsible of processing deployment events
 type Dispatcher interface {
-	Info(ctx context.Context, msg string, args ...any)
-	Error(ctx context.Context, msg string, args ...any)
-	Debug(ctx context.Context, msg string, args ...any)
-	Warn(ctx context.Context, msg string, args ...any)
+	Dispatch(ctx context.Context, eventType models.EventType, msg string)
+}
+
+// EventHandler handles events dispatched by the Dispatcher.
+type EventHandler interface {
+	HandleEvent(ctx context.Context, event models.Event)
 }
 
 type dispatcher struct {
-	store storage.EventStorage
+	eventHandlers []EventHandler
 }
 
 // NewDefaultDispatcher creates a new event dispatcher
-func NewDefaultDispatcher(store storage.EventStorage) Dispatcher {
+func NewDefaultDispatcher(eventHandlers []EventHandler) Dispatcher {
 	return &dispatcher{
-		store: store,
+		eventHandlers: eventHandlers,
 	}
 }
 
@@ -38,32 +41,41 @@ func NewVoidDispatcher() Dispatcher {
 	return &dispatcher{}
 }
 
-func (d *dispatcher) dispatchLevel(ctx context.Context, level slog.Level, msg string, args ...any) {
-	if d.store == nil {
-		return
+func (d *dispatcher) Dispatch(ctx context.Context, eventType models.EventType, msg string) {
+
+	objectID, objectName := GetObjectFromContext(ctx)
+
+	event := models.Event{
+		Type:       eventType,
+		Msg:        msg,
+		Time:       time.Now(),
+		ObjectID:   objectID,
+		ObjectName: objectName,
 	}
-	slog.Log(ctx, level, msg, args...)
-	d.store.StoreEvent(models.Event{
-		Level:    level,
-		Msg:      msg,
-		Time:     time.Now(),
-		ObjectID: ctx.Value(ObjectID).(uint64),
-	})
+
+	for _, handler := range d.eventHandlers {
+		handler.HandleEvent(ctx, event)
+	}
 }
 
-// Dispatch handles processing events
-func (d *dispatcher) Info(ctx context.Context, msg string, args ...any) {
-	d.dispatchLevel(ctx, slog.LevelInfo, msg, args...)
+// GetObjectFromContext extracts object ID and name from the context.
+func GetObjectFromContext(ctx context.Context) (uint64, string) {
+	objectID := uint64(0)
+	objectName := ""
+
+	if ctx.Value(objectIDCtxKey) != nil {
+		objectID = ctx.Value(objectIDCtxKey).(uint64)
+	}
+	if ctx.Value(objectNameCtxKey) != nil {
+		objectName = ctx.Value(objectNameCtxKey).(string)
+	}
+
+	return objectID, objectName
 }
 
-func (d *dispatcher) Error(ctx context.Context, msg string, args ...any) {
-	d.dispatchLevel(ctx, slog.LevelError, msg, args...)
-}
-
-func (d *dispatcher) Debug(ctx context.Context, msg string, args ...any) {
-	d.dispatchLevel(ctx, slog.LevelDebug, msg, args...)
-}
-
-func (d *dispatcher) Warn(ctx context.Context, msg string, args ...any) {
-	d.dispatchLevel(ctx, slog.LevelWarn, msg, args...)
+// GetDeploymentContext adds deployment ID and title to the context.
+func GetDeploymentContext(ctx context.Context, deployment models.Deployment) context.Context {
+	ctx = context.WithValue(ctx, objectIDCtxKey, deployment.ID)
+	ctx = context.WithValue(ctx, objectNameCtxKey, deployment.Title)
+	return ctx
 }

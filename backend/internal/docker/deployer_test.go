@@ -42,11 +42,10 @@ func newDeployerWithMocks(mocker *Mocker) *deployer {
 	db := testutil.NewMemoryStorage()
 	depStore, _ := storage.NewDeploymentStorage(db)
 	dep, _ := depStore.InitDeployment("test commit", "Test", "", []models.FileDiff{})
+	ctx := events.GetDeploymentContext(context.Background(), dep)
 
-	eventStore, _ := storage.NewEventStorage(db)
-	ctx := context.WithValue(context.Background(), events.ObjectID, dep.ID)
 	return &deployer{
-		dispatcher:  events.NewDefaultDispatcher(eventStore),
+		dispatcher:  events.NewVoidDispatcher(),
 		cmdExecuter: mocker,
 		copier:      mocker,
 		envGenerator: &EnvGenerator{

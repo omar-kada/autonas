@@ -1,4 +1,4 @@
-import type { ContainerHealth, DeploymentStatus, EventLevel } from '@/api/api';
+import { EventType, type ContainerHealth, type DeploymentStatus } from '@/api/api';
 
 export function colorForStatus(status: ContainerHealth | DeploymentStatus): string {
   switch (status) {
@@ -53,15 +53,13 @@ export function textColorForStatus(status?: ContainerHealth | DeploymentStatus):
   }
 }
 
-export function logColor(level: EventLevel): string {
+export function logColor(level: EventType): string {
   switch (level) {
-    case 'ERROR':
+    case EventType.ERROR:
+    case EventType.DEPLOYMENT_ERROR:
       return 'text-red-700 dark:text-red-300 ';
-    case 'WARN':
-      return 'text-yellow-700 dark:text-yellow-300';
-    case 'DEBUG':
+    case EventType.MISC:
       return 'text-gray-700 dark:text-gray-300';
-    case 'INFO':
     default:
       return '';
   }

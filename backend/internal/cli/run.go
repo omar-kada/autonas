@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
 	"omar-kada/autonas/internal/docker"
 	"omar-kada/autonas/internal/events"
+	"omar-kada/autonas/internal/files"
 	"omar-kada/autonas/internal/git"
 	"omar-kada/autonas/internal/process"
 	"omar-kada/autonas/internal/server"
@@ -79,12 +81,20 @@ func (run *runCommand) doRun() error {
 		return fmt.Errorf("couldn't init UserStorage %w", err)
 	}
 
-	dispatcher := events.NewDefaultDispatcher(eventStore)
 	configStore := storage.NewConfigStore(params.ConfigFile)
+	dispatcher := events.NewDefaultDispatcher([]events.EventHandler{
+		events.NewLoggingEventHandler(),
+		events.NewStoringEventHandler(eventStore),
+		events.NewNotificationEventHandler(configStore),
+	})
 	scheduler := process.NewConfigScheduler(configStore)
 	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
-		slog.Debug("checking if cron changed", "oldCron", oldCfg.Settings.Cron, "newCron", cfg.Settings.Cron)
+		oldYamlCfg, _ := configStore.ToYaml(oldCfg)
+		newYamlCfg, _ := configStore.ToYaml(cfg)
+		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated,
+			files.DiffText(string(oldYamlCfg), string(newYamlCfg)))
 		if oldCfg.Settings.Cron != cfg.Settings.Cron {
+			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Cron, "newCron", cfg.Settings.Cron)
 			scheduler.ReSchedule()
 		}
 	})

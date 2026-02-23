@@ -51,12 +51,16 @@ const (
 	DeploymentStatusSuccess DeploymentStatus = "success"
 )
 
-// Defines values for EventLevel.
+// Defines values for EventType.
 const (
-	EventLevelDEBUG EventLevel = "DEBUG"
-	EventLevelERROR EventLevel = "ERROR"
-	EventLevelINFO  EventLevel = "INFO"
-	EventLevelWARN  EventLevel = "WARN"
+	EventTypeCONFIGURATIONUPDATED EventType = "CONFIGURATION_UPDATED"
+	EventTypeDEPLOYMENTERROR      EventType = "DEPLOYMENT_ERROR"
+	EventTypeDEPLOYMENTSTARTED    EventType = "DEPLOYMENT_STARTED"
+	EventTypeDEPLOYMENTSUCCESS    EventType = "DEPLOYMENT_SUCCESS"
+	EventTypeERROR                EventType = "ERROR"
+	EventTypeMISC                 EventType = "MISC"
+	EventTypePASSWORDUPDATED      EventType = "PASSWORD_UPDATED"
+	EventTypeSESSIONREUSED        EventType = "SESSION_REUSED"
 )
 
 // Defines values for Versions.
@@ -131,13 +135,14 @@ type Error struct {
 
 // Event defines model for Event.
 type Event struct {
-	Level EventLevel `json:"level"`
-	Msg   string     `json:"msg"`
-	Time  time.Time  `json:"time"`
+	ID   uint64    `json:"ID"`
+	Msg  string    `json:"msg"`
+	Time time.Time `json:"time"`
+	Type EventType `json:"type"`
 }
 
-// EventLevel defines model for Event.Level.
-type EventLevel string
+// EventType defines model for EventType.
+type EventType string
 
 // Features defines model for Features.
 type Features struct {
@@ -162,11 +167,13 @@ type PageInfo struct {
 
 // Settings defines model for Settings.
 type Settings struct {
-	Branch   *string `json:"branch,omitempty"`
-	Cron     *string `json:"cron,omitempty"`
-	Repo     string  `json:"repo"`
-	Token    *string `json:"token,omitempty"`
-	Username *string `json:"username,omitempty"`
+	Branch            *string     `json:"branch,omitempty"`
+	Cron              *string     `json:"cron,omitempty"`
+	NotificationTypes []EventType `json:"notificationTypes"`
+	NotificationURL   *string     `json:"notificationURL,omitempty"`
+	Repo              string      `json:"repo"`
+	Token             *string     `json:"token,omitempty"`
+	Username          *string     `json:"username,omitempty"`
 }
 
 // StackStatus defines model for StackStatus.

@@ -14,11 +14,13 @@ const DefaultBranch = "main"
 
 // Settings represents configuration of autonas.
 type Settings struct {
-	Repo     string `mapstructure:"repo"`
-	Branch   string `mapstructure:"branch"`
-	Username string `mapstructure:"username"`
-	Token    string `mapstructure:"token"`
-	Cron     string `mapstructure:"cron"`
+	Repo              string      `mapstructure:"repo"`
+	Branch            string      `mapstructure:"branch"`
+	Username          string      `mapstructure:"username"`
+	Token             string      `mapstructure:"token"`
+	Cron              string      `mapstructure:"cron"`
+	NotificationURL   string      `mapstructure:"notificationURL"`
+	NotificationTypes []EventType `mapstructure:"notificationTypes"`
 }
 
 // Environment represents global environment variables.
@@ -63,24 +65,34 @@ func (cfg Config) GetBranch() string {
 	return DefaultBranch
 }
 
-// GetObfuscateToken returns an obfuscated token
-func (settings Settings) GetObfuscateToken() string {
-	return ObfuscateToken(settings.Token)
+// IsEventNotificationEnabled checks if the specified event type is enabled for notifications.
+func (cfg Config) IsEventNotificationEnabled(eventType EventType) bool {
+	return slices.Contains(cfg.Settings.NotificationTypes, eventType)
 }
 
-// ObfuscateToken replaces most of the token with asterisks to hide sensitive information
-func ObfuscateToken(token string) string {
+// GetObfuscatedToken returns an obfuscated token
+func (settings Settings) GetObfuscatedToken() string {
+	return Obfuscate(settings.Token)
+}
+
+// GetObfuscatedNotificationURL returns an obfuscated notification URL
+func (settings Settings) GetObfuscatedNotificationURL() string {
+	return Obfuscate(settings.NotificationURL)
+}
+
+// Obfuscate replaces most of the input with asterisks to hide sensitive information
+func Obfuscate(token string) string {
 	if token == "" {
 		return token
 	}
 	length := len(token)
-	if length < 10 {
+	if length < 20 {
 		return strings.Repeat("*", 30)
 	}
-	return strings.Repeat("*", 25) + token[length-5:length]
+	return token[0:10] + strings.Repeat("*", 20)
 }
 
 // IsObfuscated checks if the token is obfuscated by checking if it starts with "*****".
 func IsObfuscated(token string) bool {
-	return strings.HasPrefix(token, "*****")
+	return strings.HasSuffix(token, strings.Repeat("*", 20))
 }

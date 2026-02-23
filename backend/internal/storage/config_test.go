@@ -67,7 +67,8 @@ func TestUpdateConfig(t *testing.T) {
 
 		input := models.Config{
 			Settings: models.Settings{
-				Branch: models.DefaultBranch,
+				Branch:            models.DefaultBranch,
+				NotificationTypes: []models.EventType{},
 			},
 			Environment: models.Environment{
 				"AUTONAS_HOST": "localhost",
@@ -108,6 +109,9 @@ func TestUpdateConfig(t *testing.T) {
 				"AUTONAS_HOST": "localhost",
 			},
 			Services: map[string]models.ServiceConfig{},
+			Settings: models.Settings{
+				NotificationTypes: []models.EventType{},
+			},
 		}
 		err := store.Update(initialCfg)
 		assert.NoError(t, err)
@@ -125,6 +129,9 @@ func TestUpdateConfig(t *testing.T) {
 		updatedCfg := models.Config{
 			Environment: models.Environment{
 				"AUTONAS_HOST": "new-host",
+			},
+			Settings: models.Settings{
+				NotificationTypes: []models.EventType{},
 			},
 		}
 		err = store.Update(updatedCfg)
@@ -153,6 +160,9 @@ func TestUpdateConfig(t *testing.T) {
 		input := models.Config{
 			Environment: models.Environment{
 				"AUTONAS_HOST": "localhost",
+			},
+			Settings: models.Settings{
+				NotificationTypes: []models.EventType{},
 			},
 		}
 

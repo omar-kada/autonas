@@ -51,20 +51,20 @@ func (d deployer) WithCtx(ctx context.Context) Deployer {
 
 // RemoveServices stops and removes Docker Compose services.
 func (d deployer) RemoveServices(services []string, servicesDir string) map[string]error {
-	d.dispatcher.Debug(d.ctx, "these services will be removed if running.", "services", services)
+	d.dispatcher.Dispatch(d.ctx, models.EventMisc, fmt.Sprintf("these services will be removed if running %v", services))
 	errors := make(map[string]error)
 	for _, service := range services {
 
 		composeDir := filepath.Join(servicesDir, service)
 
 		if info, err := os.Stat(composeDir); os.IsNotExist(err) || !info.IsDir() {
-			d.dispatcher.Debug(d.ctx, fmt.Sprintf("Skipping docker compose down for %s: directory does not exist", service))
+			d.dispatcher.Dispatch(d.ctx, models.EventMisc, fmt.Sprintf("Skipping docker compose down for %s: directory does not exist", service))
 			continue
 		}
 
 		err := d.composeDown(composeDir)
 		if err != nil {
-			d.dispatcher.Error(d.ctx, "Error running docker compose down for %s: %v", service, err)
+			d.dispatcher.Dispatch(d.ctx, models.EventError, fmt.Sprintf("Error running docker compose down for %s: %v", service, err))
 			errors[service] = err
 		}
 	}
@@ -76,7 +76,7 @@ func (d deployer) RemoveServices(services []string, servicesDir string) map[stri
 func (d deployer) DeployServices(cfg models.Config, params models.DeploymentParams) map[string]error {
 	enabledServices := cfg.GetEnabledServices()
 	if len(enabledServices) == 0 {
-		d.dispatcher.Warn(d.ctx, "No enabled services specified in config. Skipping .env generation and compose up.")
+		d.dispatcher.Dispatch(d.ctx, models.EventMisc, "No enabled services specified in config. Skipping .env generation and compose up.")
 		return nil
 	}
 
@@ -84,17 +84,17 @@ func (d deployer) DeployServices(cfg models.Config, params models.DeploymentPara
 	for _, service := range enabledServices {
 
 		if err := d.copyServiceFiles(service, params); err != nil {
-			d.dispatcher.Error(d.ctx, fmt.Sprintf("Error copying service files for %s : %v", service, err))
+			d.dispatcher.Dispatch(d.ctx, models.EventError, fmt.Sprintf("Error copying service files for %s : %v", service, err))
 			errors[service] = err
 			continue
 		}
 		if err := d.envGenerator.generateEnvFile(cfg, params.ServicesDir, service); err != nil {
-			d.dispatcher.Error(d.ctx, fmt.Sprintf("Error creating env file for %s : %v", service, err))
+			d.dispatcher.Dispatch(d.ctx, models.EventError, fmt.Sprintf("Error creating env file for %s : %v", service, err))
 			errors[service] = err
 			continue
 		}
 		if err := d.composeUp(filepath.Join(params.ServicesDir, service)); err != nil {
-			d.dispatcher.Error(d.ctx, fmt.Sprintf("Error running docker compose for %s : %v", service, err))
+			d.dispatcher.Dispatch(d.ctx, models.EventError, fmt.Sprintf("Error running docker compose for %s : %v", service, err))
 			errors[service] = err
 		}
 	}
@@ -128,7 +128,7 @@ func (d deployer) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models
 
 	enabledServiecs := cfg.GetEnabledServices()
 
-	d.dispatcher.Debug(d.ctx, "deploying enabled services", "services", enabledServiecs)
+	d.dispatcher.Dispatch(d.ctx, models.EventMisc, fmt.Sprintf("deploying enabled services %v", enabledServiecs))
 	if errs := d.DeployServices(cfg, params); len(errs) > 0 {
 		return fmt.Errorf("error(s) while deploying services : %v", errs)
 	}

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log/slog"
 	"time"
 )
 
@@ -46,13 +45,4 @@ type FileDiff struct {
 	NewFile      string
 	OldFile      string
 	DeploymentID uint64 `gorm:"index"`
-}
-
-// Event represent an event inside the deployment process
-type Event struct {
-	ID       uint64     `gorm:"primaryKey;autoIncrement:true"`
-	Level    slog.Level `gorm:"type:int"`
-	Msg      string
-	Time     time.Time `gorm:"autoCreateTime"`
-	ObjectID uint64    `gorm:"index"`
 }
