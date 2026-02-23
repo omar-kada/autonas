@@ -28,7 +28,6 @@ func (m *MockEventHandler) HandleEvent(ctx context.Context, event models.Event) 
 }
 
 func TestHandleEvent(t *testing.T) {
-
 	mockHandler := new(MockEventHandler)
 	mockHandler.On("HandleEvent", mock.Anything, mock.Anything).Return()
 	dispatcher := NewDefaultDispatcher([]EventHandler{mockHandler})

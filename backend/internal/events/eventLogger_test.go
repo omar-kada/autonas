@@ -3,9 +3,10 @@ package events
 import (
 	"context"
 	"log/slog"
-	"omar-kada/autonas/models"
 	"reflect"
 	"testing"
+
+	"omar-kada/autonas/models"
 )
 
 func TestLoggingEventHandler_HandleEvent(t *testing.T) {
@@ -44,7 +45,7 @@ type mockLogger struct {
 	loggedEvents []slog.Record
 }
 
-func (m *mockLogger) Enabled(_ context.Context, _ slog.Level) bool {
+func (*mockLogger) Enabled(_ context.Context, _ slog.Level) bool {
 	return true
 }
 

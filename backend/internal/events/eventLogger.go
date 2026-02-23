@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+
 	"omar-kada/autonas/models"
 )
 
@@ -16,6 +17,6 @@ func NewLoggingEventHandler() EventHandler {
 }
 
 // HandleEvent logs the event
-func (h *LoggingEventHandler) HandleEvent(ctx context.Context, event models.Event) {
+func (*LoggingEventHandler) HandleEvent(ctx context.Context, event models.Event) {
 	slog.Log(ctx, slog.LevelInfo, fmt.Sprintf("[%v - %v] %v : %v", event.Type, event.ObjectID, event.ObjectName, event.Msg))
 }

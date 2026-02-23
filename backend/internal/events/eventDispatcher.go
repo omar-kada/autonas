@@ -42,7 +42,6 @@ func NewVoidDispatcher() Dispatcher {
 }
 
 func (d *dispatcher) Dispatch(ctx context.Context, eventType models.EventType, msg string) {
-
 	objectID, objectName := GetObjectFromContext(ctx)
 
 	event := models.Event{

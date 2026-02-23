@@ -91,6 +91,7 @@
       "NOTIFICATION": "Notifications",
       "notificationURL": "Notification URL",
       "notificationURL_DESCRIPTION": "Check Shoutrrr docs for format",
+      "notificationURL_PLACEHOLDER": "gotify://123456789",
       "notificationTypes": "Enabled Notifications",
       "notificationTypes_DESCRIPTION": "Choose which types of notification to enable"
     },

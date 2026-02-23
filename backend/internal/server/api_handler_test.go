@@ -446,7 +446,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 		Cron:            "0 0 * * *",
 		Username:        "user",
 		Token:           "123456789123456789123456789",
-		NotificationURL: "telegram://123456789",
+		NotificationURL: "gotify://123456789123456789",
 	}
 	store.On("Get").Return(models.Config{Settings: settings}, nil)
 
@@ -460,7 +460,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 		assert.Equal(t, "0 0 * * *", *r.Cron)
 		assert.Equal(t, "user", *r.Username)
 		assert.Equal(t, "1234567891********************", *r.Token)
-		assert.Equal(t, "telegram:/********************", *r.NotificationURL)
+		assert.Equal(t, "gotify://1********************", *r.NotificationURL)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}

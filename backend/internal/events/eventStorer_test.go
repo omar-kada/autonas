@@ -2,9 +2,10 @@ package events
 
 import (
 	"context"
-	"omar-kada/autonas/models"
 	"testing"
 	"time"
+
+	"omar-kada/autonas/models"
 
 	"github.com/stretchr/testify/mock"
 )

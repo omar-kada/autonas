@@ -14,7 +14,7 @@ export function DeploymentEventLog({ events }: { events: Event[] }) {
       <CardContent>
         {events.map((event) => (
           <pre key={event.ID} className={`whitespace-pre-wrap ${logColor(event.type)}`}>
-            {formatTime(event.time, i18n.language)} : [{t('EVENT_TYPE.' + event.type)}] {event.msg}
+            {formatTime(event.time, i18n.language)} : [{t(`EVENT_TYPE.${event.type}`)}] {event.msg}
           </pre>
         ))}
       </CardContent>

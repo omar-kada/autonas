@@ -14,7 +14,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 	cron := "0 0 * * *"
 	username := "user"
 	token := "123456789123456789"
-	notificationURL := "telegram://123456789"
+	notificationURL := "gotify://123456789"
 	obfuscatedToken := models.Obfuscate(token)
 	obfuscatedURL := models.Obfuscate(notificationURL)
 	empty := ""
@@ -77,7 +77,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 	repo := "https://github.com/example/repo"
 	username := "user"
 	token := "123456789123456789"
-	notificationURL := "telegram://123456789"
+	notificationURL := "gotify://123456789"
 
 	cases := []struct {
 		name string

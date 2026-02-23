@@ -3,9 +3,10 @@ package events
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
-	"testing"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -31,6 +32,7 @@ func (m *MockConfigStore) Get() (models.Config, error) {
 	args := m.Called()
 	return args.Get(0).(models.Config), args.Error(1)
 }
+
 func (m *MockConfigStore) IsEventNotificationEnabled(eventType models.EventType) bool {
 	args := m.Called(eventType)
 	return args.Bool(0)
