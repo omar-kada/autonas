@@ -1,11 +1,11 @@
-import { getLogoutAPILogoutMutationOptions, getUserAPIGetQueryOptions } from '@/api/api';
+import { getAuthAPILogoutMutationOptions, getUserAPIGetQueryOptions } from '@/api/api';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 export const getLogoutOptions = () => {
-  return getLogoutAPILogoutMutationOptions({
+  return getAuthAPILogoutMutationOptions({
     mutation: {
       onSuccess: (data, _, __, context) => {
         if (data.data.success) {

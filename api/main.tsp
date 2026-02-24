@@ -135,16 +135,6 @@ model Error {
   message: string;
 }
 
-@route("/register")
-@tag("Register")
-@useAuth(NoAuth)
-interface RegisterAPI {
-  @get registered(): {
-    registered: boolean;
-  } | Error;
-  @post register(@body user: Credentials): BooleanResponse | Error;
-}
-
 model User {
   username: string;
 }
@@ -158,24 +148,39 @@ model BooleanResponse {
   success: boolean;
 }
 
-@route("/login")
-@tag("Login")
-@useAuth(NoAuth)
+@route("/auth")
+@tag("Auth")
 interface AuthAPI {
-  @post login(@body credentials: Credentials): BooleanResponse | Error;
-}
+  @useAuth(NoAuth)
+  @route("register")
+  @get
+  registered(): {
+    registered: boolean;
+  } | Error;
 
-@route("/logout")
-@tag("Logout")
-interface LogoutAPI {
-  @post logout(): BooleanResponse | Error;
+  @useAuth(NoAuth)
+  @route("register")
+  @post
+  register(@body user: Credentials): BooleanResponse | Error;
+
+  @useAuth(NoAuth)
+  @route("login")
+  @post
+  login(@body credentials: Credentials): BooleanResponse | Error;
+
+  @route("refresh")
+  @post
+  refresh(): BooleanResponse | Error;
+
+  @route("logout")
+  @post
+  logout(): BooleanResponse | Error;
 }
 
 @route("/user")
 @tag("user")
 interface UserAPI {
   @get get(): User | Error;
-  //@post update(user: User): BooleanResponse | Error;
   @post @route("change-password") changePassword(
     oldPass: string,
     newPass: string,

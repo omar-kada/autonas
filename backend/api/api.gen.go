@@ -214,14 +214,14 @@ type UserAPIChangePasswordJSONBody struct {
 	OldPass string `json:"oldPass"`
 }
 
-// ConfigAPISetJSONRequestBody defines body for ConfigAPISet for application/json ContentType.
-type ConfigAPISetJSONRequestBody = Config
-
 // AuthAPILoginJSONRequestBody defines body for AuthAPILogin for application/json ContentType.
 type AuthAPILoginJSONRequestBody = Credentials
 
-// RegisterAPIRegisterJSONRequestBody defines body for RegisterAPIRegister for application/json ContentType.
-type RegisterAPIRegisterJSONRequestBody = Credentials
+// AuthAPIRegisterJSONRequestBody defines body for AuthAPIRegister for application/json ContentType.
+type AuthAPIRegisterJSONRequestBody = Credentials
+
+// ConfigAPISetJSONRequestBody defines body for ConfigAPISet for application/json ContentType.
+type ConfigAPISetJSONRequestBody = Config
 
 // SettingsAPISetJSONRequestBody defines body for SettingsAPISet for application/json ContentType.
 type SettingsAPISetJSONRequestBody = Settings
@@ -302,6 +302,25 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// AuthAPILoginWithBody request with any body
+	AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AuthAPILogin(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AuthAPILogout request
+	AuthAPILogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AuthAPIRefresh request
+	AuthAPIRefresh(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AuthAPIRegistered request
+	AuthAPIRegistered(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AuthAPIRegisterWithBody request with any body
+	AuthAPIRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AuthAPIRegister(ctx context.Context, body AuthAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ConfigAPIGet request
 	ConfigAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -324,22 +343,6 @@ type ClientInterface interface {
 
 	// FeaturesAPIGet request
 	FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// AuthAPILoginWithBody request with any body
-	AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	AuthAPILogin(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// LogoutAPILogout request
-	LogoutAPILogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// RegisterAPIRegistered request
-	RegisterAPIRegistered(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// RegisterAPIRegisterWithBody request with any body
-	RegisterAPIRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	RegisterAPIRegister(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SettingsAPIGet request
 	SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -365,6 +368,90 @@ type ClientInterface interface {
 	UserAPIChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UserAPIChangePassword(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPILoginRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPILogin(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPILoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPILogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPILogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPIRefresh(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPIRefreshRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPIRegistered(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPIRegisteredRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPIRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPIRegisterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthAPIRegister(ctx context.Context, body AuthAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthAPIRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) ConfigAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -453,78 +540,6 @@ func (c *Client) DiffAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) 
 
 func (c *Client) FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFeaturesAPIGetRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAuthAPILoginRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) AuthAPILogin(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewAuthAPILoginRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) LogoutAPILogout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLogoutAPILogoutRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) RegisterAPIRegistered(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterAPIRegisteredRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) RegisterAPIRegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterAPIRegisterRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) RegisterAPIRegister(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterAPIRegisterRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -641,6 +656,167 @@ func (c *Client) UserAPIChangePassword(ctx context.Context, body UserAPIChangePa
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewAuthAPILoginRequest calls the generic AuthAPILogin builder with application/json body
+func NewAuthAPILoginRequest(server string, body AuthAPILoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAuthAPILoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAuthAPILoginRequestWithBody generates requests for AuthAPILogin with any type of body
+func NewAuthAPILoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAuthAPILogoutRequest generates requests for AuthAPILogout
+func NewAuthAPILogoutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/logout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAuthAPIRefreshRequest generates requests for AuthAPIRefresh
+func NewAuthAPIRefreshRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/refresh")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAuthAPIRegisteredRequest generates requests for AuthAPIRegistered
+func NewAuthAPIRegisteredRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAuthAPIRegisterRequest calls the generic AuthAPIRegister builder with application/json body
+func NewAuthAPIRegisterRequest(server string, body AuthAPIRegisterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAuthAPIRegisterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewAuthAPIRegisterRequestWithBody generates requests for AuthAPIRegister with any type of body
+func NewAuthAPIRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewConfigAPIGetRequest generates requests for ConfigAPIGet
@@ -882,140 +1058,6 @@ func NewFeaturesAPIGetRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return req, nil
-}
-
-// NewAuthAPILoginRequest calls the generic AuthAPILogin builder with application/json body
-func NewAuthAPILoginRequest(server string, body AuthAPILoginJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewAuthAPILoginRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewAuthAPILoginRequestWithBody generates requests for AuthAPILogin with any type of body
-func NewAuthAPILoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/login")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewLogoutAPILogoutRequest generates requests for LogoutAPILogout
-func NewLogoutAPILogoutRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/logout")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewRegisterAPIRegisteredRequest generates requests for RegisterAPIRegistered
-func NewRegisterAPIRegisteredRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/register")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewRegisterAPIRegisterRequest calls the generic RegisterAPIRegister builder with application/json body
-func NewRegisterAPIRegisterRequest(server string, body RegisterAPIRegisterJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewRegisterAPIRegisterRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewRegisterAPIRegisterRequestWithBody generates requests for RegisterAPIRegister with any type of body
-func NewRegisterAPIRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/register")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1285,6 +1327,25 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// AuthAPILoginWithBodyWithResponse request with any body
+	AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error)
+
+	AuthAPILoginWithResponse(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error)
+
+	// AuthAPILogoutWithResponse request
+	AuthAPILogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AuthAPILogoutResponse, error)
+
+	// AuthAPIRefreshWithResponse request
+	AuthAPIRefreshWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AuthAPIRefreshResponse, error)
+
+	// AuthAPIRegisteredWithResponse request
+	AuthAPIRegisteredWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AuthAPIRegisteredResponse, error)
+
+	// AuthAPIRegisterWithBodyWithResponse request with any body
+	AuthAPIRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPIRegisterResponse, error)
+
+	AuthAPIRegisterWithResponse(ctx context.Context, body AuthAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPIRegisterResponse, error)
+
 	// ConfigAPIGetWithResponse request
 	ConfigAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigAPIGetResponse, error)
 
@@ -1307,22 +1368,6 @@ type ClientWithResponsesInterface interface {
 
 	// FeaturesAPIGetWithResponse request
 	FeaturesAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FeaturesAPIGetResponse, error)
-
-	// AuthAPILoginWithBodyWithResponse request with any body
-	AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error)
-
-	AuthAPILoginWithResponse(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error)
-
-	// LogoutAPILogoutWithResponse request
-	LogoutAPILogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutAPILogoutResponse, error)
-
-	// RegisterAPIRegisteredWithResponse request
-	RegisterAPIRegisteredWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RegisterAPIRegisteredResponse, error)
-
-	// RegisterAPIRegisterWithBodyWithResponse request with any body
-	RegisterAPIRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error)
-
-	RegisterAPIRegisterWithResponse(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error)
 
 	// SettingsAPIGetWithResponse request
 	SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error)
@@ -1348,6 +1393,123 @@ type ClientWithResponsesInterface interface {
 	UserAPIChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error)
 
 	UserAPIChangePasswordWithResponse(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error)
+}
+
+type AuthAPILoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthAPILoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthAPILoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AuthAPILogoutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthAPILogoutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthAPILogoutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AuthAPIRefreshResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthAPIRefreshResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthAPIRefreshResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AuthAPIRegisteredResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Registered bool `json:"registered"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthAPIRegisteredResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthAPIRegisteredResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AuthAPIRegisterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthAPIRegisterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthAPIRegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type ConfigAPIGetResponse struct {
@@ -1508,100 +1670,6 @@ func (r FeaturesAPIGetResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FeaturesAPIGetResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type AuthAPILoginResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *BooleanResponse
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r AuthAPILoginResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r AuthAPILoginResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type LogoutAPILogoutResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *BooleanResponse
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r LogoutAPILogoutResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r LogoutAPILogoutResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type RegisterAPIRegisteredResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *struct {
-		Registered bool `json:"registered"`
-	}
-	JSONDefault *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r RegisterAPIRegisteredResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r RegisterAPIRegisteredResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type RegisterAPIRegisterResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *BooleanResponse
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r RegisterAPIRegisterResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r RegisterAPIRegisterResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1769,6 +1837,67 @@ func (r UserAPIChangePasswordResponse) StatusCode() int {
 	return 0
 }
 
+// AuthAPILoginWithBodyWithResponse request with arbitrary body returning *AuthAPILoginResponse
+func (c *ClientWithResponses) AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
+	rsp, err := c.AuthAPILoginWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPILoginResponse(rsp)
+}
+
+func (c *ClientWithResponses) AuthAPILoginWithResponse(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
+	rsp, err := c.AuthAPILogin(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPILoginResponse(rsp)
+}
+
+// AuthAPILogoutWithResponse request returning *AuthAPILogoutResponse
+func (c *ClientWithResponses) AuthAPILogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AuthAPILogoutResponse, error) {
+	rsp, err := c.AuthAPILogout(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPILogoutResponse(rsp)
+}
+
+// AuthAPIRefreshWithResponse request returning *AuthAPIRefreshResponse
+func (c *ClientWithResponses) AuthAPIRefreshWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AuthAPIRefreshResponse, error) {
+	rsp, err := c.AuthAPIRefresh(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPIRefreshResponse(rsp)
+}
+
+// AuthAPIRegisteredWithResponse request returning *AuthAPIRegisteredResponse
+func (c *ClientWithResponses) AuthAPIRegisteredWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AuthAPIRegisteredResponse, error) {
+	rsp, err := c.AuthAPIRegistered(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPIRegisteredResponse(rsp)
+}
+
+// AuthAPIRegisterWithBodyWithResponse request with arbitrary body returning *AuthAPIRegisterResponse
+func (c *ClientWithResponses) AuthAPIRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPIRegisterResponse, error) {
+	rsp, err := c.AuthAPIRegisterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPIRegisterResponse(rsp)
+}
+
+func (c *ClientWithResponses) AuthAPIRegisterWithResponse(ctx context.Context, body AuthAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPIRegisterResponse, error) {
+	rsp, err := c.AuthAPIRegister(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthAPIRegisterResponse(rsp)
+}
+
 // ConfigAPIGetWithResponse request returning *ConfigAPIGetResponse
 func (c *ClientWithResponses) ConfigAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigAPIGetResponse, error) {
 	rsp, err := c.ConfigAPIGet(ctx, reqEditors...)
@@ -1838,58 +1967,6 @@ func (c *ClientWithResponses) FeaturesAPIGetWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseFeaturesAPIGetResponse(rsp)
-}
-
-// AuthAPILoginWithBodyWithResponse request with arbitrary body returning *AuthAPILoginResponse
-func (c *ClientWithResponses) AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
-	rsp, err := c.AuthAPILoginWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAuthAPILoginResponse(rsp)
-}
-
-func (c *ClientWithResponses) AuthAPILoginWithResponse(ctx context.Context, body AuthAPILoginJSONRequestBody, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
-	rsp, err := c.AuthAPILogin(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseAuthAPILoginResponse(rsp)
-}
-
-// LogoutAPILogoutWithResponse request returning *LogoutAPILogoutResponse
-func (c *ClientWithResponses) LogoutAPILogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutAPILogoutResponse, error) {
-	rsp, err := c.LogoutAPILogout(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLogoutAPILogoutResponse(rsp)
-}
-
-// RegisterAPIRegisteredWithResponse request returning *RegisterAPIRegisteredResponse
-func (c *ClientWithResponses) RegisterAPIRegisteredWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RegisterAPIRegisteredResponse, error) {
-	rsp, err := c.RegisterAPIRegistered(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRegisterAPIRegisteredResponse(rsp)
-}
-
-// RegisterAPIRegisterWithBodyWithResponse request with arbitrary body returning *RegisterAPIRegisterResponse
-func (c *ClientWithResponses) RegisterAPIRegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error) {
-	rsp, err := c.RegisterAPIRegisterWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRegisterAPIRegisterResponse(rsp)
-}
-
-func (c *ClientWithResponses) RegisterAPIRegisterWithResponse(ctx context.Context, body RegisterAPIRegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterAPIRegisterResponse, error) {
-	rsp, err := c.RegisterAPIRegister(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRegisterAPIRegisterResponse(rsp)
 }
 
 // SettingsAPIGetWithResponse request returning *SettingsAPIGetResponse
@@ -1969,6 +2046,173 @@ func (c *ClientWithResponses) UserAPIChangePasswordWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseUserAPIChangePasswordResponse(rsp)
+}
+
+// ParseAuthAPILoginResponse parses an HTTP response from a AuthAPILoginWithResponse call
+func ParseAuthAPILoginResponse(rsp *http.Response) (*AuthAPILoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthAPILoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAuthAPILogoutResponse parses an HTTP response from a AuthAPILogoutWithResponse call
+func ParseAuthAPILogoutResponse(rsp *http.Response) (*AuthAPILogoutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthAPILogoutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAuthAPIRefreshResponse parses an HTTP response from a AuthAPIRefreshWithResponse call
+func ParseAuthAPIRefreshResponse(rsp *http.Response) (*AuthAPIRefreshResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthAPIRefreshResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAuthAPIRegisteredResponse parses an HTTP response from a AuthAPIRegisteredWithResponse call
+func ParseAuthAPIRegisteredResponse(rsp *http.Response) (*AuthAPIRegisteredResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthAPIRegisteredResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Registered bool `json:"registered"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAuthAPIRegisterResponse parses an HTTP response from a AuthAPIRegisterWithResponse call
+func ParseAuthAPIRegisterResponse(rsp *http.Response) (*AuthAPIRegisterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthAPIRegisterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseConfigAPIGetResponse parses an HTTP response from a ConfigAPIGetWithResponse call
@@ -2188,140 +2432,6 @@ func ParseFeaturesAPIGetResponse(rsp *http.Response) (*FeaturesAPIGetResponse, e
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Features
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseAuthAPILoginResponse parses an HTTP response from a AuthAPILoginWithResponse call
-func ParseAuthAPILoginResponse(rsp *http.Response) (*AuthAPILoginResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &AuthAPILoginResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BooleanResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseLogoutAPILogoutResponse parses an HTTP response from a LogoutAPILogoutWithResponse call
-func ParseLogoutAPILogoutResponse(rsp *http.Response) (*LogoutAPILogoutResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &LogoutAPILogoutResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BooleanResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseRegisterAPIRegisteredResponse parses an HTTP response from a RegisterAPIRegisteredWithResponse call
-func ParseRegisterAPIRegisteredResponse(rsp *http.Response) (*RegisterAPIRegisteredResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &RegisterAPIRegisteredResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Registered bool `json:"registered"`
-		}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseRegisterAPIRegisterResponse parses an HTTP response from a RegisterAPIRegisterWithResponse call
-func ParseRegisterAPIRegisterResponse(rsp *http.Response) (*RegisterAPIRegisterResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &RegisterAPIRegisterResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BooleanResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2573,6 +2683,21 @@ func ParseUserAPIChangePasswordResponse(rsp *http.Response) (*UserAPIChangePassw
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
+	// (POST /api/auth/login)
+	AuthAPILogin(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/auth/logout)
+	AuthAPILogout(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/auth/refresh)
+	AuthAPIRefresh(w http.ResponseWriter, r *http.Request)
+
+	// (GET /api/auth/register)
+	AuthAPIRegistered(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/auth/register)
+	AuthAPIRegister(w http.ResponseWriter, r *http.Request)
+
 	// (GET /api/config)
 	ConfigAPIGet(w http.ResponseWriter, r *http.Request)
 
@@ -2593,18 +2718,6 @@ type ServerInterface interface {
 
 	// (GET /api/features)
 	FeaturesAPIGet(w http.ResponseWriter, r *http.Request)
-
-	// (POST /api/login)
-	AuthAPILogin(w http.ResponseWriter, r *http.Request)
-
-	// (POST /api/logout)
-	LogoutAPILogout(w http.ResponseWriter, r *http.Request)
-
-	// (GET /api/register)
-	RegisterAPIRegistered(w http.ResponseWriter, r *http.Request)
-
-	// (POST /api/register)
-	RegisterAPIRegister(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/settings)
 	SettingsAPIGet(w http.ResponseWriter, r *http.Request)
@@ -2636,6 +2749,88 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// AuthAPILogin operation middleware
+func (siw *ServerInterfaceWrapper) AuthAPILogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthAPILogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AuthAPILogout operation middleware
+func (siw *ServerInterfaceWrapper) AuthAPILogout(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthAPILogout(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AuthAPIRefresh operation middleware
+func (siw *ServerInterfaceWrapper) AuthAPIRefresh(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthAPIRefresh(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AuthAPIRegistered operation middleware
+func (siw *ServerInterfaceWrapper) AuthAPIRegistered(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthAPIRegistered(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AuthAPIRegister operation middleware
+func (siw *ServerInterfaceWrapper) AuthAPIRegister(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AuthAPIRegister(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ConfigAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) ConfigAPIGet(w http.ResponseWriter, r *http.Request) {
@@ -2807,68 +3002,6 @@ func (siw *ServerInterfaceWrapper) FeaturesAPIGet(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.FeaturesAPIGet(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// AuthAPILogin operation middleware
-func (siw *ServerInterfaceWrapper) AuthAPILogin(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AuthAPILogin(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// LogoutAPILogout operation middleware
-func (siw *ServerInterfaceWrapper) LogoutAPILogout(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LogoutAPILogout(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RegisterAPIRegistered operation middleware
-func (siw *ServerInterfaceWrapper) RegisterAPIRegistered(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RegisterAPIRegistered(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RegisterAPIRegister operation middleware
-func (siw *ServerInterfaceWrapper) RegisterAPIRegister(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RegisterAPIRegister(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3149,6 +3282,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("POST "+options.BaseURL+"/api/auth/login", wrapper.AuthAPILogin)
+	m.HandleFunc("POST "+options.BaseURL+"/api/auth/logout", wrapper.AuthAPILogout)
+	m.HandleFunc("POST "+options.BaseURL+"/api/auth/refresh", wrapper.AuthAPIRefresh)
+	m.HandleFunc("GET "+options.BaseURL+"/api/auth/register", wrapper.AuthAPIRegistered)
+	m.HandleFunc("POST "+options.BaseURL+"/api/auth/register", wrapper.AuthAPIRegister)
 	m.HandleFunc("GET "+options.BaseURL+"/api/config", wrapper.ConfigAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/config", wrapper.ConfigAPISet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment", wrapper.DeployementAPIList)
@@ -3156,10 +3294,6 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
 	m.HandleFunc("GET "+options.BaseURL+"/api/diff", wrapper.DiffAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/features", wrapper.FeaturesAPIGet)
-	m.HandleFunc("POST "+options.BaseURL+"/api/login", wrapper.AuthAPILogin)
-	m.HandleFunc("POST "+options.BaseURL+"/api/logout", wrapper.LogoutAPILogout)
-	m.HandleFunc("GET "+options.BaseURL+"/api/register", wrapper.RegisterAPIRegistered)
-	m.HandleFunc("POST "+options.BaseURL+"/api/register", wrapper.RegisterAPIRegister)
 	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
@@ -3169,6 +3303,150 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/user/change-password", wrapper.UserAPIChangePassword)
 
 	return m
+}
+
+type AuthAPILoginRequestObject struct {
+	Body *AuthAPILoginJSONRequestBody
+}
+
+type AuthAPILoginResponseObject interface {
+	VisitAuthAPILoginResponse(w http.ResponseWriter) error
+}
+
+type AuthAPILogin200JSONResponse BooleanResponse
+
+func (response AuthAPILogin200JSONResponse) VisitAuthAPILoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthAPILogindefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response AuthAPILogindefaultJSONResponse) VisitAuthAPILoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthAPILogoutRequestObject struct {
+}
+
+type AuthAPILogoutResponseObject interface {
+	VisitAuthAPILogoutResponse(w http.ResponseWriter) error
+}
+
+type AuthAPILogout200JSONResponse BooleanResponse
+
+func (response AuthAPILogout200JSONResponse) VisitAuthAPILogoutResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthAPILogoutdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response AuthAPILogoutdefaultJSONResponse) VisitAuthAPILogoutResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthAPIRefreshRequestObject struct {
+}
+
+type AuthAPIRefreshResponseObject interface {
+	VisitAuthAPIRefreshResponse(w http.ResponseWriter) error
+}
+
+type AuthAPIRefresh200JSONResponse BooleanResponse
+
+func (response AuthAPIRefresh200JSONResponse) VisitAuthAPIRefreshResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthAPIRefreshdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response AuthAPIRefreshdefaultJSONResponse) VisitAuthAPIRefreshResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthAPIRegisteredRequestObject struct {
+}
+
+type AuthAPIRegisteredResponseObject interface {
+	VisitAuthAPIRegisteredResponse(w http.ResponseWriter) error
+}
+
+type AuthAPIRegistered200JSONResponse struct {
+	Registered bool `json:"registered"`
+}
+
+func (response AuthAPIRegistered200JSONResponse) VisitAuthAPIRegisteredResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthAPIRegistereddefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response AuthAPIRegistereddefaultJSONResponse) VisitAuthAPIRegisteredResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthAPIRegisterRequestObject struct {
+	Body *AuthAPIRegisterJSONRequestBody
+}
+
+type AuthAPIRegisterResponseObject interface {
+	VisitAuthAPIRegisterResponse(w http.ResponseWriter) error
+}
+
+type AuthAPIRegister200JSONResponse BooleanResponse
+
+func (response AuthAPIRegister200JSONResponse) VisitAuthAPIRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AuthAPIRegisterdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response AuthAPIRegisterdefaultJSONResponse) VisitAuthAPIRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type ConfigAPIGetRequestObject struct {
@@ -3381,122 +3659,6 @@ func (response FeaturesAPIGetdefaultJSONResponse) VisitFeaturesAPIGetResponse(w 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type AuthAPILoginRequestObject struct {
-	Body *AuthAPILoginJSONRequestBody
-}
-
-type AuthAPILoginResponseObject interface {
-	VisitAuthAPILoginResponse(w http.ResponseWriter) error
-}
-
-type AuthAPILogin200JSONResponse BooleanResponse
-
-func (response AuthAPILogin200JSONResponse) VisitAuthAPILoginResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type AuthAPILogindefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
-
-func (response AuthAPILogindefaultJSONResponse) VisitAuthAPILoginResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
-
-	return json.NewEncoder(w).Encode(response.Body)
-}
-
-type LogoutAPILogoutRequestObject struct {
-}
-
-type LogoutAPILogoutResponseObject interface {
-	VisitLogoutAPILogoutResponse(w http.ResponseWriter) error
-}
-
-type LogoutAPILogout200JSONResponse BooleanResponse
-
-func (response LogoutAPILogout200JSONResponse) VisitLogoutAPILogoutResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type LogoutAPILogoutdefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
-
-func (response LogoutAPILogoutdefaultJSONResponse) VisitLogoutAPILogoutResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
-
-	return json.NewEncoder(w).Encode(response.Body)
-}
-
-type RegisterAPIRegisteredRequestObject struct {
-}
-
-type RegisterAPIRegisteredResponseObject interface {
-	VisitRegisterAPIRegisteredResponse(w http.ResponseWriter) error
-}
-
-type RegisterAPIRegistered200JSONResponse struct {
-	Registered bool `json:"registered"`
-}
-
-func (response RegisterAPIRegistered200JSONResponse) VisitRegisterAPIRegisteredResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type RegisterAPIRegistereddefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
-
-func (response RegisterAPIRegistereddefaultJSONResponse) VisitRegisterAPIRegisteredResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
-
-	return json.NewEncoder(w).Encode(response.Body)
-}
-
-type RegisterAPIRegisterRequestObject struct {
-	Body *RegisterAPIRegisterJSONRequestBody
-}
-
-type RegisterAPIRegisterResponseObject interface {
-	VisitRegisterAPIRegisterResponse(w http.ResponseWriter) error
-}
-
-type RegisterAPIRegister200JSONResponse BooleanResponse
-
-func (response RegisterAPIRegister200JSONResponse) VisitRegisterAPIRegisterResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type RegisterAPIRegisterdefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
-
-func (response RegisterAPIRegisterdefaultJSONResponse) VisitRegisterAPIRegisterResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
-
-	return json.NewEncoder(w).Encode(response.Body)
-}
-
 type SettingsAPIGetRequestObject struct {
 }
 
@@ -3699,6 +3861,21 @@ func (response UserAPIChangePassworddefaultJSONResponse) VisitUserAPIChangePassw
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
+	// (POST /api/auth/login)
+	AuthAPILogin(ctx context.Context, request AuthAPILoginRequestObject) (AuthAPILoginResponseObject, error)
+
+	// (POST /api/auth/logout)
+	AuthAPILogout(ctx context.Context, request AuthAPILogoutRequestObject) (AuthAPILogoutResponseObject, error)
+
+	// (POST /api/auth/refresh)
+	AuthAPIRefresh(ctx context.Context, request AuthAPIRefreshRequestObject) (AuthAPIRefreshResponseObject, error)
+
+	// (GET /api/auth/register)
+	AuthAPIRegistered(ctx context.Context, request AuthAPIRegisteredRequestObject) (AuthAPIRegisteredResponseObject, error)
+
+	// (POST /api/auth/register)
+	AuthAPIRegister(ctx context.Context, request AuthAPIRegisterRequestObject) (AuthAPIRegisterResponseObject, error)
+
 	// (GET /api/config)
 	ConfigAPIGet(ctx context.Context, request ConfigAPIGetRequestObject) (ConfigAPIGetResponseObject, error)
 
@@ -3719,18 +3896,6 @@ type StrictServerInterface interface {
 
 	// (GET /api/features)
 	FeaturesAPIGet(ctx context.Context, request FeaturesAPIGetRequestObject) (FeaturesAPIGetResponseObject, error)
-
-	// (POST /api/login)
-	AuthAPILogin(ctx context.Context, request AuthAPILoginRequestObject) (AuthAPILoginResponseObject, error)
-
-	// (POST /api/logout)
-	LogoutAPILogout(ctx context.Context, request LogoutAPILogoutRequestObject) (LogoutAPILogoutResponseObject, error)
-
-	// (GET /api/register)
-	RegisterAPIRegistered(ctx context.Context, request RegisterAPIRegisteredRequestObject) (RegisterAPIRegisteredResponseObject, error)
-
-	// (POST /api/register)
-	RegisterAPIRegister(ctx context.Context, request RegisterAPIRegisterRequestObject) (RegisterAPIRegisterResponseObject, error)
 
 	// (GET /api/settings)
 	SettingsAPIGet(ctx context.Context, request SettingsAPIGetRequestObject) (SettingsAPIGetResponseObject, error)
@@ -3781,6 +3946,140 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// AuthAPILogin operation middleware
+func (sh *strictHandler) AuthAPILogin(w http.ResponseWriter, r *http.Request) {
+	var request AuthAPILoginRequestObject
+
+	var body AuthAPILoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthAPILogin(ctx, request.(AuthAPILoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthAPILogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthAPILoginResponseObject); ok {
+		if err := validResponse.VisitAuthAPILoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AuthAPILogout operation middleware
+func (sh *strictHandler) AuthAPILogout(w http.ResponseWriter, r *http.Request) {
+	var request AuthAPILogoutRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthAPILogout(ctx, request.(AuthAPILogoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthAPILogout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthAPILogoutResponseObject); ok {
+		if err := validResponse.VisitAuthAPILogoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AuthAPIRefresh operation middleware
+func (sh *strictHandler) AuthAPIRefresh(w http.ResponseWriter, r *http.Request) {
+	var request AuthAPIRefreshRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthAPIRefresh(ctx, request.(AuthAPIRefreshRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthAPIRefresh")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthAPIRefreshResponseObject); ok {
+		if err := validResponse.VisitAuthAPIRefreshResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AuthAPIRegistered operation middleware
+func (sh *strictHandler) AuthAPIRegistered(w http.ResponseWriter, r *http.Request) {
+	var request AuthAPIRegisteredRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthAPIRegistered(ctx, request.(AuthAPIRegisteredRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthAPIRegistered")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthAPIRegisteredResponseObject); ok {
+		if err := validResponse.VisitAuthAPIRegisteredResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AuthAPIRegister operation middleware
+func (sh *strictHandler) AuthAPIRegister(w http.ResponseWriter, r *http.Request) {
+	var request AuthAPIRegisterRequestObject
+
+	var body AuthAPIRegisterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthAPIRegister(ctx, request.(AuthAPIRegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthAPIRegister")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AuthAPIRegisterResponseObject); ok {
+		if err := validResponse.VisitAuthAPIRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ConfigAPIGet operation middleware
@@ -3955,116 +4254,6 @@ func (sh *strictHandler) FeaturesAPIGet(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(FeaturesAPIGetResponseObject); ok {
 		if err := validResponse.VisitFeaturesAPIGetResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// AuthAPILogin operation middleware
-func (sh *strictHandler) AuthAPILogin(w http.ResponseWriter, r *http.Request) {
-	var request AuthAPILoginRequestObject
-
-	var body AuthAPILoginJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.AuthAPILogin(ctx, request.(AuthAPILoginRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "AuthAPILogin")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(AuthAPILoginResponseObject); ok {
-		if err := validResponse.VisitAuthAPILoginResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// LogoutAPILogout operation middleware
-func (sh *strictHandler) LogoutAPILogout(w http.ResponseWriter, r *http.Request) {
-	var request LogoutAPILogoutRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.LogoutAPILogout(ctx, request.(LogoutAPILogoutRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "LogoutAPILogout")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(LogoutAPILogoutResponseObject); ok {
-		if err := validResponse.VisitLogoutAPILogoutResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RegisterAPIRegistered operation middleware
-func (sh *strictHandler) RegisterAPIRegistered(w http.ResponseWriter, r *http.Request) {
-	var request RegisterAPIRegisteredRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RegisterAPIRegistered(ctx, request.(RegisterAPIRegisteredRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RegisterAPIRegistered")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterAPIRegisteredResponseObject); ok {
-		if err := validResponse.VisitRegisterAPIRegisteredResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RegisterAPIRegister operation middleware
-func (sh *strictHandler) RegisterAPIRegister(w http.ResponseWriter, r *http.Request) {
-	var request RegisterAPIRegisterRequestObject
-
-	var body RegisterAPIRegisterJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RegisterAPIRegister(ctx, request.(RegisterAPIRegisterRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RegisterAPIRegister")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterAPIRegisterResponseObject); ok {
-		if err := validResponse.VisitRegisterAPIRegisterResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

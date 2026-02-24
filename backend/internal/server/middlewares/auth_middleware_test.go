@@ -32,7 +32,7 @@ func withInitUsers(t *testing.T, userService users.Service, creds models.Credent
 	return userService, token
 }
 
-func TestAuthMiddleware_Register_RealService(t *testing.T) {
+func TestAuthMiddleware_Register(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -40,7 +40,7 @@ func TestAuthMiddleware_Register_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
-	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -50,14 +50,14 @@ func TestAuthMiddleware_Register_RealService(t *testing.T) {
 	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterGet_RealService(t *testing.T) {
+func TestAuthMiddleware_RegisterGet(t *testing.T) {
 	userService, _ := withInitUsers(t, newUsersService(t), userCreds)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/register", http.NoBody)
+	req := httptest.NewRequest("GET", "/api/auth/register", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -67,7 +67,7 @@ func TestAuthMiddleware_RegisterGet_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_Login_RealService(t *testing.T) {
+func TestAuthMiddleware_Login(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
@@ -76,7 +76,7 @@ func TestAuthMiddleware_Login_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"username","password":"password"}`
-	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -87,7 +87,7 @@ func TestAuthMiddleware_Login_RealService(t *testing.T) {
 	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_Logout_RealService(t *testing.T) {
+func TestAuthMiddleware_Logout(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
@@ -95,7 +95,7 @@ func TestAuthMiddleware_Logout_RealService(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
+	req := httptest.NewRequest("POST", "/api/auth/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:    _tokenKey,
 		Value:   string(token.Value),
@@ -114,7 +114,7 @@ func TestAuthMiddleware_Logout_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_AuthorizedAccess_RealService(t *testing.T) {
+func TestAuthMiddleware_AuthorizedAccess(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
@@ -125,7 +125,7 @@ func TestAuthMiddleware_AuthorizedAccess_RealService(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/protected", http.NoBody)
+	req := httptest.NewRequest("GET", "/api/auth/protected", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  _tokenKey,
 		Value: string(token.Value),
@@ -141,7 +141,7 @@ func TestAuthMiddleware_AuthorizedAccess_RealService(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 }
 
-func TestAuthMiddleware_WhitelistedAccess_RealService(t *testing.T) {
+func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -157,7 +157,7 @@ func TestAuthMiddleware_WhitelistedAccess_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterInvalidRequestBody_RealService(t *testing.T) {
+func TestAuthMiddleware_RegisterInvalidRequestBody(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -165,7 +165,7 @@ func TestAuthMiddleware_RegisterInvalidRequestBody_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"testuser"}` // missing password
-	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -175,7 +175,7 @@ func TestAuthMiddleware_RegisterInvalidRequestBody_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterMissingCredentials_RealService(t *testing.T) {
+func TestAuthMiddleware_RegisterMissingCredentials(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -183,7 +183,7 @@ func TestAuthMiddleware_RegisterMissingCredentials_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"","password":""}` // empty username and password
-	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -193,7 +193,7 @@ func TestAuthMiddleware_RegisterMissingCredentials_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterFailure_RealService(t *testing.T) {
+func TestAuthMiddleware_RegisterFailure(t *testing.T) {
 	userService := newUsersService(t)
 	// Register first user to prevent registration
 	_, _ = withInitUsers(t, userService, userCreds)
@@ -203,7 +203,7 @@ func TestAuthMiddleware_RegisterFailure_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
-	req := httptest.NewRequest("POST", "/api/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -213,14 +213,14 @@ func TestAuthMiddleware_RegisterFailure_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginInvalidMethod_RealService(t *testing.T) {
+func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/login", http.NoBody)
+	req := httptest.NewRequest("GET", "/api/auth/login", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -229,7 +229,7 @@ func TestAuthMiddleware_LoginInvalidMethod_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginInvalidRequestBody_RealService(t *testing.T) {
+func TestAuthMiddleware_LoginInvalidRequestBody(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -237,7 +237,7 @@ func TestAuthMiddleware_LoginInvalidRequestBody_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"testuser"}` // missing password
-	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -247,7 +247,7 @@ func TestAuthMiddleware_LoginInvalidRequestBody_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginMissingCredentials_RealService(t *testing.T) {
+func TestAuthMiddleware_LoginMissingCredentials(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -255,7 +255,7 @@ func TestAuthMiddleware_LoginMissingCredentials_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"","password":""}` // empty username and password
-	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -265,7 +265,7 @@ func TestAuthMiddleware_LoginMissingCredentials_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginFailure_RealService(t *testing.T) {
+func TestAuthMiddleware_LoginFailure(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -273,7 +273,7 @@ func TestAuthMiddleware_LoginFailure_RealService(t *testing.T) {
 	}), userService)
 
 	reqBody := `{"username":"wronguser","password":"wrongpass"}`
-	req := httptest.NewRequest("POST", "/api/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -283,14 +283,14 @@ func TestAuthMiddleware_LoginFailure_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutInvalidMethod_RealService(t *testing.T) {
+func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/logout", http.NoBody)
+	req := httptest.NewRequest("GET", "/api/auth/logout", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -299,14 +299,14 @@ func TestAuthMiddleware_LogoutInvalidMethod_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutMissingToken_RealService(t *testing.T) {
+func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
 	userService := newUsersService(t)
 
 	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
+	req := httptest.NewRequest("POST", "/api/auth/logout", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -315,7 +315,7 @@ func TestAuthMiddleware_LogoutMissingToken_RealService(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutFailure_RealService(t *testing.T) {
+func TestAuthMiddleware_LogoutFailure(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
@@ -327,7 +327,7 @@ func TestAuthMiddleware_LogoutFailure_RealService(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/logout", http.NoBody)
+	req := httptest.NewRequest("POST", "/api/auth/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  _tokenKey,
 		Value: string(invalidToken.Value),
@@ -341,6 +341,85 @@ func TestAuthMiddleware_LogoutFailure_RealService(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+}
+
+func TestAuthMiddleware_Refresh(t *testing.T) {
+	userService := newUsersService(t)
+	userService, token := withInitUsers(t, userService, userCreds)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), userService)
+
+	req := httptest.NewRequest("POST", "/api/auth/refresh", http.NoBody)
+	req.AddCookie(&http.Cookie{
+		Name:  _refreshTokenKey,
+		Value: string(token.RefreshToken),
+	})
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	checkCookiesAreNot(t, rr, string(token.Value), string(token.RefreshToken))
+	checkCookiesAreNot(t, rr, "", "")
+}
+
+func TestAuthMiddleware_RefreshInvalidMethod(t *testing.T) {
+	userService := newUsersService(t)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), userService)
+
+	req := httptest.NewRequest("GET", "/api/auth/refresh", http.NoBody)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	checkCookiesAre(t, rr, "", "")
+}
+
+func TestAuthMiddleware_RefreshMissingToken(t *testing.T) {
+	userService := newUsersService(t)
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), userService)
+
+	req := httptest.NewRequest("POST", "/api/auth/refresh", http.NoBody)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	checkCookiesAre(t, rr, "", "")
+}
+
+func TestAuthMiddleware_RefreshFailure(t *testing.T) {
+	userService := newUsersService(t)
+	userService, token := withInitUsers(t, userService, userCreds)
+
+	// Invalidate the refresh token by modifying it
+	invalidToken := token
+	invalidToken.RefreshToken = "invalidtoken"
+
+	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fail() // shouldn't be called
+	}), userService)
+
+	req := httptest.NewRequest("POST", "/api/auth/refresh", http.NoBody)
+	req.AddCookie(&http.Cookie{
+		Name:  _refreshTokenKey,
+		Value: string(invalidToken.RefreshToken),
+	})
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+	checkCookiesAre(t, rr, "", "")
 }
 
 func checkCookiesAreNot(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {

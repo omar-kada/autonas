@@ -1,6 +1,6 @@
 import {
-  getRegisterAPIRegisteredQueryOptions,
-  getRegisterAPIRegisterMutationOptions,
+  getAuthAPIRegisteredQueryOptions,
+  getAuthAPIRegisterMutationOptions,
   getUserAPIGetQueryOptions,
   type Credentials,
 } from '@/api/api';
@@ -10,11 +10,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 export const getRegisterOptions = () => {
-  return getRegisterAPIRegisterMutationOptions({
+  return getAuthAPIRegisterMutationOptions({
     mutation: {
       onSuccess: (data, _, __, context) => {
         if (data.data.success) {
-          context.client.refetchQueries(getRegisterAPIRegisteredQueryOptions());
+          context.client.refetchQueries(getAuthAPIRegisteredQueryOptions());
           context.client.refetchQueries(getUserAPIGetQueryOptions());
         }
       },

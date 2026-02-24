@@ -53,19 +53,22 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 			return
 		}
 		switch url {
-		case "register":
+		case "auth/register":
 			registerHandler(w, r, authService)
 			return
-		case "login":
+		case "auth/login":
 			loginHandler(w, r, authService)
 			return
-		case "logout":
+		case "auth/logout":
 			logoutHandler(w, r, authService)
+			return
+		case "auth/refresh":
+			refreshHandler(w, r, authService)
 			return
 		}
 		inWhiteList := isWhitelisted(url, r.Method)
 
-		username, err := getUsernameFromCookies(r, authService, w)
+		username, err := getUsernameFromCookies(r, authService)
 		if err != nil {
 			slog.Error(err.Error())
 			if !inWhiteList {
@@ -79,20 +82,20 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 	})
 }
 
-func getUsernameFromCookies(r *http.Request, authService users.AuthService, w http.ResponseWriter) (string, error) {
+func getUsernameFromCookies(r *http.Request, authService users.AuthService) (string, error) {
 	token := getTokenFromCookies(r)
 	if token.RefreshToken == "" {
 		return "", errors.New("no auth available")
 	}
-	username, err := authService.GetUsernameByToken(token)
-	if err == nil {
-		return username, nil
-	}
-	token, err = authService.RefreshToken(token)
-	if err != nil {
-		return "", err
-	}
-	setTokenInCookies(w, token)
+	// username, err := authService.GetUsernameByToken(token)
+	// if err == nil {
+	// 	return username, nil
+	// }
+	// token, err = authService.RefreshToken(token)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// setTokenInCookies(w, token)
 	return authService.GetUsernameByToken(token)
 }
 
@@ -148,7 +151,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(api.RegisterAPIRegistered200JSONResponse{
+		json.NewEncoder(w).Encode(api.AuthAPIRegistered200JSONResponse{
 			Registered: hasUsers,
 		})
 		return
@@ -194,12 +197,41 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 	})
 }
 
+func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid method", http.StatusBadRequest)
+		return
+	}
+
+	token := getTokenFromCookies(r)
+
+	if token.RefreshToken == "" {
+		slog.Error("invalid token value")
+		http.Error(w, "Logout failed", http.StatusUnauthorized)
+		return
+	}
+
+	newToken, err := authService.RefreshToken(token)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Refresh failed", http.StatusUnauthorized)
+		return
+	}
+
+	setTokenInCookies(w, newToken)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(api.BooleanResponse{
+		Success: true,
+	})
+}
+
 func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid method", http.StatusBadRequest)
 		return
 	}
-	_, err := getUsernameFromCookies(r, authService, w)
+	_, err := getUsernameFromCookies(r, authService)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "Couldn't find user", http.StatusUnauthorized)
