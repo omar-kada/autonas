@@ -9,9 +9,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { getFeaturesQueryOptions, getSettingsQueryOptions, useUpdateSettings } from '@/hooks';
+import {
+  getFeaturesQueryOptions,
+  getSettingsQueryOptions,
+  useFilteredQuery,
+  useUpdateSettings,
+} from '@/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -31,9 +35,9 @@ export function SettingsSheet({
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const { data: features, error: featuresError } = useQuery(getFeaturesQueryOptions());
+  const { data: features, error: featuresError } = useFilteredQuery(getFeaturesQueryOptions());
   const disabled = !features?.editSettings;
-  const { data: settings, isPending, error } = useQuery(getSettingsQueryOptions());
+  const { data: settings, isPending, error } = useFilteredQuery(getSettingsQueryOptions());
   const mergedError = error ?? featuresError;
 
   const form = useForm<FormValues>({

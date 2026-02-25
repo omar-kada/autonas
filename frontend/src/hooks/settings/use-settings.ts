@@ -1,4 +1,4 @@
-import { getSettingsAPIGetQueryOptions, type Settings } from '@/api/api';
+import { getSettingsAPIGetQueryOptions, type Error, type Settings } from '@/api/api';
 import type { AxiosError } from 'axios';
 
 export const getSettingsQueryOptions = () => {

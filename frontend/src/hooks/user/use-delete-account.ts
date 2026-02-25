@@ -1,5 +1,5 @@
 import {
-  getRegisterAPIRegisteredQueryOptions,
+  getAuthAPIRegisteredQueryOptions,
   getUserAPIDeleteMutationOptions,
   getUserAPIGetQueryOptions,
 } from '@/api/api';
@@ -14,7 +14,7 @@ export const getDeleteAccountOptions = () => {
       onSuccess: (data, _, __, context) => {
         if (data.data.success) {
           context.client.refetchQueries(getUserAPIGetQueryOptions());
-          context.client.refetchQueries(getRegisterAPIRegisteredQueryOptions());
+          context.client.refetchQueries(getAuthAPIRegisteredQueryOptions());
         }
       },
     },

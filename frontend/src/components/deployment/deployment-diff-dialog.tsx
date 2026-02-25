@@ -1,5 +1,4 @@
-import { getDiffQueryOptions } from '@/hooks';
-import { useQuery } from '@tanstack/react-query';
+import { getDiffQueryOptions, useFilteredQuery } from '@/hooks';
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DeploymentDiff, DeploymentDiffSkeleton } from '.';
@@ -13,7 +12,7 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
     data: diffs,
     isPending,
     error,
-  } = useQuery({ ...getDiffQueryOptions(), refetchOnMount: true });
+  } = useFilteredQuery({ ...getDiffQueryOptions(), refetchOnMount: true });
 
   return (
     <Dialog>

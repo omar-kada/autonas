@@ -1,4 +1,4 @@
-import { getConfigAPIGetQueryOptions, type Config } from '@/api/api';
+import { getConfigAPIGetQueryOptions, type Config, type Error } from '@/api/api';
 import type { AxiosError } from 'axios';
 
 export const getConfigQueryOptions = ({ enabled }: { enabled: boolean }) => {

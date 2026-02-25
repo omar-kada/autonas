@@ -853,34 +853,34 @@ func TestUserAPIDelete_Error(t *testing.T) {
 	m.AssertExpectations(t)
 }
 
-func TestRegisterAPIRegistered(t *testing.T) {
+func TestAuthAPIRegistered(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	resp, err := h.RegisterAPIRegistered(context.Background(), api.RegisterAPIRegisteredRequestObject{})
+	resp, err := h.AuthAPIRegistered(context.Background(), api.AuthAPIRegisteredRequestObject{})
 	assert.Error(t, err)
 	assert.Equal(t, errShouldntReach, err)
 
 	switch resp.(type) {
-	case api.RegisterAPIRegistereddefaultJSONResponse:
+	case api.AuthAPIRegistereddefaultJSONResponse:
 		// No specific assertions needed for default response
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
 }
 
-func TestLogoutAPILogout(t *testing.T) {
+func TestAuthAPILogout(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	resp, err := h.LogoutAPILogout(context.Background(), api.LogoutAPILogoutRequestObject{})
+	resp, err := h.AuthAPILogout(context.Background(), api.AuthAPILogoutRequestObject{})
 	assert.Error(t, err)
 	assert.Equal(t, errShouldntReach, err)
 
 	switch resp.(type) {
-	case api.LogoutAPILogout200JSONResponse:
+	case api.AuthAPILogout200JSONResponse:
 		// No specific assertions needed for 200 response
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
@@ -904,17 +904,17 @@ func TestAuthAPILogin(t *testing.T) {
 	}
 }
 
-func TestRegisterAPIRegister(t *testing.T) {
+func TestAuthAPIRegister(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	resp, err := h.RegisterAPIRegister(context.Background(), api.RegisterAPIRegisterRequestObject{})
+	resp, err := h.AuthAPIRegister(context.Background(), api.AuthAPIRegisterRequestObject{})
 	assert.Error(t, err)
 	assert.Equal(t, errShouldntReach, err)
 
 	switch resp.(type) {
-	case api.RegisterAPIRegister200JSONResponse:
+	case api.AuthAPIRegister200JSONResponse:
 		// No specific assertions needed for 200 response
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)

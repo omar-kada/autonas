@@ -32,20 +32,18 @@ function RouteBasedTopBar() {
     } else if (!isRegistered) {
       navigate(ROUTES.REGISTER);
     } else {
-      if ((location.pathname = ROUTES.REGISTER)) {
+      if (location.pathname === ROUTES.REGISTER) {
         navigate(ROUTES.DEPLOYMENTS);
       }
       if (userPending) {
         return;
-      } else if (!user) {
-        navigate(ROUTES.LOGIN);
-      } else {
-        if ((location.pathname = ROUTES.LOGIN)) {
+      } else if (user) {
+        if (location.pathname === ROUTES.LOGIN) {
           navigate(ROUTES.DEPLOYMENTS);
         }
       }
     }
-  }, [isRegistered, user, isPending, userPending]);
+  }, [navigate, location, isRegistered, user, isPending, userPending]);
 
   const mergedError = error ?? userError;
   return (

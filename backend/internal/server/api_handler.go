@@ -19,7 +19,7 @@ import (
 )
 
 var disabledAPIError = api.Error{
-	Code:    http.StatusMethodNotAllowed,
+	Code:    api.ErrorCodeDISABLED,
 	Message: "DISABLED",
 }
 
@@ -105,7 +105,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	} else if dep.ID == 0 {
 		return api.DeployementAPIReaddefaultJSONResponse{
 			Body: api.Error{
-				Code:    http.StatusNotFound,
+				Code:    api.ErrorCodeNOTFOUND,
 				Message: err.Error(),
 			},
 			StatusCode: http.StatusNotFound,
@@ -245,10 +245,10 @@ func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestO
 	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil
 }
 
-// RegisterAPIRegister registers a new user
-func (*Handler) RegisterAPIRegister(_ context.Context, _ api.RegisterAPIRegisterRequestObject) (api.RegisterAPIRegisterResponseObject, error) {
+// AuthAPIRegister registers a new user
+func (*Handler) AuthAPIRegister(_ context.Context, _ api.AuthAPIRegisterRequestObject) (api.AuthAPIRegisterResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
-	return api.RegisterAPIRegister200JSONResponse{}, errShouldntReach
+	return api.AuthAPIRegister200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPILogin logs in a user
@@ -257,16 +257,22 @@ func (*Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject)
 	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
 }
 
-// LogoutAPILogout logs out a user
-func (*Handler) LogoutAPILogout(_ context.Context, _ api.LogoutAPILogoutRequestObject) (api.LogoutAPILogoutResponseObject, error) {
+// AuthAPIRefresh refreshes token
+func (*Handler) AuthAPIRefresh(_ context.Context, _ api.AuthAPIRefreshRequestObject) (api.AuthAPIRefreshResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
-	return api.LogoutAPILogout200JSONResponse{}, errShouldntReach
+	return api.AuthAPIRefresh200JSONResponse{}, errShouldntReach
 }
 
-// RegisterAPIRegistered checks if a user is registered
-func (*Handler) RegisterAPIRegistered(_ context.Context, _ api.RegisterAPIRegisteredRequestObject) (api.RegisterAPIRegisteredResponseObject, error) {
+// AuthAPILogout logs out a user
+func (*Handler) AuthAPILogout(_ context.Context, _ api.AuthAPILogoutRequestObject) (api.AuthAPILogoutResponseObject, error) {
 	// should be done in the auth middleware so if we react this return an error
-	return api.RegisterAPIRegistereddefaultJSONResponse{}, errShouldntReach
+	return api.AuthAPILogout200JSONResponse{}, errShouldntReach
+}
+
+// AuthAPIRegistered checks if a user is registered
+func (*Handler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
+	// should be done in the auth middleware so if we react this return an error
+	return api.AuthAPIRegistereddefaultJSONResponse{}, errShouldntReach
 }
 
 // UserAPIGet returns the authenticated user's information
