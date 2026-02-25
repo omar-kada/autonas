@@ -1,12 +1,11 @@
-import { getStatusQueryOptions } from '@/hooks';
-import { useQuery } from '@tanstack/react-query';
+import { getStatusQueryOptions, useFilteredQuery } from '@/hooks';
 import { useTranslation } from 'react-i18next';
 import { ServiceStatus, ServiceStatusSkeleton } from './status';
 import { ErrorAlert, InfoEmpty } from './view';
 
 export function StatusPage() {
   const { t } = useTranslation();
-  const { data, isPending, error } = useQuery(getStatusQueryOptions());
+  const { data, isPending, error } = useFilteredQuery(getStatusQueryOptions());
 
   return (
     <div className="p-4 space-y-4">

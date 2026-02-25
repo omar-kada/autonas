@@ -97,6 +97,16 @@ enum EventType {
   SessionReused: "SESSION_REUSED",
 }
 
+enum ErrorCode {
+  InvalidToken: "INVALID_TOKEN",
+  InvalidCredentials: "INVALID_CREDENTIALS",
+  InvalidRequest: "INVALID_REQUEST",
+  NotAllowed: "NOT_ALLOWED",
+  Disabled: "DISABLED",
+  NotFound: "NOT_FOUND",
+  ServerError: "SERVER_ERROR",
+}
+
 model Settings {
   repo: string;
   branch?: string;
@@ -131,7 +141,7 @@ model PageInfo {
 
 @error
 model Error {
-  code: int32;
+  code: ErrorCode;
   message: string;
 }
 

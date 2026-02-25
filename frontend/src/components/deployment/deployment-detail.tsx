@@ -1,7 +1,7 @@
 import { DeploymentStatus } from '@/api/api';
-import { getDeploymentOptions, getDeploymentsQueryOptions } from '@/hooks';
+import { getDeploymentOptions, getDeploymentsQueryOptions, useFilteredQuery } from '@/hooks';
 import { formatElapsed, ROUTES } from '@/lib';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Timer, User } from 'lucide-react';
 import { type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +21,7 @@ export function DeploymentDetail({ id }: { id: string }) {
     isPending,
     isFetching,
     refetch,
-  } = useQuery(getDeploymentOptions(id));
+  } = useFilteredQuery(getDeploymentOptions(id));
   const queryClient = useQueryClient();
 
   if (isPending) {

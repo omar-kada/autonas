@@ -115,9 +115,23 @@ export interface DeploymentWithDetails {
 }
 
 export interface Error {
-  code: number;
+  code: ErrorCode;
   message: string;
 }
+
+export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const ErrorCode = {
+  INVALID_TOKEN: 'INVALID_TOKEN',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  INVALID_REQUEST: 'INVALID_REQUEST',
+  NOT_ALLOWED: 'NOT_ALLOWED',
+  DISABLED: 'DISABLED',
+  NOT_FOUND: 'NOT_FOUND',
+  SERVER_ERROR: 'SERVER_ERROR',
+} as const;
 
 export interface Event {
   ID: number;

@@ -2,12 +2,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   getConfigQueryOptions,
   getFeaturesQueryOptions,
+  useFilteredQuery,
   useIsMobile,
   useUpdateConfig,
 } from '@/hooks';
 import { cn } from '@/lib';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircleIcon, Code, RotateCcw, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -34,16 +34,17 @@ export function ConfigPage() {
     data: features,
     isPending: featuresPending,
     error: featuresError,
-  } = useQuery(getFeaturesQueryOptions());
+  } = useFilteredQuery(getFeaturesQueryOptions());
   const {
     data: config,
     isPending,
     error,
-  } = useQuery(
+  } = useFilteredQuery(
     getConfigQueryOptions({
       enabled: !!features?.displayConfig,
     }),
   );
+
   const { updateConfig, isPending: isSavePending } = useUpdateConfig();
   const onSubmit = (data: FormValues) => updateConfig(toConfig(data));
 

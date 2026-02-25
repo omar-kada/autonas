@@ -51,6 +51,17 @@ const (
 	DeploymentStatusSuccess DeploymentStatus = "success"
 )
 
+// Defines values for ErrorCode.
+const (
+	ErrorCodeDISABLED           ErrorCode = "DISABLED"
+	ErrorCodeINVALIDCREDENTIALS ErrorCode = "INVALID_CREDENTIALS"
+	ErrorCodeINVALIDREQUEST     ErrorCode = "INVALID_REQUEST"
+	ErrorCodeINVALIDTOKEN       ErrorCode = "INVALID_TOKEN"
+	ErrorCodeNOTALLOWED         ErrorCode = "NOT_ALLOWED"
+	ErrorCodeNOTFOUND           ErrorCode = "NOT_FOUND"
+	ErrorCodeSERVERERROR        ErrorCode = "SERVER_ERROR"
+)
+
 // Defines values for EventType.
 const (
 	EventTypeCONFIGURATIONUPDATED EventType = "CONFIGURATION_UPDATED"
@@ -129,9 +140,12 @@ type DeploymentWithDetails struct {
 
 // Error defines model for Error.
 type Error struct {
-	Code    int32  `json:"code"`
-	Message string `json:"message"`
+	Code    ErrorCode `json:"code"`
+	Message string    `json:"message"`
 }
+
+// ErrorCode defines model for ErrorCode.
+type ErrorCode string
 
 // Event defines model for Event.
 type Event struct {

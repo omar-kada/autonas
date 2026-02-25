@@ -1,7 +1,7 @@
 import { authAPIRefresh } from '@/api/api';
-import { ROUTES } from '@/lib';
+import { isInvalidToken, ROUTES } from '@/lib';
 import { QueryCache, QueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import { debounce } from 'lodash';
 
 const debouncedRefreshToken = debounce(refreshToken, 5000, { leading: true }); // 5 seconds debounce
@@ -9,7 +9,7 @@ const debouncedRefreshToken = debounce(refreshToken, 5000, { leading: true }); /
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, _) => {
-      if ((error as any as AxiosError).status === 401) {
+      if (isInvalidToken(error)) {
         debouncedRefreshToken();
       }
     },

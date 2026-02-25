@@ -72,7 +72,7 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 		if err != nil {
 			slog.Error(err.Error())
 			if !inWhiteList {
-				http.Error(w, "", http.StatusUnauthorized)
+				sendError(w, api.ErrorCodeINVALIDTOKEN)
 				return
 			}
 		}
@@ -84,18 +84,9 @@ func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handl
 
 func getUsernameFromCookies(r *http.Request, authService users.AuthService) (string, error) {
 	token := getTokenFromCookies(r)
-	if token.RefreshToken == "" {
+	if token.Value == "" {
 		return "", errors.New("no auth available")
 	}
-	// username, err := authService.GetUsernameByToken(token)
-	// if err == nil {
-	// 	return username, nil
-	// }
-	// token, err = authService.RefreshToken(token)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// setTokenInCookies(w, token)
 	return authService.GetUsernameByToken(token)
 }
 
@@ -117,12 +108,12 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			slog.Error(err.Error())
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Invalid request body")
 			return
 		}
 
 		if req.Username == "" || req.Password == "" {
-			http.Error(w, "Username and password are required", http.StatusBadRequest)
+			sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Username and password are required")
 			return
 		}
 
@@ -132,7 +123,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 		})
 		if err != nil {
 			slog.Error(err.Error())
-			http.Error(w, "Registration failed", http.StatusInternalServerError)
+			sendErrorMessage(w, api.ErrorCodeSERVERERROR, "Registration failed")
+
 			return
 		}
 
@@ -147,7 +139,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 		hasUsers, err := authService.IsRegistered()
 		if err != nil {
 			slog.Error(err.Error())
-			http.Error(w, "testing", http.StatusUnauthorized)
+			sendError(w, api.ErrorCodeSERVERERROR)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -156,14 +148,14 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 		})
 		return
 	default:
-		http.Error(w, "invalid method", http.StatusUnauthorized)
+		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
 	}
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusBadRequest)
+		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
 	}
 
@@ -171,12 +163,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error(err.Error())
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Invalid request body")
 		return
 	}
 
 	if req.Username == "" || req.Password == "" {
-		http.Error(w, "Username and password are required", http.StatusBadRequest)
+		sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Username and password are required")
 		return
 	}
 
@@ -186,7 +178,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 	})
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, "Login failed", http.StatusUnauthorized)
+		sendError(w, api.ErrorCodeINVALIDCREDENTIALS)
 		return
 	}
 
@@ -199,22 +191,22 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 
 func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusBadRequest)
+		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
 	}
 
 	token := getTokenFromCookies(r)
 
 	if token.RefreshToken == "" {
-		slog.Error("invalid token value")
-		http.Error(w, "Logout failed", http.StatusUnauthorized)
+		slog.Error("invalid refresh token value")
+		sendError(w, api.ErrorCodeINVALIDCREDENTIALS)
 		return
 	}
 
 	newToken, err := authService.RefreshToken(token)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, "Refresh failed", http.StatusUnauthorized)
+		sendError(w, api.ErrorCodeINVALIDCREDENTIALS)
 		return
 	}
 
@@ -228,28 +220,21 @@ func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.Au
 
 func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid method", http.StatusBadRequest)
-		return
-	}
-	_, err := getUsernameFromCookies(r, authService)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Error(w, "Couldn't find user", http.StatusUnauthorized)
+		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
 	}
 
 	token := getTokenFromCookies(r)
-
 	if token.Value == "" || token.RefreshToken == "" {
 		slog.Error("invalid token value")
-		http.Error(w, "Logout failed", http.StatusUnauthorized)
+		sendError(w, api.ErrorCodeINVALIDTOKEN)
 		return
 	}
 
-	err = authService.Logout(token)
+	err := authService.Logout(token)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, "Logout failed", http.StatusUnauthorized)
+		sendError(w, api.ErrorCodeINVALIDTOKEN)
 		return
 	}
 
@@ -306,4 +291,39 @@ func setTokenInCookies(w http.ResponseWriter, token models.Token) {
 		Secure:   true,
 		Path:     "/api",
 	})
+}
+
+func sendError(w http.ResponseWriter, errCode api.ErrorCode) {
+	sendErrorMessage(w, errCode, "")
+}
+
+func sendErrorMessage(w http.ResponseWriter, errCode api.ErrorCode, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	builder := strings.Builder{}
+	json.NewEncoder(&builder).Encode(api.Error{
+		Code:    errCode,
+		Message: message,
+	})
+	http.Error(w, builder.String(), errorCodeToHTTPCode(errCode))
+}
+
+func errorCodeToHTTPCode(errCode api.ErrorCode) int {
+	switch errCode {
+	case api.ErrorCodeINVALIDTOKEN:
+		return http.StatusUnauthorized
+	case api.ErrorCodeINVALIDCREDENTIALS:
+		return http.StatusUnauthorized
+	case api.ErrorCodeINVALIDREQUEST:
+		return http.StatusBadRequest
+	case api.ErrorCodeNOTALLOWED:
+		return http.StatusMethodNotAllowed
+	case api.ErrorCodeDISABLED:
+		return http.StatusMethodNotAllowed
+	case api.ErrorCodeNOTFOUND:
+		return http.StatusNotFound
+	case api.ErrorCodeSERVERERROR:
+		return http.StatusInternalServerError
+	default:
+		return http.StatusInternalServerError
+	}
 }

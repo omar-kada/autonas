@@ -1,6 +1,11 @@
-import { getDiffQueryOptions, getStatsQueryOptions, useIsMobile, useSync } from '@/hooks';
+import {
+  getDiffQueryOptions,
+  getStatsQueryOptions,
+  useFilteredQuery,
+  useIsMobile,
+  useSync,
+} from '@/hooks';
 import { cn } from '@/lib';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircleIcon, CloudSync, FileDiff, History, TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/badge';
@@ -16,12 +21,12 @@ export function DeploymentToolbar({ className }: { className?: string }) {
   const isMobile = useIsMobile();
   const { sync, error: syncError, isPending: isSyncLoading } = useSync();
 
-  const { data: stats, isPending, error } = useQuery(getStatsQueryOptions());
+  const { data: stats, isPending, error } = useFilteredQuery(getStatsQueryOptions());
   const {
     data: diffs,
     isFetching: isDiffsLoading,
     error: diffError,
-  } = useQuery(getDiffQueryOptions());
+  } = useFilteredQuery(getDiffQueryOptions());
 
   return (
     <div className={cn('flex flex-wrap items-center align-bottom gap-4', className)}>

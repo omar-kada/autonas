@@ -19,7 +19,7 @@ import (
 )
 
 var disabledAPIError = api.Error{
-	Code:    http.StatusMethodNotAllowed,
+	Code:    api.ErrorCodeDISABLED,
 	Message: "DISABLED",
 }
 
@@ -105,7 +105,7 @@ func (h *Handler) DeployementAPIRead(_ context.Context, request api.DeployementA
 	} else if dep.ID == 0 {
 		return api.DeployementAPIReaddefaultJSONResponse{
 			Body: api.Error{
-				Code:    http.StatusNotFound,
+				Code:    api.ErrorCodeNOTFOUND,
 				Message: err.Error(),
 			},
 			StatusCode: http.StatusNotFound,

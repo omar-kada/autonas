@@ -225,7 +225,7 @@ func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
 	checkCookiesAre(t, rr, "", "")
 }
 
@@ -295,7 +295,7 @@ func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
 	checkCookiesAre(t, rr, "", "")
 }
 
@@ -377,7 +377,7 @@ func TestAuthMiddleware_RefreshInvalidMethod(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
 	checkCookiesAre(t, rr, "", "")
 }
 
