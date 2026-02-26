@@ -49,6 +49,7 @@ func (m *MockEventStore) StoreEvent(event models.Event) error {
 	args := m.Called(event)
 	return args.Error(0)
 }
+
 func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 	mockSend := new(MockSend)
 	mockConfigStore := new(MockConfigStore)

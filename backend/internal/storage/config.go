@@ -98,7 +98,6 @@ func (s *configStore) SetOnChange(fn func(oldConfig, newConfig models.Config)) {
 // Get reads the configuration from the config file
 func (s *configStore) Get() (models.Config, error) {
 	bs, err := os.ReadFile(s.configFilePath)
-
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return models.Config{}, nil

@@ -219,9 +219,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		storedURL = storedCfg.Settings.NotificationURL
 		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
-
 	})
-
 }
 
 func TestLoadConfig_FileError(t *testing.T) {
