@@ -59,33 +59,33 @@ func TestEventMapper_MapToPageInfo(t *testing.T) {
 
 	// Test cases
 	tests := []struct {
-		name    string
-		events  []models.Event
-		limit   int
+		name     string
+		events   []models.Event
+		limit    int
 		expected api.PageInfo
 	}{
 		{
-			name:    "No events",
-			events:  []models.Event{},
-			limit:   2,
+			name:   "No events",
+			events: []models.Event{},
+			limit:  2,
 			expected: api.PageInfo{
 				HasNextPage: false,
 				EndCursor:   "",
 			},
 		},
 		{
-			name:    "Less events than limit",
-			events:  events,
-			limit:   3,
+			name:   "Less events than limit",
+			events: events,
+			limit:  3,
 			expected: api.PageInfo{
 				HasNextPage: false,
 				EndCursor:   "2",
 			},
 		},
 		{
-			name:    "Equal events to limit",
-			events:  events,
-			limit:   2,
+			name:   "Equal events to limit",
+			events: events,
+			limit:  2,
 			expected: api.PageInfo{
 				HasNextPage: true,
 				EndCursor:   "2",
