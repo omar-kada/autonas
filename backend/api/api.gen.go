@@ -222,6 +222,12 @@ type DeployementAPIListParams struct {
 	Offset *string `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// NotificationsAPIListParams defines parameters for NotificationsAPIList.
+type NotificationsAPIListParams struct {
+	Limit  int32   `form:"limit" json:"limit"`
+	Offset *string `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
 // UserAPIChangePasswordJSONBody defines parameters for UserAPIChangePassword.
 type UserAPIChangePasswordJSONBody struct {
 	NewPass string `json:"newPass"`
@@ -357,6 +363,9 @@ type ClientInterface interface {
 
 	// FeaturesAPIGet request
 	FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// NotificationsAPIList request
+	NotificationsAPIList(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SettingsAPIGet request
 	SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -554,6 +563,18 @@ func (c *Client) DiffAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) 
 
 func (c *Client) FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFeaturesAPIGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) NotificationsAPIList(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewNotificationsAPIListRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1076,6 +1097,67 @@ func NewFeaturesAPIGetRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewNotificationsAPIListRequest generates requests for NotificationsAPIList
+func NewNotificationsAPIListRequest(server string, params *NotificationsAPIListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/notifications")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "limit", runtime.ParamLocationQuery, params.Limit); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSettingsAPIGetRequest generates requests for SettingsAPIGet
 func NewSettingsAPIGetRequest(server string) (*http.Request, error) {
 	var err error
@@ -1382,6 +1464,9 @@ type ClientWithResponsesInterface interface {
 
 	// FeaturesAPIGetWithResponse request
 	FeaturesAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FeaturesAPIGetResponse, error)
+
+	// NotificationsAPIListWithResponse request
+	NotificationsAPIListWithResponse(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*NotificationsAPIListResponse, error)
 
 	// SettingsAPIGetWithResponse request
 	SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error)
@@ -1690,6 +1775,32 @@ func (r FeaturesAPIGetResponse) StatusCode() int {
 	return 0
 }
 
+type NotificationsAPIListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Items    []Event  `json:"items"`
+		PageInfo PageInfo `json:"pageInfo"`
+	}
+	JSONDefault *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r NotificationsAPIListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r NotificationsAPIListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SettingsAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1981,6 +2092,15 @@ func (c *ClientWithResponses) FeaturesAPIGetWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseFeaturesAPIGetResponse(rsp)
+}
+
+// NotificationsAPIListWithResponse request returning *NotificationsAPIListResponse
+func (c *ClientWithResponses) NotificationsAPIListWithResponse(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*NotificationsAPIListResponse, error) {
+	rsp, err := c.NotificationsAPIList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseNotificationsAPIListResponse(rsp)
 }
 
 // SettingsAPIGetWithResponse request returning *SettingsAPIGetResponse
@@ -2463,6 +2583,42 @@ func ParseFeaturesAPIGetResponse(rsp *http.Response) (*FeaturesAPIGetResponse, e
 	return response, nil
 }
 
+// ParseNotificationsAPIListResponse parses an HTTP response from a NotificationsAPIListWithResponse call
+func ParseNotificationsAPIListResponse(rsp *http.Response) (*NotificationsAPIListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &NotificationsAPIListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Items    []Event  `json:"items"`
+			PageInfo PageInfo `json:"pageInfo"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSettingsAPIGetResponse parses an HTTP response from a SettingsAPIGetWithResponse call
 func ParseSettingsAPIGetResponse(rsp *http.Response) (*SettingsAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2732,6 +2888,9 @@ type ServerInterface interface {
 
 	// (GET /api/features)
 	FeaturesAPIGet(w http.ResponseWriter, r *http.Request)
+
+	// (GET /api/notifications)
+	NotificationsAPIList(w http.ResponseWriter, r *http.Request, params NotificationsAPIListParams)
 
 	// (GET /api/settings)
 	SettingsAPIGet(w http.ResponseWriter, r *http.Request)
@@ -3025,6 +3184,54 @@ func (siw *ServerInterfaceWrapper) FeaturesAPIGet(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// NotificationsAPIList operation middleware
+func (siw *ServerInterfaceWrapper) NotificationsAPIList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params NotificationsAPIListParams
+
+	// ------------- Required query parameter "limit" -------------
+
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", false, true, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "offset", r.URL.Query(), &params.Offset)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.NotificationsAPIList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SettingsAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) SettingsAPIGet(w http.ResponseWriter, r *http.Request) {
 
@@ -3308,6 +3515,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/deployment/{id}", wrapper.DeployementAPIRead)
 	m.HandleFunc("GET "+options.BaseURL+"/api/diff", wrapper.DiffAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/features", wrapper.FeaturesAPIGet)
+	m.HandleFunc("GET "+options.BaseURL+"/api/notifications", wrapper.NotificationsAPIList)
 	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
@@ -3673,6 +3881,38 @@ func (response FeaturesAPIGetdefaultJSONResponse) VisitFeaturesAPIGetResponse(w 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type NotificationsAPIListRequestObject struct {
+	Params NotificationsAPIListParams
+}
+
+type NotificationsAPIListResponseObject interface {
+	VisitNotificationsAPIListResponse(w http.ResponseWriter) error
+}
+
+type NotificationsAPIList200JSONResponse struct {
+	Items    []Event  `json:"items"`
+	PageInfo PageInfo `json:"pageInfo"`
+}
+
+func (response NotificationsAPIList200JSONResponse) VisitNotificationsAPIListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type NotificationsAPIListdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response NotificationsAPIListdefaultJSONResponse) VisitNotificationsAPIListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type SettingsAPIGetRequestObject struct {
 }
 
@@ -3910,6 +4150,9 @@ type StrictServerInterface interface {
 
 	// (GET /api/features)
 	FeaturesAPIGet(ctx context.Context, request FeaturesAPIGetRequestObject) (FeaturesAPIGetResponseObject, error)
+
+	// (GET /api/notifications)
+	NotificationsAPIList(ctx context.Context, request NotificationsAPIListRequestObject) (NotificationsAPIListResponseObject, error)
 
 	// (GET /api/settings)
 	SettingsAPIGet(ctx context.Context, request SettingsAPIGetRequestObject) (SettingsAPIGetResponseObject, error)
@@ -4268,6 +4511,32 @@ func (sh *strictHandler) FeaturesAPIGet(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(FeaturesAPIGetResponseObject); ok {
 		if err := validResponse.VisitFeaturesAPIGetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// NotificationsAPIList operation middleware
+func (sh *strictHandler) NotificationsAPIList(w http.ResponseWriter, r *http.Request, params NotificationsAPIListParams) {
+	var request NotificationsAPIListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.NotificationsAPIList(ctx, request.(NotificationsAPIListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "NotificationsAPIList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(NotificationsAPIListResponseObject); ok {
+		if err := validResponse.VisitNotificationsAPIListResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -15,6 +15,7 @@ type gormEventStorage struct {
 type EventStorage interface {
 	StoreEvent(event models.Event) error
 	GetEvents(objectID uint64) ([]models.Event, error)
+	GetNotifications(c Cursor[uint64]) ([]models.Event, error)
 }
 
 // NewEventStorage creates a storage for events using gorm
@@ -46,4 +47,14 @@ func (s *gormEventStorage) GetEvents(objectID uint64) ([]models.Event, error) {
 		return nil, err
 	}
 	return event, nil
+}
+
+// GetNotifications retrieves all events that are notifications
+func (s *gormEventStorage) GetNotifications(c Cursor[uint64]) ([]models.Event, error) {
+	var notifs []models.Event
+	if err := s.db.
+		Scopes(Paginate(c)).Order("Time desc").Where("isNotification = true").Find(&notifs).Error; err != nil {
+		return nil, err
+	}
+	return notifs, nil
 }

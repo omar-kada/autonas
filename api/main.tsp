@@ -232,6 +232,12 @@ interface FeaturesAPI {
   @get get(): Features | Error;
 }
 
+@route("/notifications")
+@tag("Notifications")
+interface NotificationsAPI {
+  @get list(@query limit: int32, @query offset?: string): Page<Event> | Error;
+}
+
 @route("/diff")
 @tag("Diff")
 interface DiffAPI {

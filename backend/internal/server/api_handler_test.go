@@ -50,6 +50,11 @@ func (m *MockProcess) GetDeployment(id uint64) (models.Deployment, error) {
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
+func (m *MockProcess) GetNotifications(limit int, offset uint64) ([]models.Event, error) {
+	args := m.Called(limit, offset)
+	return args.Get(0).([]models.Event), args.Error(1)
+}
+
 func (m *MockProcess) GetUser(username string) (models.User, error) {
 	args := m.Called(username)
 	return args.Get(0).(models.User), args.Error(1)

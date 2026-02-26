@@ -36,6 +36,7 @@ type Handler struct {
 
 	depMapper        mappers.DeploymentMapper
 	depDetailsMapper mappers.DeploymentDetailsMapper
+	eventMapper      mappers.EventMapper
 	diffMapper       mappers.DiffMapper
 	statusMapper     mappers.StatusMapper
 	statsMapper      mappers.StatsMapper
@@ -57,6 +58,7 @@ func NewHandler(configStore storage.ConfigStore, processService process.Service,
 		accountService:   userService,
 		depMapper:        mappers.NewDeploymentMapper(),
 		depDetailsMapper: mappers.NewDeploymentDetailsMapper(diffMapper, eventMapper),
+		eventMapper:      eventMapper,
 		diffMapper:       diffMapper,
 		statusMapper:     mappers.StatusMapper{},
 		statsMapper:      mappers.StatsMapper{},
@@ -306,5 +308,24 @@ func (h *Handler) UserAPIChangePassword(ctx context.Context, r api.UserAPIChange
 	ok, err := h.accountService.ChangePassword(username, r.Body.OldPass, r.Body.NewPass)
 	return api.UserAPIChangePassword200JSONResponse{
 		Success: ok,
+	}, err
+}
+
+// NotificationsAPIList lists notifications with pagination support
+func (h *Handler) NotificationsAPIList(_ context.Context, request api.NotificationsAPIListRequestObject) (api.NotificationsAPIListResponseObject, error) {
+	offset, err := validateCursorOffset(request.Params.Offset)
+	if err != nil {
+		return nil, fmt.Errorf("invalid after value")
+	}
+
+	if request.Params.Limit <= 0 {
+		return nil, fmt.Errorf("invalid first value")
+	}
+
+	events, err := h.processService.GetNotifications(int(request.Params.Limit), offset)
+
+	return api.NotificationsAPIList200JSONResponse{
+		Items:    models.ListMapper(h.eventMapper.Map)(events),
+		PageInfo: h.eventMapper.MapToPageInfo(events, int(request.Params.Limit)),
 	}, err
 }
