@@ -2,11 +2,11 @@ import type { Deployment } from '@/api/api';
 import { getDeploymentsQueryOptions } from '@/hooks';
 import { cn } from '@/lib';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Loader } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { DeploymentItemSkeleton, DeploymentListItem } from '.';
 import { ScrollArea } from '../ui/scroll-area';
+import { Spinner } from '../ui/spinner';
 import { ErrorAlert } from '../view';
 
 export function DeploymentList({
@@ -50,9 +50,7 @@ export function DeploymentList({
         ></DeploymentListItem>
       ))}
       <div ref={ref} className="flex justify-around w-full min-h-1">
-        {(isFetchingNextPage || (hasNextPage && deployments?.length)) && (
-          <Loader className="animate-spin my-2" />
-        )}
+        {(isFetchingNextPage || (hasNextPage && deployments?.length)) && <Spinner />}
       </div>
     </DeploymentListContainer>
   );

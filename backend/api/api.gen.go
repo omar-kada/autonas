@@ -149,10 +149,12 @@ type ErrorCode string
 
 // Event defines model for Event.
 type Event struct {
-	ID   uint64    `json:"ID"`
-	Msg  string    `json:"msg"`
-	Time time.Time `json:"time"`
-	Type EventType `json:"type"`
+	ID         uint64    `json:"ID"`
+	Msg        string    `json:"msg"`
+	ObjectId   uint64    `json:"objectId"`
+	ObjectName string    `json:"objectName"`
+	Time       time.Time `json:"time"`
+	Type       EventType `json:"type"`
 }
 
 // EventType defines model for EventType.
