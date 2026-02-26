@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -33,11 +34,20 @@ func NewConfigStore(filePath string) ConfigStore {
 
 func (s *configStore) Update(cfg models.Config) (err error) {
 	slog.Debug("updating configuration file")
+
+	oldCfg, err := s.Get()
+	if err != nil {
+		return err
+	}
+
+	if models.IsObfuscated(cfg.Settings.Token) {
+		cfg.Settings.Token = oldCfg.Settings.Token // keep old token when obfuscated
+	}
+	if models.IsObfuscated(cfg.Settings.NotificationURL) {
+		cfg.Settings.NotificationURL = oldCfg.Settings.NotificationURL // keep old url when obfuscated
+	}
+
 	if s.OnConfigUpdate != nil {
-		oldCfg, err := s.Get()
-		if err != nil {
-			return err
-		}
 		defer func() {
 			if err != nil { // check no error occurred when updating the config
 				return
@@ -88,7 +98,11 @@ func (s *configStore) SetOnChange(fn func(oldConfig, newConfig models.Config)) {
 // Get reads the configuration from the config file
 func (s *configStore) Get() (models.Config, error) {
 	bs, err := os.ReadFile(s.configFilePath)
+
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return models.Config{}, nil
+		}
 		return models.Config{}, fmt.Errorf("error reading config file %s: %w", s.configFilePath, err)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"omar-kada/autonas/internal/storage"
 	"omar-kada/autonas/models"
@@ -38,11 +39,22 @@ func (m *MockConfigStore) IsEventNotificationEnabled(eventType models.EventType)
 	return args.Bool(0)
 }
 
+// MockConfigStore is a mock implementation of the ConfigStore interface
+type MockEventStore struct {
+	mock.Mock
+	storage.EventStorage
+}
+
+func (m *MockEventStore) StoreEvent(event models.Event) error {
+	args := m.Called(event)
+	return args.Error(0)
+}
 func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 	mockSend := new(MockSend)
 	mockConfigStore := new(MockConfigStore)
+	mockEventStore := new(MockEventStore)
 
-	handler := NewNotificationEventHandler(mockConfigStore).(*NotificationEventHandler)
+	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
 	handler.Send = mockSend.Send
 
 	t.Run("should send notification when config is valid and event is enabled", func(t *testing.T) {
@@ -60,6 +72,8 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 		}
 
 		mockConfigStore.On("Get").Return(cfg, nil)
+		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
+
 		mockSend.On("Send", cfg.Settings.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
@@ -99,10 +113,38 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 		}
 
 		mockConfigStore.On("Get").Return(cfg, nil)
+		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
 
 		mockConfigStore.AssertExpectations(t)
 		mockSend.AssertNotCalled(t, "Send")
 	})
+}
+
+func TestStoringEventHandler_HandleEvent(t *testing.T) {
+	mockSend := new(MockSend)
+	mockConfigStore := new(MockConfigStore)
+	mockEventStore := new(MockEventStore)
+
+	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler.Send = mockSend.Send
+
+	event := models.Event{
+		ID:         2,
+		Type:       models.EventMisc,
+		Msg:        "Test event",
+		Time:       time.Now(),
+		ObjectID:   1,
+		ObjectName: "Test object",
+	}
+
+	mockConfigStore.On("Get").Return(models.Config{}, nil)
+	mockEventStore.On("StoreEvent", event).Return(nil).Once()
+
+	// Call the HandleEvent method with the event
+	handler.HandleEvent(context.Background(), event)
+
+	// Assert that the StoreEvent method was called with the event
+	mockEventStore.AssertCalled(t, "StoreEvent", event)
 }

@@ -84,8 +84,7 @@ func (run *runCommand) doRun() error {
 	configStore := storage.NewConfigStore(params.ConfigFile)
 	dispatcher := events.NewDefaultDispatcher([]events.EventHandler{
 		events.NewLoggingEventHandler(),
-		events.NewStoringEventHandler(eventStore),
-		events.NewNotificationEventHandler(configStore),
+		events.NewNotificationEventHandler(configStore, eventStore),
 	})
 	scheduler := process.NewConfigScheduler(configStore)
 	configStore.SetOnChange(func(oldCfg, cfg models.Config) {

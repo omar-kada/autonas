@@ -15,13 +15,15 @@ import (
 // NotificationEventHandler is an event handler that sends notifications
 type NotificationEventHandler struct {
 	configStore storage.ConfigStore
+	eventStore  storage.EventStorage
 	Send        func(rawURL string, message string) error
 }
 
 // NewNotificationEventHandler creates a new notification event handler
-func NewNotificationEventHandler(configStore storage.ConfigStore) EventHandler {
+func NewNotificationEventHandler(configStore storage.ConfigStore, eventStore storage.EventStorage) EventHandler {
 	return &NotificationEventHandler{
 		configStore: configStore,
+		eventStore:  eventStore,
 		Send:        shoutrrr.Send,
 	}
 }
@@ -34,8 +36,10 @@ func (h *NotificationEventHandler) HandleEvent(_ context.Context, event models.E
 		return
 	}
 	if cfg.Settings.NotificationURL != "" {
+		event.IsNotification = true
 		h.sendNotification(cfg, event)
 	}
+	h.storeNotification(event)
 }
 
 func (h *NotificationEventHandler) sendNotification(cfg models.Config, event models.Event) {
@@ -53,5 +57,12 @@ func (h *NotificationEventHandler) sendNotification(cfg models.Config, event mod
 	err := h.Send(cfg.Settings.NotificationURL, message)
 	if err != nil {
 		slog.Error("can't send notification", "error", err)
+	}
+}
+
+func (h *NotificationEventHandler) storeNotification(event models.Event) {
+	err := h.eventStore.StoreEvent(event)
+	if err != nil {
+		slog.Error("can't store event", "error", err)
 	}
 }

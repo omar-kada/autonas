@@ -170,13 +170,66 @@ func TestUpdateConfig(t *testing.T) {
 		assert.Error(t, err)
 		assert.False(t, called)
 	})
+
+	t.Run("obfuscate token on update", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		filePath := filepath.Join(tmpDir, "config.yaml")
+		store := NewConfigStore(filePath)
+
+		input := models.Config{
+			Settings: models.Settings{
+				Token:           "my-secret-token-12345",
+				NotificationURL: "https://example.com/webhook?token=12345",
+			},
+			Environment: models.Environment{},
+			Services:    map[string]models.ServiceConfig{},
+		}
+
+		err := store.Update(input)
+		assert.NoError(t, err)
+
+		// Verify the token was obfuscated in the stored config
+		storedCfg, err := store.Get()
+		assert.NoError(t, err)
+
+		storedToken := storedCfg.Settings.Token
+		assert.Equal(t, "my-secret-token-12345", storedToken)
+
+		storedURL := storedCfg.Settings.NotificationURL
+		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
+
+		input2 := models.Config{
+			Settings: models.Settings{
+				Token:           "my-secret-********************",
+				NotificationURL: "https://ex********************",
+			},
+			Environment: models.Environment{},
+			Services:    map[string]models.ServiceConfig{},
+		}
+
+		err = store.Update(input2)
+		assert.NoError(t, err)
+
+		// Verify the notification URL was obfuscated in the stored config
+		storedCfg, err = store.Get()
+		assert.NoError(t, err)
+
+		storedToken = storedCfg.Settings.Token
+		assert.Equal(t, "my-secret-token-12345", storedToken)
+
+		storedURL = storedCfg.Settings.NotificationURL
+		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
+
+	})
+
 }
 
 func TestLoadConfig_FileError(t *testing.T) {
 	t.Run("missing file", func(t *testing.T) {
 		configStore := NewConfigStore("/does/not/exist.yaml")
-		_, err := configStore.Get()
-		assert.Error(t, err)
+		cfg, err := configStore.Get()
+		assert.NoError(t, err)
+		assert.Equal(t, models.Config{}, cfg)
 	})
 
 	t.Run("invalid yaml", func(t *testing.T) {

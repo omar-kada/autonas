@@ -81,10 +81,11 @@ func (e EventType) ToEmoji() string {
 
 // Event represent an event inside the deployment process
 type Event struct {
-	ID         uint64 `gorm:"primaryKey;autoIncrement:true"`
-	Type       EventType
-	Msg        string
-	Time       time.Time `gorm:"autoCreateTime"`
-	ObjectID   uint64    `gorm:"index"`
-	ObjectName string
+	ID             uint64 `gorm:"primaryKey;autoIncrement:true"`
+	Type           EventType
+	Msg            string
+	Time           time.Time `gorm:"autoCreateTime"`
+	ObjectID       uint64    `gorm:"index"`
+	ObjectName     string
+	IsNotification bool
 }

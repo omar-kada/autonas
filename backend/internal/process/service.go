@@ -76,8 +76,8 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	defer s.mu.Unlock()
 
 	cfg, err := s.configStore.Get()
-	if err != nil {
-		return models.Deployment{}, fmt.Errorf("error getting current config:  %w", err)
+	if err != nil || cfg.Settings.Repo == "" {
+		return models.Deployment{}, fmt.Errorf("error getting repo: %v, %w", cfg.Settings.Repo, err)
 	}
 	oldCfg := s.currentCfg
 	s.currentCfg = cfg
@@ -228,8 +228,8 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 // GetDiff returns the changed files between what's deployed and the repo
 func (s *service) GetDiff() ([]models.FileDiff, error) {
 	cfg, err := s.getConfig()
-	if err != nil {
-		return []models.FileDiff{}, fmt.Errorf("error while getting config : %w", err)
+	if err != nil || cfg.Settings.Repo == "" {
+		return []models.FileDiff{}, fmt.Errorf("error getting repo : %v, %w", cfg.Settings.Repo, err)
 	}
 	patch, err := s.fetcher.WithConfig(cfg).DiffWithRemote()
 	if err != nil {
