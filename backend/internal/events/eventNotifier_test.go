@@ -149,3 +149,65 @@ func TestStoringEventHandler_HandleEvent(t *testing.T) {
 	// Assert that the StoreEvent method was called with the event
 	mockEventStore.AssertCalled(t, "StoreEvent", event)
 }
+
+func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testing.T) {
+	mockSend := new(MockSend)
+	mockConfigStore := new(MockConfigStore)
+	mockEventStore := new(MockEventStore)
+
+	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler.Send = mockSend.Send
+
+	cfg := models.Config{
+		Settings: models.Settings{
+			NotificationURL:   "http://example.com",
+			NotificationTypes: []models.EventType{models.EventMisc},
+		},
+	}
+	event := models.Event{
+		Type:       models.EventMisc,
+		ObjectID:   1,
+		ObjectName: "Test Object",
+		Msg:        "Test Message",
+	}
+
+	mockConfigStore.On("Get").Return(cfg, nil)
+	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
+		return e.ObjectID == 1 && e.IsNotification == true
+	})).Return(nil)
+	mockSend.On("Send", cfg.Settings.NotificationURL, mock.Anything).Return(nil)
+
+	handler.HandleEvent(context.Background(), event)
+
+	mockEventStore.AssertExpectations(t)
+}
+
+func TestNotificationEventHandler_HandleEvent_NotificationFlag_Disabled(t *testing.T) {
+	mockSend := new(MockSend)
+	mockConfigStore := new(MockConfigStore)
+	mockEventStore := new(MockEventStore)
+
+	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler.Send = mockSend.Send
+	cfg := models.Config{
+		Settings: models.Settings{
+			NotificationURL:   "http://example.com",
+			NotificationTypes: []models.EventType{},
+		},
+	}
+	event := models.Event{
+		Type:       models.EventMisc,
+		ObjectID:   2,
+		ObjectName: "Test Object",
+		Msg:        "Test Message",
+	}
+
+	mockConfigStore.On("Get").Return(cfg, nil)
+	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
+		return e.ObjectID == 2 && e.IsNotification == false
+	})).Return(nil)
+
+	handler.HandleEvent(context.Background(), event)
+
+	mockEventStore.AssertExpectations(t)
+}

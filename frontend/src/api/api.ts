@@ -225,6 +225,16 @@ export type DeployementAPIList200 = {
   pageInfo: PageInfo;
 };
 
+export type NotificationsAPIListParams = {
+limit: number;
+offset?: string;
+};
+
+export type NotificationsAPIList200 = {
+  items: Event[];
+  pageInfo: PageInfo;
+};
+
 export type UserAPIChangePasswordBody = {
   oldPass: string;
   newPass: string;
@@ -1072,6 +1082,93 @@ export function useFeaturesAPIGet<TData = Awaited<ReturnType<typeof featuresAPIG
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getFeaturesAPIGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+export const notificationsAPIList = (
+    params: NotificationsAPIListParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<NotificationsAPIList200>> => {
+    
+    
+    return axios.default.get(
+      `/api/notifications`,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+
+export const getNotificationsAPIListQueryKey = (params?: NotificationsAPIListParams,) => {
+    return [
+    `/api/notifications`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getNotificationsAPIListQueryOptions = <TData = Awaited<ReturnType<typeof notificationsAPIList>>, TError = AxiosError<Error>>(params: NotificationsAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getNotificationsAPIListQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof notificationsAPIList>>> = ({ signal }) => notificationsAPIList(params, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof notificationsAPIList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type NotificationsAPIListQueryResult = NonNullable<Awaited<ReturnType<typeof notificationsAPIList>>>
+export type NotificationsAPIListQueryError = AxiosError<Error>
+
+
+export function useNotificationsAPIList<TData = Awaited<ReturnType<typeof notificationsAPIList>>, TError = AxiosError<Error>>(
+ params: NotificationsAPIListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsAPIList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof notificationsAPIList>>,
+          TError,
+          Awaited<ReturnType<typeof notificationsAPIList>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useNotificationsAPIList<TData = Awaited<ReturnType<typeof notificationsAPIList>>, TError = AxiosError<Error>>(
+ params: NotificationsAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsAPIList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof notificationsAPIList>>,
+          TError,
+          Awaited<ReturnType<typeof notificationsAPIList>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useNotificationsAPIList<TData = Awaited<ReturnType<typeof notificationsAPIList>>, TError = AxiosError<Error>>(
+ params: NotificationsAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useNotificationsAPIList<TData = Awaited<ReturnType<typeof notificationsAPIList>>, TError = AxiosError<Error>>(
+ params: NotificationsAPIListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsAPIList>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getNotificationsAPIListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

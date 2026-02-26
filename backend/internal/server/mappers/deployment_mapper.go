@@ -36,13 +36,7 @@ func (depMapper) Map(dep models.Deployment) api.Deployment {
 // MapToPageInfo maps a slice of models.Deployment to an api.PageInfo, determining if there are more items
 // and providing the end cursor for pagination.
 func (depMapper) MapToPageInfo(deps []models.Deployment, limit int) api.PageInfo {
-	endCursor := ""
-	if len(deps) > 0 {
-		lastDep := deps[len(deps)-1]
-		endCursor = fmt.Sprintf("%d", lastDep.ID)
-	}
-	return api.PageInfo{
-		HasNextPage: len(deps) == limit,
-		EndCursor:   endCursor,
-	}
+	return MapToPageInfo(deps, limit, func(dep models.Deployment) string {
+		return fmt.Sprintf("%d", dep.ID)
+	})
 }

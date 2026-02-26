@@ -29,6 +29,7 @@ type Service interface {
 	GetManagedStacks() (map[string][]models.ContainerSummary, error)
 	GetDeployments(limit int, offset uint64) ([]models.Deployment, error)
 	GetDeployment(id uint64) (models.Deployment, error)
+	GetNotifications(limit int, offset uint64) ([]models.Event, error)
 }
 
 // NewService creates a new process Service instance
@@ -38,6 +39,7 @@ func NewService(
 	containersInspector docker.Inspector,
 	fetcher git.Fetcher,
 	store storage.DeploymentStorage,
+	eventStore storage.EventStorage,
 	configStore storage.ConfigStore,
 	dispatcher events.Dispatcher,
 	scheduler ConfigScheduler,
@@ -48,6 +50,7 @@ func NewService(
 		containersInspector: containersInspector,
 		fetcher:             fetcher,
 		store:               store,
+		eventStore:          eventStore,
 		configStore:         configStore,
 		dispatcher:          dispatcher,
 		params:              deployParams,
@@ -62,6 +65,7 @@ type service struct {
 	containersInspector docker.Inspector
 	fetcher             git.Fetcher
 	store               storage.DeploymentStorage
+	eventStore          storage.EventStorage
 	configStore         storage.ConfigStore
 	dispatcher          events.Dispatcher
 	scheduler           ConfigScheduler
@@ -248,6 +252,11 @@ func (s *service) getConfig() (models.Config, error) {
 // GetDeployments returns a paginated list of deployments.
 func (s *service) GetDeployments(limit int, offset uint64) ([]models.Deployment, error) {
 	return s.store.GetDeployments(storage.NewIDCursor(limit, offset))
+}
+
+// GetNotifications returns a paginated list of notifications.
+func (s *service) GetNotifications(limit int, offset uint64) ([]models.Event, error) {
+	return s.eventStore.GetNotifications(storage.NewIDCursor(limit, offset))
 }
 
 // GetDeployment returns a deployment.

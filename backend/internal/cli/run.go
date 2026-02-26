@@ -107,6 +107,7 @@ func (run *runCommand) doRun() error {
 		inspector,
 		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir()),
 		deploymentStore,
+		eventStore,
 		configStore,
 		dispatcher,
 		scheduler)

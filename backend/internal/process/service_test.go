@@ -122,23 +122,29 @@ var (
 	}
 )
 
-func newDeploymentStorage(t *testing.T) storage.DeploymentStorage {
-	depStore, err := storage.NewDeploymentStorage(testutil.NewMemoryStorage())
+func initStores(t *testing.T) (storage.DeploymentStorage, storage.EventStorage) {
+	db := testutil.NewMemoryStorage()
+	depStore, err := storage.NewDeploymentStorage(db)
 	if err != nil {
 		t.Fatalf("error creating deployment storage : %v", err)
 	}
-	return depStore
+	eventStore, err := storage.NewEventStorage(db)
+	if err != nil {
+		t.Fatalf("error creating deployment storage : %v", err)
+	}
+	return depStore, eventStore
 }
 
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
 	configStore.Update(currentCfg)
+	depStore, eventStore := initStores(t)
 	svc := NewService(
 		params,
 		mocker,
 		mocker,
 		mocker,
-		newDeploymentStorage(t),
+		depStore, eventStore,
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -424,6 +430,8 @@ func TestGetDiff_ErrorDiffWithRemote(t *testing.T) {
 func TestSync_ErrorGettingConfig(t *testing.T) {
 	mocker := &Mocker{}
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	depStore, eventStore := initStores(t)
+
 	// Don't initialize config, so Get() will fail
 	svc := NewService(
 		models.DeploymentParams{
@@ -433,7 +441,7 @@ func TestSync_ErrorGettingConfig(t *testing.T) {
 		mocker,
 		mocker,
 		mocker,
-		newDeploymentStorage(t),
+		depStore, eventStore,
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -638,12 +646,14 @@ func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {
 	mocker := &Mocker{}
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
 	configStore.Update(mockConfigOld)
+	depStore, eventStore := initStores(t)
+
 	svc := NewService(
 		models.DeploymentParams{},
 		mocker,
 		mocker,
 		mocker,
-		newDeploymentStorage(t),
+		depStore, eventStore,
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
@@ -666,12 +676,13 @@ func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {
 func TestGetDiff_ErrorGettingConfigFromStore(t *testing.T) {
 	mocker := &Mocker{}
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	depStore, eventStore := initStores(t)
 	svc := NewService(
 		models.DeploymentParams{},
 		mocker,
 		mocker,
 		mocker,
-		newDeploymentStorage(t),
+		depStore, eventStore,
 		configStore,
 		events.NewVoidDispatcher(),
 		mocker,
