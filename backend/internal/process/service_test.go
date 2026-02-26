@@ -441,7 +441,7 @@ func TestSync_ErrorGettingConfig(t *testing.T) {
 
 	dep, err := svc.SyncDeployment()
 
-	assert.ErrorContains(t, err, "error getting current config")
+	assert.ErrorContains(t, err, "error getting repo")
 	assert.Equal(t, models.Deployment{}, dep)
 }
 
@@ -679,7 +679,7 @@ func TestGetDiff_ErrorGettingConfigFromStore(t *testing.T) {
 
 	diff, err := svc.GetDiff()
 
-	assert.ErrorContains(t, err, "error while getting config")
+	assert.ErrorContains(t, err, "error getting repo")
 	assert.Equal(t, 0, len(diff))
 }
 

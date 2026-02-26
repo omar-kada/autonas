@@ -497,19 +497,21 @@ func TestSettingsAPISet_Success(t *testing.T) {
 			"service1": {"key1": "value1"},
 		},
 		Settings: models.Settings{
-			Repo:     "old-repo",
-			Branch:   "old-branch",
-			Cron:     "old-cron",
-			Token:    "123456789",
-			Username: "old-user",
+			Repo:            "old-repo",
+			Branch:          "old-branch",
+			Cron:            "old-cron",
+			Token:           "123456789",
+			NotificationURL: "http://example.com/notification?token=123456",
+			Username:        "old-user",
 		},
 	}
 	newSettings := api.Settings{
-		Repo:     "new-repo",
-		Branch:   ptr("new-branch"),
-		Cron:     ptr("new-cron"),
-		Username: ptr("new-user"),
-		Token:    ptr("********************"),
+		Repo:            "new-repo",
+		Branch:          ptr("new-branch"),
+		Cron:            ptr("new-cron"),
+		Username:        ptr("new-user"),
+		Token:           ptr("******************************"),
+		NotificationURL: ptr("http://ex*********************"),
 	}
 
 	store.On("Get").Return(oldConfig, nil)
@@ -518,11 +520,12 @@ func TestSettingsAPISet_Success(t *testing.T) {
 		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
 		assert.Equal(t, oldConfig.Services, newCfg.Services)
 		assert.Equal(t, models.Settings{
-			Repo:     newSettings.Repo,
-			Branch:   *newSettings.Branch,
-			Cron:     *newSettings.Cron,
-			Username: *newSettings.Username,
-			Token:    oldConfig.Settings.Token,
+			Repo:            newSettings.Repo,
+			Branch:          *newSettings.Branch,
+			Cron:            *newSettings.Cron,
+			Username:        *newSettings.Username,
+			Token:           "******************************",
+			NotificationURL: "http://ex*********************",
 		}, newCfg.Settings)
 		return true
 	})).Return(nil)
@@ -538,6 +541,7 @@ func TestSettingsAPISet_Success(t *testing.T) {
 		assert.Equal(t, "new-cron", *r.Cron)
 		assert.Equal(t, "new-user", *r.Username)
 		assert.Equal(t, "******************************", *r.Token)
+		assert.Equal(t, "http://ex*********************", *r.NotificationURL)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
