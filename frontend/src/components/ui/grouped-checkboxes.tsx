@@ -29,7 +29,7 @@ interface GroupedCheckboxesProps {
 
 export function GroupedCheckboxes({ groups, value, onChange }: GroupedCheckboxesProps) {
 
-    const {t} = useTranslation();
+  const {t} = useTranslation();
   // Helper to toggle a single option
   const handleCheckboxChange = (optionValue: string, checked: boolean) => {
     if (checked) {
