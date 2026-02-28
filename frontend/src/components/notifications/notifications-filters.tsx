@@ -31,7 +31,7 @@ export function NotificationFilter({
   const [selectedFilters, setSelectedFilters] = useState<Array<EventFilter>>([]);
 
   useEffect(() => {
-    if (selectedFilters.length == 0) {
+    if (selectedFilters.length === 0) {
       onFilterChanged(Object.values(EventType));
     } else {
       onFilterChanged(selectedFilters.flatMap((filter) => filterMap.get(filter) ?? []));
@@ -47,9 +47,13 @@ export function NotificationFilter({
       className={className}
     >
       {Array.from(filterMap.keys()).map((filter) => (
-        <Tooltip>
+        <Tooltip key={filter}>
           <TooltipTrigger asChild>
-            <ToggleGroupItem key={filter} value={filter} variant="outline">
+            <ToggleGroupItem
+              value={filter}
+              variant="outline"
+              aria-describedby={t(`EVENT_TYPE.${filter}`)}
+            >
               <GroupIcon filter={filter} />
             </ToggleGroupItem>
           </TooltipTrigger>

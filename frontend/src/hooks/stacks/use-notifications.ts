@@ -1,16 +1,28 @@
 import {
   getNotificationsAPIListQueryKey,
   notificationsAPIList,
+  type Error,
   type Event,
   type NotificationsAPIList200,
   type NotificationsAPIListParams,
 } from '@/api/api';
-import { type InfiniteData, type QueryClient } from '@tanstack/react-query';
-import type { AxiosResponse } from 'axios';
+import {
+  type InfiniteData,
+  type QueryClient,
+  type QueryKey,
+  type UseInfiniteQueryOptions,
+} from '@tanstack/react-query';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 const initialParams = { limit: 10, offset: '' } as NotificationsAPIListParams;
 
-export function getNotificationsQueryOptions() {
+export function getNotificationsQueryOptions(): UseInfiniteQueryOptions<
+  AxiosResponse<NotificationsAPIList200>,
+  AxiosError<Error>,
+  Event[],
+  QueryKey,
+  NotificationsAPIListParams
+> {
   return {
     queryKey: getNotificationsAPIListQueryKey(initialParams),
     queryFn: ({ pageParam = initialParams }: { pageParam: NotificationsAPIListParams }) =>
@@ -28,6 +40,7 @@ export function getNotificationsQueryOptions() {
       return { limit: initialParams.limit, offset: lastPage.data.pageInfo.endCursor };
     },
     gcTime: 10 * 60 * 1000,
+    refetchOnMount: true,
   };
 }
 

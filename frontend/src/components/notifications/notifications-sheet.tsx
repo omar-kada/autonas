@@ -25,7 +25,7 @@ export function NotificationSheet({ children }: { children: ReactNode }) {
   const handleNotificationClick = useCallback(
     (event: Event) => {
       setOpen(false);
-      depNavigate(event.objectId + '');
+      depNavigate(event.objectId);
     },
     [setOpen, depNavigate],
   );
