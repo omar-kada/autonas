@@ -18,11 +18,6 @@ import (
 	"omar-kada/autonas/models"
 )
 
-var disabledAPIError = api.Error{
-	Code:    api.ErrorCodeDISABLED,
-	Message: "DISABLED",
-}
-
 var (
 	errUserNotFound  = errors.New("user error")
 	errShouldntReach = errors.New("shouldn't be reachable")

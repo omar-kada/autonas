@@ -89,7 +89,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			})
 
 			// Create a new request
-			req, err := http.NewRequest(tt.method, tt.url, nil)
+			req, err := http.NewRequest(tt.method, tt.url, http.NoBody)
 			if err != nil {
 				t.Fatal(err)
 			}
