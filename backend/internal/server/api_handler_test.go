@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 	"time"
 
@@ -367,8 +366,8 @@ func TestDiffAPIGet_Error(t *testing.T) {
 func TestConfigAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
+
 	h := NewHandler(store, m, m)
-	h.features.DisplayConfig = true
 
 	config := models.Config{
 		Environment: models.Environment{
@@ -390,29 +389,10 @@ func TestConfigAPIGet_Success(t *testing.T) {
 	store.AssertExpectations(t)
 }
 
-func TestConfigAPIGet_Disabled(t *testing.T) {
-	m := &MockProcess{}
-	store := &MockStore{}
-	h := NewHandler(store, m, m)
-	h.features.DisplayConfig = false
-
-	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
-	assert.NoError(t, err)
-
-	switch r := resp.(type) {
-	case api.ConfigAPIGetdefaultJSONResponse:
-		assert.Equal(t, http.StatusMethodNotAllowed, r.StatusCode)
-		assert.Equal(t, "DISABLED", r.Body.Message)
-	default:
-		t.Fatalf("unexpected resp type: %T", resp)
-	}
-}
-
 func TestConfigAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
-	h.features.DisplayConfig = true
 
 	errConfig := errors.New("config error")
 	store.On("Get").Return(models.Config{}, errConfig)
@@ -427,14 +407,25 @@ func TestConfigAPIGet_Error(t *testing.T) {
 func TestFeaturesAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
+
+	t.Setenv("AUTONAS_DISPLAY_CONFIG", "true")
+	t.Setenv("AUTONAS_EDIT_CONFIG", "true")
+	t.Setenv("AUTONAS_EDIT_SETTINGS", "true")
+
 	h := NewHandler(store, m, m)
 
 	resp, err := h.FeaturesAPIGet(context.Background(), api.FeaturesAPIGetRequestObject{})
 	assert.NoError(t, err)
 
+	want := api.FeaturesAPIGet200JSONResponse{
+		DisplayConfig: true,
+		EditConfig:    true,
+		EditSettings:  true,
+	}
+
 	switch r := resp.(type) {
 	case api.FeaturesAPIGet200JSONResponse:
-		assert.Equal(t, h.features.DisplayConfig, r.DisplayConfig)
+		assert.Equal(t, want, r)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
@@ -492,7 +483,6 @@ func TestSettingsAPISet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
-	h.features.EditSettings = true
 
 	oldConfig := models.Config{
 		Environment: models.Environment{
@@ -558,7 +548,6 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
-	h.features.EditSettings = true
 
 	oldConfig := models.Config{
 		Environment: models.Environment{},
@@ -604,38 +593,10 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	store.AssertExpectations(t)
 }
 
-func TestSettingsAPISet_Disabled(t *testing.T) {
-	m := &MockProcess{}
-	store := &MockStore{}
-	h := NewHandler(store, m, m)
-	h.features.EditSettings = false
-
-	settings := api.Settings{
-		Repo:     "test-repo",
-		Branch:   ptr("main"),
-		Cron:     ptr("0 0 * * *"),
-		Token:    ptr(""),
-		Username: ptr("user"),
-	}
-
-	req := api.SettingsAPISetRequestObject{Body: &settings}
-	resp, err := h.SettingsAPISet(context.Background(), req)
-	assert.NoError(t, err)
-
-	switch r := resp.(type) {
-	case api.SettingsAPISetdefaultJSONResponse:
-		assert.Equal(t, http.StatusMethodNotAllowed, r.StatusCode)
-		assert.Equal(t, "DISABLED", r.Body.Message)
-	default:
-		t.Fatalf("unexpected resp type: %T", resp)
-	}
-}
-
 func TestSettingsAPISet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
-	h.features.EditSettings = true
 
 	settings := api.Settings{
 		Repo:     "test-repo",
@@ -664,7 +625,6 @@ func TestConfigAPISet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
-	h.features.EditConfig = true
 
 	oldConfig := models.Config{
 		Environment: models.Environment{
@@ -716,39 +676,10 @@ func TestConfigAPISet_Success(t *testing.T) {
 	store.AssertExpectations(t)
 }
 
-func TestConfigAPISet_Disabled(t *testing.T) {
-	m := &MockProcess{}
-	store := &MockStore{}
-	h := NewHandler(store, m, m)
-	h.features.EditConfig = false
-
-	config := api.Config{
-		GlobalVariables: map[string]string{
-			"ENV": "VALUE",
-		},
-		Services: map[string]map[string]string{
-			"service1": {"key1": "value1"},
-		},
-	}
-
-	req := api.ConfigAPISetRequestObject{Body: &config}
-	resp, err := h.ConfigAPISet(context.Background(), req)
-	assert.NoError(t, err)
-
-	switch r := resp.(type) {
-	case api.ConfigAPISetdefaultJSONResponse:
-		assert.Equal(t, http.StatusMethodNotAllowed, r.StatusCode)
-		assert.Equal(t, "DISABLED", r.Body.Message)
-	default:
-		t.Fatalf("unexpected resp type: %T", resp)
-	}
-}
-
 func TestConfigAPISet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
-	h.features.EditConfig = true
 
 	config := api.Config{
 		GlobalVariables: map[string]string{
