@@ -3,10 +3,10 @@ package middlewares
 import (
 	"encoding/json"
 	"net/http"
-	"omar-kada/autonas/api"
 	"strings"
-)
 
+	"omar-kada/autonas/api"
+)
 
 func sendError(w http.ResponseWriter, errCode api.ErrorCode) {
 	sendErrorMessage(w, errCode, "")
