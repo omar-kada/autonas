@@ -4,6 +4,7 @@ import { useTheme } from '@/hooks/theme-provider';
 import { Bell, LogOutIcon, Moon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NotificationSheet } from './notifications';
 import { SettingsSheet } from './settings';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
@@ -31,9 +32,11 @@ export function Topbar({ children }: { children?: ReactNode }) {
 
       {user && (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="rounded-full" disabled>
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationSheet>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Bell className="h-5 w-5" />
+            </Button>
+          </NotificationSheet>
           <UserDropDown user={user} />
         </div>
       )}

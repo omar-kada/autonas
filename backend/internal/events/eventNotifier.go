@@ -35,9 +35,7 @@ func (h *NotificationEventHandler) HandleEvent(_ context.Context, event models.E
 		slog.Error("can't retrieve config", "error", err)
 		return
 	}
-	if cfg.Settings.NotificationURL != "" {
-		event.IsNotification = h.sendNotification(cfg, event)
-	}
+	event.IsNotification = h.sendNotification(cfg, event)
 	h.storeNotification(event)
 }
 
@@ -46,17 +44,19 @@ func (h *NotificationEventHandler) sendNotification(cfg models.Config, event mod
 		return false
 	}
 	event.IsNotification = true
-	message := event.Type.ToEmoji() + " " + event.Type.ToText()
-	if event.ObjectID != 0 {
-		message += fmt.Sprintf(" - [%v] %v", event.ObjectID, event.ObjectName)
-	}
-	if event.Msg != "" {
-		message += fmt.Sprintf(" :\n %v", event.Msg)
-	}
+	if cfg.Settings.NotificationURL != "" {
+		message := event.Type.ToEmoji() + " " + event.Type.ToText()
+		if event.ObjectID != 0 {
+			message += fmt.Sprintf(" - [%v] %v", event.ObjectID, event.ObjectName)
+		}
+		if event.Msg != "" {
+			message += fmt.Sprintf(" :\n %v", event.Msg)
+		}
 
-	err := h.Send(cfg.Settings.NotificationURL, message)
-	if err != nil {
-		slog.Error("can't send notification", "error", err)
+		err := h.Send(cfg.Settings.NotificationURL, message)
+		if err != nil {
+			slog.Error("can't send notification", "error", err)
+		}
 	}
 	return true
 }

@@ -3,7 +3,7 @@ import { getDeploymentOptions, getDeploymentsQueryOptions, useFilteredQuery } fr
 import { formatElapsed, ROUTES } from '@/lib';
 import { useQueryClient } from '@tanstack/react-query';
 import { Timer, User } from 'lucide-react';
-import { type ReactElement } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { DeploymentDiff, DeploymentEventLog, DeploymentStatusBadge } from '.';
@@ -24,17 +24,18 @@ export function DeploymentDetail({ id }: { id: string }) {
   } = useFilteredQuery(getDeploymentOptions(id));
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (deployment?.status === DeploymentStatus.running) {
+      setTimeout(() => {
+        refetch();
+        queryClient.refetchQueries(getDeploymentsQueryOptions());
+      }, 1000);
+    }
+  }, [deployment]);
+
   if (isPending) {
     return <DeploymentDetailSkeleton />;
   }
-
-  if (deployment?.status === DeploymentStatus.running) {
-    setTimeout(() => {
-      refetch();
-      queryClient.refetchQueries(getDeploymentsQueryOptions());
-    }, 1000);
-  }
-
   return (
     <div className="flex flex-col h-full">
       <ErrorAlert

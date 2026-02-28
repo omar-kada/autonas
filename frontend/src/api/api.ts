@@ -138,6 +138,8 @@ export interface Event {
   time: string;
   msg: string;
   type: EventType;
+  objectId: number;
+  objectName: string;
 }
 
 export type EventType = typeof EventType[keyof typeof EventType];

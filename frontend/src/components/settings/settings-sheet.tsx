@@ -70,7 +70,7 @@ export function SettingsSheet({
           )}
         </SheetHeader>
         <ScrollArea className="h-1 flex-1 gap-2">
-          <div className=" grid auto-rows-min gap-6 px-4 mb-25">
+          <div className=" grid auto-rows-min gap-6 px-4 mb-10">
             {mergedError && (
               <ErrorAlert
                 title={t('ALERT.LOAD_SETTINGS_ERROR')}

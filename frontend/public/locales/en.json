@@ -43,6 +43,10 @@
     "NO_DEPLOYMENTS_DESCRIPTION": "Get started by pushing a configuration and synchronizing.",
     "SELECT_DEPLOYMENT_FOR_DETAILS": "Select deployment for details"
   },
+  "NOTIFICATIONS": {
+    "NOTIFICATIONS": "Notifications",
+    "DESCRIPTION": "Based on notifications settings"
+  },
   "CONFIGURATION": {
     "CONFIGURATION": "Configuration",
     "DISABLED_TITLE": "Configuration is disabled",
@@ -143,6 +147,7 @@
     "DIFF_ERROR": "Error while loading diff",
     "LOAD_DEPLOYMENT_ERROR": "Error while loading deployment",
     "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
+    "LOAD_NOTIFICATIONS_ERROR": "Error while loading notifications",
     "LOAD_STATS_ERROR": "Error while loading stats",
     "LOAD_STATUS_ERROR": "Error while loading status",
     "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
@@ -156,7 +161,7 @@
   },
   "EVENT_TYPE": {
     "GENERAL": "General",
-    "MISC": "Misc",
+    "MISC": "Info",
     "ERROR": "Error",
     "DEPLOYMENT": "Deployment",
     "DEPLOYMENT_STARTED": "Deployment started",

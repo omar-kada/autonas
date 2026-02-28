@@ -18,6 +18,8 @@ model Event {
   time: utcDateTime;
   msg: string;
   type: EventType;
+  objectId: uint64;
+  objectName: string;
 }
 
 enum DeploymentStatus {
