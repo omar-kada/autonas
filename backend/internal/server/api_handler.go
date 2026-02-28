@@ -43,8 +43,6 @@ type Handler struct {
 	configMapper     mappers.ConfigMapper
 	settingsMapper   mappers.SettingsMapper
 	featuresMapper   mappers.FeaturesMapper
-
-	features models.Features
 }
 
 // NewHandler creates a new Handler
@@ -63,7 +61,6 @@ func NewHandler(configStore storage.ConfigStore, processService process.Service,
 		statusMapper:     mappers.StatusMapper{},
 		statsMapper:      mappers.StatsMapper{},
 		configMapper:     mappers.ConfigMapper{},
-		features:         models.LoadFeatures(),
 	}
 }
 
@@ -170,12 +167,6 @@ func (h *Handler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (
 
 // ConfigAPIGet retrieves the current configuration
 func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
-	if !h.features.DisplayConfig {
-		return api.ConfigAPIGetdefaultJSONResponse{
-			Body:       disabledAPIError,
-			StatusCode: http.StatusMethodNotAllowed,
-		}, nil
-	}
 	config, err := h.configStore.Get()
 	if err != nil {
 		return nil, err
@@ -185,12 +176,6 @@ func (h *Handler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObjec
 
 // ConfigAPISet updates the current configuration
 func (h *Handler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
-	if !h.features.EditConfig {
-		return api.ConfigAPISetdefaultJSONResponse{
-			Body:       disabledAPIError,
-			StatusCode: http.StatusMethodNotAllowed,
-		}, nil
-	}
 	config := h.configMapper.UnMap(api.Config(*r.Body))
 	oldConfig, err := h.configStore.Get()
 	if err != nil {
@@ -216,12 +201,6 @@ func (h *Handler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestO
 
 // SettingsAPISet updates the current settings
 func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
-	if !h.features.EditSettings {
-		return api.SettingsAPISetdefaultJSONResponse{
-			Body:       disabledAPIError,
-			StatusCode: http.StatusMethodNotAllowed,
-		}, nil
-	}
 	oldConfig, err := h.configStore.Get()
 	if err != nil {
 		return nil, err
@@ -237,7 +216,7 @@ func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestO
 
 // FeaturesAPIGet retrieves the current features
 func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
-	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(h.features)), nil
+	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(models.LoadFeatures())), nil
 }
 
 // AuthAPIRegister registers a new user

@@ -41,11 +41,11 @@ func UsernameFromContext(ctx context.Context) (string, bool) {
 	return username, ok
 }
 
-// AuthMiddleware provides authentication middleware.
+// AuthnMiddleware provides authentication middleware.
 // @param next http.Handler - the next handler in the chain
 // @param authService user.AuthService - the authentication service
 // @return http.Handler - the authentication middleware
-func AuthMiddleware(next http.Handler, authService users.AuthService) http.Handler {
+func AuthnMiddleware(next http.Handler, authService users.AuthService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url, ok := strings.CutPrefix(r.URL.Path, "/api/")
 		if !ok {
@@ -291,39 +291,4 @@ func setTokenInCookies(w http.ResponseWriter, token models.Token) {
 		Secure:   true,
 		Path:     "/api",
 	})
-}
-
-func sendError(w http.ResponseWriter, errCode api.ErrorCode) {
-	sendErrorMessage(w, errCode, "")
-}
-
-func sendErrorMessage(w http.ResponseWriter, errCode api.ErrorCode, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	builder := strings.Builder{}
-	json.NewEncoder(&builder).Encode(api.Error{
-		Code:    errCode,
-		Message: message,
-	})
-	http.Error(w, builder.String(), errorCodeToHTTPCode(errCode))
-}
-
-func errorCodeToHTTPCode(errCode api.ErrorCode) int {
-	switch errCode {
-	case api.ErrorCodeINVALIDTOKEN:
-		return http.StatusUnauthorized
-	case api.ErrorCodeINVALIDCREDENTIALS:
-		return http.StatusUnauthorized
-	case api.ErrorCodeINVALIDREQUEST:
-		return http.StatusBadRequest
-	case api.ErrorCodeNOTALLOWED:
-		return http.StatusMethodNotAllowed
-	case api.ErrorCodeDISABLED:
-		return http.StatusMethodNotAllowed
-	case api.ErrorCodeNOTFOUND:
-		return http.StatusNotFound
-	case api.ErrorCodeSERVERERROR:
-		return http.StatusInternalServerError
-	default:
-		return http.StatusInternalServerError
-	}
 }

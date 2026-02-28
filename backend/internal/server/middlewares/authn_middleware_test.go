@@ -32,10 +32,10 @@ func withInitUsers(t *testing.T, userService users.Service, creds models.Credent
 	return userService, token
 }
 
-func TestAuthMiddleware_Register(t *testing.T) {
+func TestAuthnMiddleware_Register(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -50,10 +50,10 @@ func TestAuthMiddleware_Register(t *testing.T) {
 	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterGet(t *testing.T) {
+func TestAuthnMiddleware_RegisterGet(t *testing.T) {
 	userService, _ := withInitUsers(t, newUsersService(t), userCreds)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -67,11 +67,11 @@ func TestAuthMiddleware_RegisterGet(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_Login(t *testing.T) {
+func TestAuthnMiddleware_Login(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -87,11 +87,11 @@ func TestAuthMiddleware_Login(t *testing.T) {
 	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_Logout(t *testing.T) {
+func TestAuthnMiddleware_Logout(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -114,11 +114,11 @@ func TestAuthMiddleware_Logout(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_AuthorizedAccess(t *testing.T) {
+func TestAuthnMiddleware_AuthorizedAccess(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, ok := UsernameFromContext(r.Context())
 		assert.True(t, ok)
 		assert.Equal(t, "username", username)
@@ -141,10 +141,10 @@ func TestAuthMiddleware_AuthorizedAccess(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 }
 
-func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
+func TestAuthnMiddleware_WhitelistedAccess(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}), userService)
 
@@ -157,10 +157,10 @@ func TestAuthMiddleware_WhitelistedAccess(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterInvalidRequestBody(t *testing.T) {
+func TestAuthnMiddleware_RegisterInvalidRequestBody(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -175,10 +175,10 @@ func TestAuthMiddleware_RegisterInvalidRequestBody(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterMissingCredentials(t *testing.T) {
+func TestAuthnMiddleware_RegisterMissingCredentials(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -193,12 +193,12 @@ func TestAuthMiddleware_RegisterMissingCredentials(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RegisterFailure(t *testing.T) {
+func TestAuthnMiddleware_RegisterFailure(t *testing.T) {
 	userService := newUsersService(t)
 	// Register first user to prevent registration
 	_, _ = withInitUsers(t, userService, userCreds)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -213,10 +213,10 @@ func TestAuthMiddleware_RegisterFailure(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
+func TestAuthnMiddleware_LoginInvalidMethod(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -229,10 +229,10 @@ func TestAuthMiddleware_LoginInvalidMethod(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginInvalidRequestBody(t *testing.T) {
+func TestAuthnMiddleware_LoginInvalidRequestBody(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -247,10 +247,10 @@ func TestAuthMiddleware_LoginInvalidRequestBody(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginMissingCredentials(t *testing.T) {
+func TestAuthnMiddleware_LoginMissingCredentials(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -265,10 +265,10 @@ func TestAuthMiddleware_LoginMissingCredentials(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LoginFailure(t *testing.T) {
+func TestAuthnMiddleware_LoginFailure(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -283,10 +283,10 @@ func TestAuthMiddleware_LoginFailure(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
+func TestAuthnMiddleware_LogoutInvalidMethod(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -299,10 +299,10 @@ func TestAuthMiddleware_LogoutInvalidMethod(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
+func TestAuthnMiddleware_LogoutMissingToken(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -315,7 +315,7 @@ func TestAuthMiddleware_LogoutMissingToken(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_LogoutFailure(t *testing.T) {
+func TestAuthnMiddleware_LogoutFailure(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
@@ -323,7 +323,7 @@ func TestAuthMiddleware_LogoutFailure(t *testing.T) {
 	invalidToken := token
 	invalidToken.Value = "invalidtoken"
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -343,11 +343,11 @@ func TestAuthMiddleware_LogoutFailure(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 }
 
-func TestAuthMiddleware_Refresh(t *testing.T) {
+func TestAuthnMiddleware_Refresh(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -365,10 +365,10 @@ func TestAuthMiddleware_Refresh(t *testing.T) {
 	checkCookiesAreNot(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RefreshInvalidMethod(t *testing.T) {
+func TestAuthnMiddleware_RefreshInvalidMethod(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -381,10 +381,10 @@ func TestAuthMiddleware_RefreshInvalidMethod(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RefreshMissingToken(t *testing.T) {
+func TestAuthnMiddleware_RefreshMissingToken(t *testing.T) {
 	userService := newUsersService(t)
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 
@@ -397,7 +397,7 @@ func TestAuthMiddleware_RefreshMissingToken(t *testing.T) {
 	checkCookiesAre(t, rr, "", "")
 }
 
-func TestAuthMiddleware_RefreshFailure(t *testing.T) {
+func TestAuthnMiddleware_RefreshFailure(t *testing.T) {
 	userService := newUsersService(t)
 	userService, token := withInitUsers(t, userService, userCreds)
 
@@ -405,7 +405,7 @@ func TestAuthMiddleware_RefreshFailure(t *testing.T) {
 	invalidToken := token
 	invalidToken.RefreshToken = "invalidtoken"
 
-	handler := AuthMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), userService)
 

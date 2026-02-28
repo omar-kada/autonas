@@ -57,7 +57,7 @@ func (s *HTTPServer) Serve(port int) error {
 
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(strict, mux)
-	h = middlewares.AuthMiddleware(h, s.userSvc)
+	h = middlewares.AuthnMiddleware(h, s.userSvc)
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
