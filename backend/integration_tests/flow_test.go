@@ -15,7 +15,6 @@ import (
 	"omar-kada/air-compose/internal/shell"
 	"omar-kada/air-compose/testutil"
 
-	"github.com/docker/compose/v2/pkg/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 )
@@ -80,7 +79,7 @@ func TestFileGeneration(t *testing.T) {
 	assert.NoError(t, err, "failed to load compose")
 
 	// Start containers
-	if err := stack.Up(ctx, compose.WithRecreate(api.RecreateForce)); err != nil {
+	if err := stack.Up(ctx, compose.WithRecreate("")); err != nil {
 		t.Fatalf("failed to start compose: %v", err)
 	}
 	t.Cleanup(func() {

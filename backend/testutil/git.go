@@ -37,7 +37,7 @@ func AddCommitToRepo(t *testing.T, repoPath string, fileName string, content []b
 		t.Fatalf("Failed to get worktree: %v", err)
 	}
 
-	file, err := w.Filesystem.Create(fileName)
+	file, err := w.Filesystem().Create(fileName)
 	if err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
