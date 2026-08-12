@@ -29,13 +29,12 @@ export function useWsStatus(enabled: boolean) {
       }
       setStatus(newStatus);
     },
-    [t, status],
+    [t, status, setStatus, enabledRef],
   );
 
   return { status, updateStatus };
 }
 
-// useWsRetry.ts
 export function useWsRetry() {
   const retriesRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout>>(0);
@@ -48,15 +47,15 @@ export function useWsRetry() {
     retriesRef.current++;
     retryTimeoutRef.current = setTimeout(() => setAttempt((n) => n + 1), delay + jitter);
     return true;
-  }, []);
+  }, [retriesRef, retryTimeoutRef]);
 
   const reset = useCallback(() => {
     retriesRef.current = 0;
-  }, []);
+  }, [retriesRef]);
 
   const cancel = useCallback(() => {
     clearTimeout(retryTimeoutRef.current);
-  }, []);
+  }, [retryTimeoutRef]);
 
   return { attempt, scheduleRetry, reset, cancel, retriesRef };
 }

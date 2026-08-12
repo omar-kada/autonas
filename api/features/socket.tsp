@@ -42,7 +42,7 @@ model EventMessage {
 model LogLine {
     msg: string;
     time: utcDateTime;
-    level: string;
+    level: Level;
 }
 
 model LogMessages is Array<LogLine>;

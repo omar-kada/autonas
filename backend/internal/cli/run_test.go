@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"omar-kada/air-compose/internal/logs"
 	"omar-kada/air-compose/testutil"
 	"omar-kada/air-compose/testutil/mocks"
 
@@ -32,7 +33,8 @@ func initConfigRepo(t *testing.T) string {
 func TestRunCommand_CmdParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &mocks.Executor{}
-	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
+	hub := logs.NewHistoryHub(0)
+	cmd := NewRunCommand(mocker, hub, func(_ RunParams) (*gorm.DB, error) {
 		return testutil.NewMemoryStorage(t), nil
 	})
 
@@ -90,7 +92,8 @@ func TestRunCommand_CmdParams(t *testing.T) {
 func TestRunCommand_EnvParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &mocks.Executor{}
-	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
+	hub := logs.NewHistoryHub(0)
+	cmd := NewRunCommand(mocker, hub, func(_ RunParams) (*gorm.DB, error) {
 		return testutil.NewMemoryStorage(t), nil
 	})
 
@@ -157,7 +160,8 @@ func TestRunCommand_EnvParams(t *testing.T) {
 
 func TestRunCommand_WithInvalidConfig(t *testing.T) {
 	mocker := &mocks.Executor{}
-	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
+	hub := logs.NewHistoryHub(0)
+	cmd := NewRunCommand(mocker, hub, func(_ RunParams) (*gorm.DB, error) {
 		return nil, errors.New("mock error")
 	})
 

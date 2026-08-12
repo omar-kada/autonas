@@ -71,6 +71,13 @@ enum ContainerState {
   dead: "dead",
 }
 
+enum Level {
+  error: "ERROR",
+  warning: "WARN",
+  info: "INFO",
+  debug: "DEBUG",
+}
+
 model Page<T> {
   @pageItems items: T[];
   pageInfo: PageInfo;

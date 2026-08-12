@@ -102,6 +102,14 @@
       "SERVICE_NAME_REQUIRED": "Service name is required"
     }
   },
+  "LOGS": {
+    "LOGS": "Logs",
+    "NO_LOGS_FILTERED": "No logs match the current filters",
+    "NO_LOGS": "No logs available",
+    "NO_LOGS_DESCRIPTION": "check if the server is generating logs correctly",
+    "FILTER_LOGS": "Filter logs ...",
+    "STREAMING": "Live"
+  },
   "SETTINGS": {
     "SETTINGS": "Settings",
     "DESCRIPTION": "Update the app settings",
@@ -149,7 +157,6 @@
       "CHANGE_PASS_SUCCESS": "Password changed successfully"
     }
   },
-  "LOGS": "Logs",
   "ACTION": {
     "BACK": "Back",
     "CONFIRM": "Confirm",
@@ -195,6 +202,7 @@
     "LOAD_NOTIFICATIONS_ERROR": "Error while loading notifications",
     "LOAD_STATE_ERROR": "Error while loading state",
     "LOAD_STATUS_ERROR": "Error while loading status",
+    "LOAD_LOGS_ERROR": "Error while loading logs",
     "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
     "LOAD_SETTINGS_ERROR": "Error while loading settings",
     "COPIED": "Copied",

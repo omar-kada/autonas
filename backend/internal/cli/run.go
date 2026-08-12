@@ -12,6 +12,7 @@ import (
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/logs"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server"
@@ -26,6 +27,7 @@ import (
 
 type runCommand struct {
 	executor  shell.Executor
+	logHub    logs.Hub
 	dbCreator func(params RunParams) (*gorm.DB, error)
 
 	cmd    *cobra.Command
@@ -33,10 +35,11 @@ type runCommand struct {
 }
 
 // NewRunCommand creates a new run
-func NewRunCommand(executor shell.Executor, dbCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
+func NewRunCommand(executor shell.Executor, logHub logs.Hub, dbCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
 	run := runCommand{
 		params:    RunParams{},
 		executor:  executor,
+		logHub:    logHub,
 		dbCreator: dbCreator,
 	}
 
@@ -103,7 +106,7 @@ func (run *runCommand) doRun() error {
 	if err != nil {
 		return fmt.Errorf("error creating config storage %w", err)
 	}
-	eventBus.SetTransform(events.NewEventTransformer(configStore).HandleEvent)
+	eventBus.SetTransform(events.NewSourceEventTransformer(configStore).HandleEvent)
 
 	inspector, err := docker.NewInspector(params.ServicesDir, configStore)
 	if err != nil {
@@ -165,7 +168,7 @@ func (run *runCommand) doRun() error {
 		fetcher, healthChecker, repoWatcher,
 		eventStore, deploymentStore)
 
-	socketHandler := socket.NewWebSocketHandler()
+	socketHandler := socket.NewWebSocketHandler(run.logHub)
 
 	eventBus.Register(events.HandlerFunc(socketHandler.BroadcastEvent))
 

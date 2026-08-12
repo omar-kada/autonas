@@ -87,6 +87,14 @@ const (
 	EventTypeSESSIONREUSED        EventType = "SESSION_REUSED"
 )
 
+// Defines values for Level.
+const (
+	LevelDEBUG Level = "DEBUG"
+	LevelERROR Level = "ERROR"
+	LevelINFO  Level = "INFO"
+	LevelWARN  Level = "WARN"
+)
+
 // Defines values for ServerMessageErrorKind.
 const (
 	ServerMessageErrorKindError ServerMessageErrorKind = "error"
@@ -264,9 +272,12 @@ type GitCredentials struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// Level defines model for Level.
+type Level string
+
 // LogLine defines model for LogLine.
 type LogLine struct {
-	Level string    `json:"level"`
+	Level Level     `json:"level"`
 	Msg   string    `json:"msg"`
 	Time  time.Time `json:"time"`
 }

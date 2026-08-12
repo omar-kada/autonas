@@ -11,7 +11,7 @@ export function ErrorAlert({
   className,
 }: {
   title: string;
-  error: AxiosError<Error> | null;
+  error: AxiosError<Error> | Error | null;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -21,7 +21,11 @@ export function ErrorAlert({
         <AlertCircleIcon />
         <AlertTitle>{t(title)}</AlertTitle>
         {error.message && (
-          <AlertDescription>{t(error.response?.data.message ?? error.message)}</AlertDescription>
+          <AlertDescription>
+            {t(
+              'response' in error ? (error.response?.data.message ?? error.message) : error.message,
+            )}
+          </AlertDescription>
         )}
       </Alert>
     )
