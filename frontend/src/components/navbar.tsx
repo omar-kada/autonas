@@ -14,7 +14,7 @@ const LINKS: Array<NavbarElementProps> = [
     path: ROUTES.STATUS,
   },
   {
-    label: 'LOGS',
+    label: 'LOGS.LOGS',
     Icon: ScrollText,
     path: ROUTES.LOGS,
   },

@@ -7,20 +7,20 @@ import (
 	"omar-kada/air-compose/internal/models"
 )
 
-// EventTransformer transforms source events into events with additional metadata.
-type EventTransformer struct {
+// SourceEventTransformer transforms source events into events with additional metadata.
+type SourceEventTransformer struct {
 	configStore models.ConfigGetter
 }
 
-// NewEventTransformer creates a new EventTransformer with the given config store.
-func NewEventTransformer(configStore models.ConfigGetter) *EventTransformer {
-	return &EventTransformer{
+// NewSourceEventTransformer creates a new EventTransformer with the given config store.
+func NewSourceEventTransformer(configStore models.ConfigGetter) *SourceEventTransformer {
+	return &SourceEventTransformer{
 		configStore: configStore,
 	}
 }
 
-// HandleEvent sends a notification for the event
-func (t *EventTransformer) HandleEvent(ctx context.Context, srcEvent models.SourceEvent) models.Event {
+// HandleEvent transforms SourceEvent into an Event
+func (t *SourceEventTransformer) HandleEvent(ctx context.Context, srcEvent models.SourceEvent) models.Event {
 	cfg := t.configStore.Get()
 	event := models.FromSourceEvent(ctx, srcEvent)
 	event.IsNotification = cfg.IsEventNotificationEnabled(event.Type)

@@ -215,10 +215,20 @@ export interface GitCredentials {
   token?: string;
 }
 
+export type Level = typeof Level[keyof typeof Level];
+
+
+export const Level = {
+  ERROR: 'ERROR',
+  WARN: 'WARN',
+  INFO: 'INFO',
+  DEBUG: 'DEBUG',
+} as const;
+
 export interface LogLine {
   msg: string;
   time: string;
-  level: string;
+  level: Level;
 }
 
 export type LogMessages = LogLine[];

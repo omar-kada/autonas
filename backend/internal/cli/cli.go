@@ -4,6 +4,7 @@ package cli
 import (
 	"path/filepath"
 
+	"omar-kada/air-compose/internal/logs"
 	"omar-kada/air-compose/internal/shell"
 	"omar-kada/air-compose/internal/storage"
 
@@ -12,12 +13,12 @@ import (
 )
 
 // NewRootCmd creates a new command with default dependencies
-func NewRootCmd(executor shell.Executor) *cobra.Command {
+func NewRootCmd(executor shell.Executor, logHub logs.Hub) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "air-compose",
 		Short: "AirCompose CLI",
 	}
-	rootCmd.AddCommand(NewRunCommand(executor, func(params RunParams) (*gorm.DB, error) {
+	rootCmd.AddCommand(NewRunCommand(executor, logHub, func(params RunParams) (*gorm.DB, error) {
 		return storage.NewGormDb(
 			filepath.Join(params.GetDBDir(), "air-compose.db"),
 			params.GetAddWritePerm(),

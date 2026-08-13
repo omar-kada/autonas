@@ -1,6 +1,7 @@
 import {
   ServerMessageLogKind,
   ServerMessagePreviousLogsKind,
+  type Error,
   type LogMessages,
   type ServerMessageLog,
   type ServerMessagePreviousLogs,
@@ -13,7 +14,7 @@ export function getLogsQueryKey(): QueryKey {
   return ['logs'];
 }
 
-export function useLogs(previousLines = 0, query?: Partial<UseQueryOptions<LogMessages>>) {
+export function useLogs(previousLines = 0, query?: Partial<UseQueryOptions<LogMessages, Error>>) {
   const { startLogs, endLogs } = useWs();
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export function useLogs(previousLines = 0, query?: Partial<UseQueryOptions<LogMe
     return () => endLogs();
   }, [startLogs, endLogs]);
 
-  return useQuery<LogMessages>({
+  return useQuery<LogMessages, Error>({
     queryKey: getLogsQueryKey(),
     queryFn: async (): Promise<LogMessages> => [],
     enabled: true,

@@ -13,7 +13,6 @@ export const BASE_DELAY = 500;
 export const MAX_DELAY = 30_000;
 export const MAX_RETRIES = 10;
 
-// WebSocketProvider.tsx
 export function WebSocketProvider({
   url,
   enabled = true,
@@ -73,5 +72,3 @@ export function WebSocketProvider({
     </WsContext.Provider>
   );
 }
-
-// --- Hooks ---

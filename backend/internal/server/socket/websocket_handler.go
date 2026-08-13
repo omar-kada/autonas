@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/logs"
 	"omar-kada/air-compose/internal/models"
 	"sync"
 	"sync/atomic"
@@ -23,14 +24,17 @@ type WebSocketHandler interface {
 }
 
 type websocketHandler struct {
+	logHub logs.Hub
+
 	sessionIDCounter atomic.Uint64
 	sessions         map[uint64]*session
 	mu               sync.RWMutex
 }
 
 // NewWebSocketHandler creates a new WebSocketHandler instance.
-func NewWebSocketHandler() WebSocketHandler {
+func NewWebSocketHandler(logHub logs.Hub) WebSocketHandler {
 	return &websocketHandler{
+		logHub:   logHub,
 		sessions: make(map[uint64]*session),
 	}
 }
@@ -54,7 +58,7 @@ func (h *websocketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		conn:     conn,
 		logger:   logger,
 		sender:   sender,
-		handlers: []Handler{NewLogHandler(logger, sender)},
+		handlers: []Handler{NewLogHandler(logger, sender, h.logHub)},
 		ctx:      ctx,
 		cancel:   cancel,
 	}

@@ -12,7 +12,7 @@ import (
 
 func TestEventTransformer_HandleEvent(t *testing.T) {
 	configStore := testutil.NewConfigGetter(models.Config{})
-	transformer := NewEventTransformer(configStore)
+	transformer := NewSourceEventTransformer(configStore)
 
 	t.Run("should set IsNotification based on config", func(t *testing.T) {
 		cfg := models.Config{

@@ -88,19 +88,24 @@ function Notification({
     [onClick, notification],
   );
   return (
-    <Item asChild className={cn(unread ? 'bg-accent ' : '', className)}>
+    <Item asChild className={cn(unread ? 'bg-accent ' : '', className, 'flex-nowrap')}>
       <a href="" onClick={handleClick}>
         <ItemMedia variant="default">
           <NotificationBadge notification={notification} />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>{t(`EVENT_TYPE.${notification.type}`, { ...notification })}</ItemTitle>
+          <ItemTitle className="line-clamp-1">
+            {t(`EVENT_TYPE.${notification.type}`, { ...notification })}
+          </ItemTitle>
           <ItemDescription>
             {getNotificationObjectTitle(notification)}
-
             {notification.msg !== '' && `${notification.msg}`}
           </ItemDescription>
-          <div className="text-xs text-muted-foreground self-end-safe">{relativeTime}</div>
+        </ItemContent>
+        <ItemContent className="flex-none self-start">
+          <ItemDescription className="text-xs text-muted-foreground">
+            {relativeTime}
+          </ItemDescription>
         </ItemContent>
       </a>
     </Item>

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/logs"
 	"omar-kada/air-compose/internal/models"
 	"strings"
 	"testing"
@@ -18,7 +19,7 @@ import (
 
 func TestWebSocketHandlerConnectionAcceptance(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	// Convert http:// to ws://
@@ -34,7 +35,7 @@ func TestWebSocketHandlerConnectionAcceptance(t *testing.T) {
 }
 
 func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
-	socketHandler := NewWebSocketHandler().(*websocketHandler)
+	socketHandler := NewWebSocketHandler(logs.NewHistoryHub(0)).(*websocketHandler)
 	server := httptest.NewServer(http.HandlerFunc(socketHandler.Handle))
 	defer server.Close()
 
@@ -78,7 +79,7 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 
 func TestWebSocketHandlerMessageParsing(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -108,7 +109,7 @@ func TestWebSocketHandlerMessageParsing(t *testing.T) {
 
 func TestWebSocketHandlerSessionCleanup(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -131,7 +132,7 @@ func TestWebSocketHandlerSessionCleanup(t *testing.T) {
 
 func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -157,7 +158,7 @@ func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 
 func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -185,7 +186,7 @@ func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 
 func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -218,7 +219,7 @@ func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 
 func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -242,7 +243,7 @@ func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 
 func TestWebSocketHandlerConcurrentConnections(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -273,7 +274,7 @@ func TestWebSocketHandlerConcurrentConnections(t *testing.T) {
 
 func TestWebSocketHandlerMultipleMessages(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -332,7 +333,7 @@ func TestWebSocketHandlerMessageEnvelopeStructure(t *testing.T) {
 
 func TestWebSocketHandlerContextCancellation(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler(logs.NewHistoryHub(0)).Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -354,7 +355,7 @@ func TestWebSocketHandlerContextCancellation(t *testing.T) {
 }
 
 func TestWebSocketHandlerBroadcastEvent(t *testing.T) {
-	handler := NewWebSocketHandler()
+	handler := NewWebSocketHandler(logs.NewHistoryHub(0))
 	server := httptest.NewServer(http.HandlerFunc(handler.Handle))
 	defer server.Close()
 
