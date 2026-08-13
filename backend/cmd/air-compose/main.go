@@ -23,7 +23,7 @@ func main() {
 	var base slog.Handler
 	if isDev {
 		base =
-			tint.NewHandler(os.Stdout, &tint.Options{
+			tint.NewTextHandler(os.Stdout, &tint.Options{
 				Level:      slog.LevelDebug,
 				TimeFormat: time.Kitchen,
 				AddSource:  true,
