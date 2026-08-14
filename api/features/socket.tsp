@@ -1,6 +1,4 @@
-import "@typespec/events";
 import "@typespec/http";
-import "@typespec/streams";
 using TypeSpec.Http;
 
 namespace AirComposeService;
