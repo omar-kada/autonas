@@ -9,7 +9,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/go-git/go-git/v6 v6.0.0-alpha.4
+	github.com/go-git/go-git/v6 v6.0.0-alpha.5
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/lmittmann/tint v1.2.0
 	github.com/moby/moby/api v1.54.2
@@ -79,7 +79,7 @@ require (
 	github.com/fvbommel/sortorder v1.1.0 // indirect
 	github.com/getkin/kin-openapi v0.144.0 // indirect
 	github.com/go-git/gcfg/v2 v2.0.2 // indirect
-	github.com/go-git/go-billy/v6 v6.0.0-alpha.1 // indirect
+	github.com/go-git/go-billy/v6 v6.0.0-alpha.2 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -184,7 +184,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
