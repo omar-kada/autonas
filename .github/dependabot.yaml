@@ -13,6 +13,9 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "*"
+        versions: ["*-rc*", "*-alpha*", "*-beta*", "*-pre*"]
 
   # React Frontend (npm)
   - package-ecosystem: "npm"
@@ -29,7 +32,9 @@ updates:
     ignore:
       - dependency-name: "*eslint*"
         # Ignore versions 10.x.x and above because of plugin incompatibility, should be remove later
-        versions: [">=10.0.0"] 
+        versions: [">=10.0.0"]
+      - dependency-name: "*"
+        versions: ["*-rc*", "*-alpha*", "*-beta*", "*-pre*"]
 
   # Typespec (npm)
   - package-ecosystem: "npm"
@@ -43,6 +48,9 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "*"
+        versions: ["*-rc*", "*-alpha*", "*-beta*", "*-pre*"]
 
   # Docker
   - package-ecosystem: "docker"
@@ -56,6 +64,9 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "*"
+        versions: ["*-rc*", "*-alpha*", "*-beta*", "*-pre*"]
 
   # Github actions CI
   - package-ecosystem: "github-actions"
@@ -69,4 +80,6 @@ updates:
           - "*"
     cooldown:
       default-days: 7
-      
+    ignore:
+      - dependency-name: "*"
+        versions: ["*-rc*", "*-alpha*", "*-beta*", "*-pre*"]
