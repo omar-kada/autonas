@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/omar-kada/air-compose/compare/v0.3.0...v0.3.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* auto scroll logs on mobile ([#234](https://github.com/omar-kada/air-compose/issues/234)) ([cb6bf71](https://github.com/omar-kada/air-compose/commit/cb6bf712ba6f1629613cf143c50069b9b6111545))
+
 ## [0.3.0](https://github.com/omar-kada/air-compose/compare/v0.2.0...v0.3.0) (2026-08-19)
 
 
