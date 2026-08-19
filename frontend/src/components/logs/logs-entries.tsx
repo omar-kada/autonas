@@ -7,7 +7,7 @@ import { LEVEL_STYLES } from './log-levels';
 export function LogEntries({ logs }: { logs: LogMessages }) {
   const { t } = useTranslation();
   return (
-    <AutoScrollArea className="min-h-0 flex-1">
+    <AutoScrollArea className="min-h-0 flex-1" watch={logs.length}>
       <ul className="font-mono text-xs">
         {logs.length === 0 ? (
           <li className="py-4 text-center text-muted-foreground text-sm">
