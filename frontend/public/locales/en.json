@@ -108,7 +108,8 @@
     "NO_LOGS": "No logs available",
     "NO_LOGS_DESCRIPTION": "check if the server is generating logs correctly",
     "FILTER_LOGS": "Filter logs ...",
-    "STREAMING": "Live"
+    "STREAMING": "Live",
+    "EXPAND_ALL": "Expand all"
   },
   "SETTINGS": {
     "SETTINGS": "Settings",

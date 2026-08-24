@@ -36,7 +36,7 @@ export function ServiceStatus({
           <HumanTime time={time} />
         </ItemDescription>
       </ItemContent>
-      <ItemActions className="flex-wrap">
+      <ItemActions className="flex-wrap justify-end-safe">
         {Object.entries(serviceContainers).map(([_, item]) => (
           <ContainerStatusBadge
             health={item.health}

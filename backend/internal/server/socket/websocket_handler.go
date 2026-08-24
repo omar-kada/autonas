@@ -174,7 +174,7 @@ func (sess *session) ReadMessage(ctx context.Context) (any, error) {
 		})
 		return nil, nil
 	}
-	sess.logger.Info("[SOCKET] message received", "kind", kind, "value", value)
+	sess.logger.Debug("[SOCKET] message received", "kind", kind, "value", value)
 
 	return value, nil
 }

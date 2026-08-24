@@ -41,6 +41,7 @@ model LogLine {
     msg: string;
     time: utcDateTime;
     level: Level;
+    meta: Record<string>;
 }
 
 model LogMessages is Array<LogLine>;

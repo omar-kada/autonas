@@ -34,7 +34,7 @@ func (h *ConfigurationUpdatedHandler) HandleEvent(_ context.Context, event model
 			if maps.Equal(oldCfg.Environment, newCfg.Environment) &&
 				reflect.DeepEqual(oldCfg.Services, newCfg.Services) &&
 				reflect.DeepEqual(oldCfg.Settings.Git, newCfg.Settings.Git) {
-				slog.Info("No relevant configuration changes detected, skipping deployment")
+				slog.Info("[CONFIG] No relevant configuration changes detected, skipping deployment")
 				return
 			}
 		} else {

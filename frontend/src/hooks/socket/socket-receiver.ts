@@ -17,8 +17,8 @@ import {
 import { type QueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { toast } from 'sonner';
+import { onLogEvent } from '..';
 import { incrementUnreadCount } from '../stacks';
-import { onLogEvent } from './use-logs';
 
 export function createSocketReceiver(queryClient: QueryClient) {
   return (event: MessageEvent) => {
