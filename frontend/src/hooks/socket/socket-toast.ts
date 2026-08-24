@@ -15,6 +15,7 @@ export const wsToast = {
     toastId = toast.success(t('SOCKET.CONNECTED.TITLE'), {
       id: toastId ?? undefined,
       duration: 4000,
+      dismissible: true,
       description: t('SOCKET.CONNECTED.DESCRIPTION'),
     });
   },

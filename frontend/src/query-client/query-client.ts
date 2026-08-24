@@ -25,11 +25,9 @@ export const queryClient = new QueryClient({
 });
 
 function refreshToken() {
-  authAPIRefresh()
-    .then((success) => success && queryClient.refetchQueries())
-    .catch((err: AxiosError) => {
-      if (err.status === 401) {
-        window.location.href = ROUTES.LOGIN;
-      }
-    });
+  authAPIRefresh().catch((err: AxiosError) => {
+    if (err.status === 401) {
+      window.location.href = ROUTES.LOGIN;
+    }
+  });
 }

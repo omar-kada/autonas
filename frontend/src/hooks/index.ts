@@ -1,3 +1,4 @@
+export * from './logs';
 export * from './settings';
 export * from './socket';
 export * from './stacks';

@@ -225,10 +225,13 @@ export const Level = {
   DEBUG: 'DEBUG',
 } as const;
 
+export type LogLineMeta = {[key: string]: string};
+
 export interface LogLine {
   msg: string;
   time: string;
   level: Level;
+  meta: LogLineMeta;
 }
 
 export type LogMessages = LogLine[];

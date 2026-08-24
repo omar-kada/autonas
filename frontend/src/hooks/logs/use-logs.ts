@@ -8,25 +8,38 @@ import {
 } from '@/api';
 import { QueryClient, useQuery, type QueryKey, type UseQueryOptions } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useWs } from '..';
+import { useWs, useWsStatusQuery } from '..';
 
 export function getLogsQueryKey(): QueryKey {
   return ['logs'];
 }
 
-export function useLogs(previousLines = 0, query?: Partial<UseQueryOptions<LogMessages, Error>>) {
+export function useLogs(
+  previousLines = 0,
+  queryOptions?: Partial<UseQueryOptions<LogMessages, Error>>,
+) {
   const { startLogs, endLogs } = useWs();
-
+  const { data: status } = useWsStatusQuery();
+  /*
   useEffect(() => {
     startLogs(previousLines);
     return () => endLogs();
-  }, [startLogs, endLogs]);
+  }, [startLogs, endLogs]);*/
+
+  useEffect(() => {
+    if (status === 'connected') {
+      startLogs(previousLines);
+      return () => endLogs();
+    }
+  }, [status]);
 
   return useQuery<LogMessages, Error>({
     queryKey: getLogsQueryKey(),
     queryFn: async (): Promise<LogMessages> => [],
     enabled: true,
-    ...query,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    ...queryOptions,
   });
 }
 

@@ -177,7 +177,7 @@ func (s *configStore) WatchFile() error {
 				}
 
 				if event.Has(fsnotify.Write) {
-					slog.Info("config file update detected")
+					slog.Info("[FILE-WATCH] config file update detected")
 					newCfg, err := readConfig(s.configFilePath)
 					if err != nil {
 						slog.Error("error reading new config file", "err", err)

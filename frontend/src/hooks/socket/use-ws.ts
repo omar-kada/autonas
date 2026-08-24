@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type SocketEmitterActions } from './socket-emitter';
@@ -10,10 +11,34 @@ export function useWs(): SocketEmitterActions {
   return ctx;
 }
 
+export function getWsStatusKey(): QueryKey {
+  return ['ws-status'];
+}
+
+export function useWsStatusQuery() {
+  return useQuery<WsStatus, Error>({
+    queryKey: getWsStatusKey(),
+    queryFn: async (): Promise<WsStatus> => {
+      return 'off';
+    },
+    enabled: true,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    initialData: 'off',
+  });
+}
+
 export function useWsStatus(enabled: boolean) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
-  const [status, setStatus] = useState<WsStatus>('off');
+  const { data: status } = useWsStatusQuery();
+  const setStatus = useCallback(
+    (status: WsStatus) => {
+      queryClient.setQueryData(getWsStatusKey(), status);
+    },
+    [queryClient],
+  );
   const enabledRef = useRef(enabled);
 
   useEffect(() => {

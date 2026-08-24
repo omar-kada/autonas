@@ -9,7 +9,7 @@ export type WsStatus = 'off' | 'connected' | 'reconnecting' | 'failed';
 
 export const WsContext = createContext<SocketBusinessEmitter | null>(null);
 
-export const BASE_DELAY = 500;
+export const BASE_DELAY = 1000;
 export const MAX_DELAY = 30_000;
 export const MAX_RETRIES = 10;
 

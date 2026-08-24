@@ -46,7 +46,7 @@ func (lh *LogHandler) HandleMessage(ctx context.Context, msg any) {
 }
 
 func (lh *LogHandler) handleStartLog(ctx context.Context, msg api.StartLogsMessage) {
-	lh.logger.Info("[SOCKET] started streaming logs", "previousLines", msg.PreviousLines)
+	lh.logger.Debug("[SOCKET] started streaming logs", "previousLines", msg.PreviousLines)
 
 	lh.mu.Lock()
 	if lh.stopLogs != nil {
@@ -79,21 +79,14 @@ func (lh *LogHandler) handleStartLog(ctx context.Context, msg api.StartLogsMessa
 
 					var messages []api.LogLine
 					for _, line := range lines {
-						messages = append(messages, api.LogLine{
-							Msg:   line.Message,
-							Level: api.Level(line.Level.String()),
-							Time:  line.Time,
-						})
+						messages = append(messages, MapLogLine(line))
 					}
 					if err := lh.sender.SendPreviousLogs(ctx, messages); err != nil {
 						lh.logger.Error("error sending previous logs ", "err", err)
 						return
 					}
 				} else if len(lines) == 1 {
-					if err := lh.sender.SendLog(ctx, api.LogLine{
-						Msg:   lines[0].Message,
-						Level: api.Level(lines[0].Level.String()),
-						Time:  lines[0].Time}); err != nil {
+					if err := lh.sender.SendLog(ctx, MapLogLine(lines[0])); err != nil {
 						lh.logger.Error("error reading logs ", "err", err)
 						return
 					}
@@ -110,7 +103,7 @@ func (lh *LogHandler) cancelLogs() {
 	lh.mu.Lock()
 	defer lh.mu.Unlock()
 	if lh.stopLogs != nil {
-		lh.logger.Info("[SOCKET] cancelling active log stream")
+		lh.logger.Debug("[SOCKET] cancelling active log stream")
 		lh.stopLogs()
 		lh.stopLogs = nil
 	}
