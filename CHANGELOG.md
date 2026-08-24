@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/omar-kada/air-compose/compare/v0.3.1...v0.4.0) (2026-08-24)
+
+
+### Features
+
+* enhance logs with meta attributes ([#236](https://github.com/omar-kada/air-compose/issues/236)) ([4095e94](https://github.com/omar-kada/air-compose/commit/4095e94086886a857b6c6d02af38c0959c3dff82))
+
 ## [0.3.1](https://github.com/omar-kada/air-compose/compare/v0.3.0...v0.3.1) (2026-08-19)
 
 
