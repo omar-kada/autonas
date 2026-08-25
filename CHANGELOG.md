@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/omar-kada/air-compose/compare/v0.4.0...v0.5.0) (2026-08-25)
+
+
+### Features
+
+* display version in the ui ([#241](https://github.com/omar-kada/air-compose/issues/241)) ([5fd19aa](https://github.com/omar-kada/air-compose/commit/5fd19aa79c5595a0dd1fd0b27edb719bf7c5c353))
+
 ## [0.4.0](https://github.com/omar-kada/air-compose/compare/v0.3.1...v0.4.0) (2026-08-24)
 
 
