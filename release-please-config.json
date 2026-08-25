@@ -2,12 +2,41 @@
   "packages": {
     ".": {
       "release-type": "simple",
+      "component": "app",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": false,
       "draft": false,
       "prerelease": false,
+      "include-component-in-tag": false,
+      "extra-files": []
+    },
+    "backend": {
+      "release-type": "go",
+      "component": "backend",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "skip-github-release": true,
+      "skip-changelog": true,
+      "extra-files": [
+        "internal/version/version.go"
+      ]
+    },
+    "frontend": {
+      "release-type": "node",
+      "component": "frontend",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "skip-github-release": true,
+      "skip-changelog": true,
       "extra-files": []
     }
-  }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "app",
+      "components": ["app", "backend", "frontend"]
+    }
+  ]
 }
