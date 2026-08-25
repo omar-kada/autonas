@@ -1,6 +1,12 @@
-import { getStateAPIGetQueryOptions, type Error as ApiError, type State } from '@/api/api';
-import type { UseQueryOptions } from '@tanstack/react-query';
+import {
+  getStateAPIGetQueryKey,
+  getStateAPIGetQueryOptions,
+  type Error as ApiError,
+  type State,
+} from '@/api/api';
+import type { QueryClient, UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError, AxiosResponse } from 'axios';
+import debounce from 'lodash.debounce';
 
 export const getStateQueryOptions = (
   queryOptions?: Partial<
@@ -27,3 +33,13 @@ export const getStateQueryOptions = (
     },
   });
 };
+
+export const refetchState = debounce(
+  (queryClient: QueryClient) => {
+    queryClient.refetchQueries({
+      queryKey: getStateAPIGetQueryKey(),
+    });
+  },
+  2000,
+  { leading: true },
+);
