@@ -9,11 +9,14 @@ run-dev:
 	ENV=dev cd backend && go run ./cmd/air-compose run
 
 up-local:
+	docker compose -f compose.local.yaml up --build
+
+up-build:
 	(docker stop air-compose || true) && \
 	(docker rm air-compose || true) && \
 	(docker rmi air-compose:local --force || true) && \
-	docker compose -f compose.local.yaml up --build
-
+	make up-local
+	
 lint:
 	cd backend && golangci-lint run ./...
 

@@ -1,6 +1,6 @@
-import { debouncedRefreshToken } from '@/query-client/query-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useEffect, useMemo, useRef } from 'react';
+import { refetchState } from '../stacks';
 import { createSocketEmitter, type SocketBusinessEmitter } from './socket-emitter';
 import { createSocketReceiver } from './socket-receiver';
 import { useWsRetry, useWsStatus } from './use-ws';
@@ -45,7 +45,7 @@ export function WebSocketProvider({
       if (isManuallyClosed.current || event.code === 1000) return;
       const retried = scheduleRetry();
       updateStatus(retried ? 'reconnecting' : 'failed', retriesRef.current);
-      debouncedRefreshToken();
+      refetchState(queryClient);
     };
 
     socket.onopen = () => {
