@@ -116,6 +116,7 @@
     "DESCRIPTION": "Update the app settings",
     "DISABLED_TITLE": "Settings are disabled",
     "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_EDIT_SETTINGS' to 'true'",
+    "VERSION": "Version",
     "FORM": {
       "GIT": "Git",
       "repo": "Repository",

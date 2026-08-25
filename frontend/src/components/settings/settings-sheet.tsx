@@ -63,15 +63,14 @@ export function SettingsSheet({
       <SheetContent className="w-full md:w-none flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>{t('SETTINGS.SETTINGS')}</SheetTitle>
-          {disabled && (
-            <SheetDescription>
-              {t('SETTINGS.DISABLED_TITLE')}, {t('SETTINGS.DISABLED_DESCRIPTION')}
-            </SheetDescription>
-          )}
+          <SheetDescription>{`${t('SETTINGS.VERSION')}: ${__APP_VERSION__}`}</SheetDescription>
         </SheetHeader>
         <ScrollArea className="h-1 flex-1 gap-2">
           <div className=" grid auto-rows-min gap-6 px-4 mb-10">
             <ErrorAlert title={t('ALERT.LOAD_SETTINGS_ERROR')} error={mergedError}></ErrorAlert>
+            {disabled && (
+              <p>{`${t('SETTINGS.DISABLED_TITLE')}, ${t('SETTINGS.DISABLED_DESCRIPTION')}`}</p>
+            )}
             {isPending ? <SettingsSkeleton /> : settings && <SettingsForm form={form} />}
           </div>
         </ScrollArea>
