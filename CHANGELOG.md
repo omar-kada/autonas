@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/omar-kada/air-compose/compare/v0.5.0...v0.5.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* fix issue of reuse of refresh token on reconnection ([#244](https://github.com/omar-kada/air-compose/issues/244)) ([6c3a62d](https://github.com/omar-kada/air-compose/commit/6c3a62d13ac4f3ced1a1f157809da14296b5e766))
+
 ## [0.5.0](https://github.com/omar-kada/air-compose/compare/v0.4.0...v0.5.0) (2026-08-25)
 
 
